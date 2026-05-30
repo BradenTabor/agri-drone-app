@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { calculateExpectedAcres, calculateProductRateGuardrail, calculateTotalMixGallonsHint } from "@/lib/calculations/mix";
+import { calculateExpectedAcres, calculateTotalMixGallonsHint } from "@/lib/calculations/mix";
 import { WIND_DIRECTIONS } from "@/lib/constants";
 
 const initialState: MixRecordFormState = { error: null };
@@ -77,9 +77,6 @@ type MixRecordFormProps = {
     id: string;
     name: string;
     epaNumber: string | null;
-    labelMinRate: number | null;
-    labelMaxRate: number | null;
-    rateUnit: string | null;
     active: boolean;
   }>;
   applicators: Array<{ id: string; label: string }>;
@@ -410,13 +407,6 @@ export function MixRecordForm({
           </div>
           {lines.map((line) => {
             const selectedProduct = products.find((product) => product.id === line.productId) ?? null;
-            const guardrail = calculateProductRateGuardrail({
-              enteredRate: parseDecimal(line.ratePerAcre),
-              enteredUnit: line.rateUnit || null,
-              labelMinRate: selectedProduct?.labelMinRate ?? null,
-              labelMaxRate: selectedProduct?.labelMaxRate ?? null,
-              labelUnit: selectedProduct?.rateUnit ?? null,
-            });
 
             return (
               <div key={line.rowId} className="space-y-2 rounded-md border p-3">
@@ -527,16 +517,6 @@ export function MixRecordForm({
                   ) : null}
                 </div>
 
-                {guardrail.status === "below_min" ? (
-                  <p className="text-xs text-amber-600">
-                    Entered rate is below label minimum ({guardrail.min} {guardrail.unit}/ac).
-                  </p>
-                ) : null}
-                {guardrail.status === "above_max" ? (
-                  <p className="text-xs text-amber-600">
-                    Entered rate is above label maximum ({guardrail.max} {guardrail.unit}/ac).
-                  </p>
-                ) : null}
               </div>
             );
           })}

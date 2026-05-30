@@ -39,6 +39,185 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_record_pesticides: {
+        Row: {
+          active_ingredient: string | null
+          app_record_id: string
+          created_at: string
+          epa_reg_number: string | null
+          id: string
+          is_surfactant: boolean
+          product_name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active_ingredient?: string | null
+          app_record_id: string
+          created_at?: string
+          epa_reg_number?: string | null
+          id?: string
+          is_surfactant?: boolean
+          product_name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active_ingredient?: string | null
+          app_record_id?: string
+          created_at?: string
+          epa_reg_number?: string | null
+          id?: string
+          is_surfactant?: boolean
+          product_name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_record_pesticides_app_record_id_fkey"
+            columns: ["app_record_id"]
+            isOneToOne: false
+            referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_records: {
+        Row: {
+          acres_treated: number | null
+          additional_notes: string | null
+          app_method: string | null
+          applicator_name: string
+          applicator_sig: string | null
+          cert_attested: boolean
+          created_at: string
+          customer_name: string
+          deleted_at: string | null
+          end_time: string | null
+          equipment_notes: string | null
+          gallons_per_acre: number | null
+          id: string
+          job_date: string
+          job_site_id: string | null
+          last_modified_at: string | null
+          last_modified_by: string | null
+          license_cert_no: string | null
+          location_lat: number | null
+          location_lng: number | null
+          nozzle_type: string | null
+          rei: string | null
+          safe_reentry_date: string | null
+          site_address: string | null
+          sky_condition: string | null
+          start_time: string | null
+          submitted_at: string
+          submitted_by: string | null
+          tank_mix_record: string | null
+          target_veg_other: string | null
+          target_vegetation: Json
+          temp_f: number | null
+          total_gallons: number | null
+          truck_id: string | null
+          updated_at: string
+          wind_direction: string | null
+          wind_speed_mph: number | null
+        }
+        Insert: {
+          acres_treated?: number | null
+          additional_notes?: string | null
+          app_method?: string | null
+          applicator_name: string
+          applicator_sig?: string | null
+          cert_attested?: boolean
+          created_at?: string
+          customer_name: string
+          deleted_at?: string | null
+          end_time?: string | null
+          equipment_notes?: string | null
+          gallons_per_acre?: number | null
+          id?: string
+          job_date: string
+          job_site_id?: string | null
+          last_modified_at?: string | null
+          last_modified_by?: string | null
+          license_cert_no?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          nozzle_type?: string | null
+          rei?: string | null
+          safe_reentry_date?: string | null
+          site_address?: string | null
+          sky_condition?: string | null
+          start_time?: string | null
+          submitted_at?: string
+          submitted_by?: string | null
+          tank_mix_record?: string | null
+          target_veg_other?: string | null
+          target_vegetation?: Json
+          temp_f?: number | null
+          total_gallons?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          wind_direction?: string | null
+          wind_speed_mph?: number | null
+        }
+        Update: {
+          acres_treated?: number | null
+          additional_notes?: string | null
+          app_method?: string | null
+          applicator_name?: string
+          applicator_sig?: string | null
+          cert_attested?: boolean
+          created_at?: string
+          customer_name?: string
+          deleted_at?: string | null
+          end_time?: string | null
+          equipment_notes?: string | null
+          gallons_per_acre?: number | null
+          id?: string
+          job_date?: string
+          job_site_id?: string | null
+          last_modified_at?: string | null
+          last_modified_by?: string | null
+          license_cert_no?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          nozzle_type?: string | null
+          rei?: string | null
+          safe_reentry_date?: string | null
+          site_address?: string | null
+          sky_condition?: string | null
+          start_time?: string | null
+          submitted_at?: string
+          submitted_by?: string | null
+          tank_mix_record?: string | null
+          target_veg_other?: string | null
+          target_vegetation?: Json
+          temp_f?: number | null
+          total_gallons?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          wind_direction?: string | null
+          wind_speed_mph?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_records_last_modified_by_fkey"
+            columns: ["last_modified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_records_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -215,51 +394,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "mix_record_photos_mix_record_id_fkey"
-            columns: ["mix_record_id"]
-            isOneToOne: false
-            referencedRelation: "mix_records"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mix_record_equipment: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          equipment_id: string
-          id: string
-          mix_record_id: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          equipment_id: string
-          id?: string
-          mix_record_id: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          equipment_id?: string
-          id?: string
-          mix_record_id?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mix_record_equipment_equipment_id_fkey"
-            columns: ["equipment_id"]
-            isOneToOne: false
-            referencedRelation: "equipment"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mix_record_equipment_mix_record_id_fkey"
             columns: ["mix_record_id"]
             isOneToOne: false
             referencedRelation: "mix_records"
@@ -487,6 +621,48 @@ export type Database = {
           },
         ]
       }
+      pricing_config: {
+        Row: {
+          aerial_rate_per_acre: number | null
+          created_at: string
+          id: string
+          markup_cap: number | null
+          minimum_job_fee: number | null
+          payment_terms: string | null
+          product_markup_pct: number | null
+          setup_fee: number | null
+          special_rates: Json
+          travel_fee_per_mile: number | null
+          updated_at: string
+        }
+        Insert: {
+          aerial_rate_per_acre?: number | null
+          created_at?: string
+          id?: string
+          markup_cap?: number | null
+          minimum_job_fee?: number | null
+          payment_terms?: string | null
+          product_markup_pct?: number | null
+          setup_fee?: number | null
+          special_rates?: Json
+          travel_fee_per_mile?: number | null
+          updated_at?: string
+        }
+        Update: {
+          aerial_rate_per_acre?: number | null
+          created_at?: string
+          id?: string
+          markup_cap?: number | null
+          minimum_job_fee?: number | null
+          payment_terms?: string | null
+          product_markup_pct?: number | null
+          setup_fee?: number | null
+          special_rates?: Json
+          travel_fee_per_mile?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -495,12 +671,10 @@ export type Database = {
           documents: Json
           epa_number: string | null
           id: string
-          label_max_rate: number | null
-          label_min_rate: number | null
           manufacturer: string | null
           name: string
           notes: string | null
-          rate_unit: string | null
+          restricted_use: boolean
           updated_at: string
         }
         Insert: {
@@ -510,12 +684,10 @@ export type Database = {
           documents?: Json
           epa_number?: string | null
           id?: string
-          label_max_rate?: number | null
-          label_min_rate?: number | null
           manufacturer?: string | null
           name: string
           notes?: string | null
-          rate_unit?: string | null
+          restricted_use?: boolean
           updated_at?: string
         }
         Update: {
@@ -525,12 +697,10 @@ export type Database = {
           documents?: Json
           epa_number?: string | null
           id?: string
-          label_max_rate?: number | null
-          label_min_rate?: number | null
           manufacturer?: string | null
           name?: string
           notes?: string | null
-          rate_unit?: string | null
+          restricted_use?: boolean
           updated_at?: string
         }
         Relationships: []

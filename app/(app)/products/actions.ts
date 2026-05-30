@@ -23,9 +23,7 @@ function extractProductFormData(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     manufacturer: String(formData.get("manufacturer") ?? ""),
     epaNumber: String(formData.get("epaNumber") ?? ""),
-    labelMinRate: String(formData.get("labelMinRate") ?? ""),
-    labelMaxRate: String(formData.get("labelMaxRate") ?? ""),
-    rateUnit: String(formData.get("rateUnit") ?? ""),
+    restrictedUse: checkboxValue(formData, "restrictedUse"),
     notes: String(formData.get("notes") ?? ""),
     active: checkboxValue(formData, "active"),
   };
@@ -36,9 +34,7 @@ function normalizeProductInput(input: ProductCreateInput) {
     name: input.name,
     manufacturer: input.manufacturer ?? null,
     epa_number: input.epaNumber ?? null,
-    label_min_rate: input.labelMinRate ?? null,
-    label_max_rate: input.labelMaxRate ?? null,
-    rate_unit: input.rateUnit ?? null,
+    restricted_use: input.restrictedUse,
     notes: input.notes ?? null,
     active: input.active,
   };

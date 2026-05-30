@@ -106,49 +106,18 @@ export const equipmentUpdateSchema = equipmentCreateSchema;
 export type EquipmentCreateInput = z.infer<typeof equipmentCreateSchema>;
 export type EquipmentUpdateInput = z.infer<typeof equipmentUpdateSchema>;
 
-const rateUnitSchema = z.enum(["oz", "fl_oz", "gal", "lb"], {
-  message: "Rate unit must be oz, fl_oz, gal, or lb.",
+export const productCreateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Product name is required.")
+    .max(120, "Product name must be 120 characters or fewer."),
+  epaNumber: optionalText(40),
+  manufacturer: optionalText(120),
+  restrictedUse: checkboxBoolean(false),
+  notes: optionalText(2000),
+  active: checkboxBoolean(true),
 });
-
-const optionalRateUnit = () => z.preprocess(emptyStringToUndefined, rateUnitSchema.optional());
-
-export const productCreateSchema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Product name is required.")
-      .max(120, "Product name must be 120 characters or fewer."),
-    epaNumber: optionalText(40),
-    manufacturer: optionalText(120),
-    labelMinRate: optionalDecimal({ min: 0, max: 10000, label: "Label min rate" }),
-    labelMaxRate: optionalDecimal({ min: 0, max: 10000, label: "Label max rate" }),
-    rateUnit: optionalRateUnit(),
-    notes: optionalText(2000),
-    active: checkboxBoolean(true),
-  })
-  .superRefine((data, ctx) => {
-    if (
-      data.labelMinRate !== undefined &&
-      data.labelMaxRate !== undefined &&
-      data.labelMaxRate < data.labelMinRate
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["labelMaxRate"],
-        message: "Label max rate must be greater than or equal to label min rate.",
-      });
-    }
-
-    const hasAnyRate = data.labelMinRate !== undefined || data.labelMaxRate !== undefined;
-    if (hasAnyRate && !data.rateUnit) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["rateUnit"],
-        message: "Rate unit is required when a label rate is set.",
-      });
-    }
-  });
 
 export const productUpdateSchema = productCreateSchema;
 
@@ -173,6 +142,10 @@ const amountUnitSchema = z.enum(["gal", "oz", "fl_oz", "lb"], {
   message: "Amount unit must be gal, oz, fl_oz, or lb.",
 });
 
+const mixRateUnitSchema = z.enum(["oz", "fl_oz", "gal", "lb"], {
+  message: "Rate unit must be oz, fl_oz, gal, or lb.",
+});
+
 const surfactantUnitSchema = z.enum(["oz", "fl_oz", "gal", "%"], {
   message: "Surfactant unit must be oz, fl_oz, gal, or %.",
 });
@@ -190,7 +163,7 @@ const mixRecordProductLineSchema = z
     amountAdded: requiredDecimal({ min: 0, max: 100000, label: "Amount added" }),
     amountUnit: amountUnitSchema,
     ratePerAcre: optionalDecimal({ min: 0, max: 100000, label: "Rate per acre" }),
-    rateUnit: z.preprocess(emptyStringToUndefined, rateUnitSchema.optional()),
+    rateUnit: z.preprocess(emptyStringToUndefined, mixRateUnitSchema.optional()),
     sortOrder: z.number().int().min(0).default(0),
   })
   .superRefine((line, ctx) => {
@@ -258,3 +231,122 @@ export const mixRecordUpdateSchema = mixRecordCreateSchema;
 export type MixRecordCreateInput = z.infer<typeof mixRecordCreateSchema>;
 export type MixRecordUpdateInput = z.infer<typeof mixRecordUpdateSchema>;
 export type MixRecordProductLineInput = z.infer<typeof mixRecordProductLineSchema>;
+
+const specialRateUnitSchema = z.enum(["per_acre", "per_hour", "flat", "other"], {
+  message: "Unit must be per_acre, per_hour, flat, or other.",
+});
+
+const specialRateRowSchema = z.object({
+  name: z.string().trim().min(1, "Service name is required."),
+  rate: z.coerce.number().min(0, "Rate must be 0 or greater."),
+  unit: specialRateUnitSchema,
+  notes: optionalText(500),
+});
+
+export const pricingConfigSchema = z.object({
+  aerialRatePerAcre: optionalDecimal({ min: 0, max: 100000, label: "Aerial rate" }),
+  minimumJobFee: optionalDecimal({ min: 0, max: 1000000, label: "Minimum job fee" }),
+  travelFeePerMile: optionalDecimal({ min: 0, max: 100000, label: "Travel fee" }),
+  setupFee: optionalDecimal({ min: 0, max: 1000000, label: "Setup fee" }),
+  productMarkupPct: optionalDecimal({ min: 0, max: 100, label: "Product markup" }),
+  markupCap: optionalDecimal({ min: 0, max: 1000000, label: "Markup cap" }),
+  paymentTerms: optionalText(2000),
+  specialRates: z.array(specialRateRowSchema).default([]),
+});
+
+export type PricingConfigInput = z.infer<typeof pricingConfigSchema>;
+
+const appMethodSchema = z.enum(
+  ["backpack", "boom", "handgun", "utv", "truck_rig", "drone"],
+  { message: "Select a valid application method." },
+);
+
+const targetVegSchema = z.enum(
+  ["broadleaf", "grasses", "brush", "woody", "aquatic", "other"],
+  { message: "Invalid vegetation type." },
+);
+
+const skyConditionSchema = z.enum(
+  ["clear", "partly_cloudy", "cloudy", "rain"],
+  { message: "Invalid sky condition." },
+);
+
+const appRecordPesticideSchema = z.object({
+  epaRegNumber: optionalText(40),
+  productName: z.string().trim().min(1, "Product name is required."),
+  activeIngredient: optionalText(500),
+  isSurfactant: checkboxBoolean(false),
+  sortOrder: z.coerce.number().int().min(0).default(0),
+});
+
+export const appRecordCreateSchema = z
+  .object({
+    jobDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
+    applicatorName: z.string().trim().min(1, "Applicator name is required.").max(120),
+    customerName: z.string().trim().min(1, "Customer name is required.").max(120),
+    siteAddress: optionalText(255),
+    jobSiteId: optionalText(120),
+
+    locationLat: optionalDecimal({ min: -90, max: 90, label: "Latitude" }),
+    locationLng: optionalDecimal({ min: -180, max: 180, label: "Longitude" }),
+
+    tempF: optionalDecimal({ min: -60, max: 140, label: "Temperature" }),
+    windSpeedMph: optionalDecimal({ min: 0, max: 200, label: "Wind speed" }),
+    windDirection: z.preprocess(emptyStringToUndefined, windDirectionSchema.optional()),
+    skyCondition: z.preprocess(emptyStringToUndefined, skyConditionSchema.optional()),
+
+    targetVegetation: z.array(targetVegSchema).min(1, "Select at least one target vegetation type."),
+    targetVegOther: optionalText(120),
+
+    appMethod: z.preprocess(emptyStringToUndefined, appMethodSchema.optional()),
+
+    startTime: z
+      .string()
+      .trim()
+      .regex(/^\d{2}:\d{2}$/, "Time must be HH:MM.")
+      .optional()
+      .or(z.literal("")),
+    endTime: z
+      .string()
+      .trim()
+      .regex(/^\d{2}:\d{2}$/, "Time must be HH:MM.")
+      .optional()
+      .or(z.literal("")),
+
+    totalGallons: optionalDecimal({ min: 0, max: 1000000, label: "Total gallons" }),
+    gallonsPerAcre: optionalDecimal({ min: 0, max: 10000, label: "Gallons per acre" }),
+    acresTreated: optionalDecimal({ min: 0, max: 100000, label: "Acres treated" }),
+    tankMixRecord: optionalText(120),
+
+    equipmentNotes: optionalText(500),
+    truckId: optionalText(80),
+    nozzleType: optionalText(80),
+
+    rei: optionalText(80),
+    safeReentryDate: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD.").optional(),
+    ),
+
+    additionalNotes: optionalText(4000),
+    certAttested: checkboxBoolean(false),
+    applicatorSig: z.string().trim().min(1, "Applicator signature is required.").max(120),
+    licenseCertNo: optionalText(80),
+
+    pesticides: z.array(appRecordPesticideSchema).min(1, "Add at least one product."),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.certAttested) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["certAttested"],
+        message: "Attestation is required before submitting.",
+      });
+    }
+  });
+
+export const appRecordUpdateSchema = appRecordCreateSchema;
+
+export type AppRecordCreateInput = z.infer<typeof appRecordCreateSchema>;
+export type AppRecordUpdateInput = z.infer<typeof appRecordUpdateSchema>;
+export type AppRecordPesticideInput = z.infer<typeof appRecordPesticideSchema>;

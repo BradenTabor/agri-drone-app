@@ -28,7 +28,7 @@ export default async function NewMixRecordPage() {
         .order("identifier", { ascending: true }),
       supabase
         .from("products")
-        .select("id,name,epa_number,label_min_rate,label_max_rate,rate_unit,active")
+        .select("id,name,epa_number,active")
         .is("deleted_at", null)
         .eq("active", true)
         .order("name", { ascending: true }),
@@ -78,9 +78,6 @@ export default async function NewMixRecordPage() {
             id: product.id,
             name: product.name,
             epaNumber: product.epa_number,
-            labelMinRate: product.label_min_rate,
-            labelMaxRate: product.label_max_rate,
-            rateUnit: product.rate_unit,
             active: product.active,
           }))}
           applicators={(profiles ?? []).map((profile) => ({

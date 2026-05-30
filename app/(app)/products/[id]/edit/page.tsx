@@ -51,16 +51,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             name: product.name,
             manufacturer: product.manufacturer,
             epaNumber: product.epa_number,
-            labelMinRate: product.label_min_rate,
-            labelMaxRate: product.label_max_rate,
-            // TODO(0002): Add DB CHECK constraint for products.rate_unit and remove this fallback.
-            rateUnit:
-              product.rate_unit === "oz" ||
-              product.rate_unit === "fl_oz" ||
-              product.rate_unit === "gal" ||
-              product.rate_unit === "lb"
-                ? product.rate_unit
-                : null,
+            restrictedUse: product.restricted_use ?? false,
             active: product.active,
             notes: product.notes,
           }}

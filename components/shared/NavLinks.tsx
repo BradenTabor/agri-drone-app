@@ -13,11 +13,13 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/records", label: "Records" },
+  { href: "/records", label: "Mix Records" },
+  { href: "/app-records", label: "App Records" },
   { href: "/map", label: "Map" },
   { href: "/customers", label: "Customers" },
   { href: "/equipment", label: "Equipment" },
   { href: "/products", label: "Products" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 function isActivePath(pathname: string, href: string) {

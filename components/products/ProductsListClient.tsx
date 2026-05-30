@@ -82,7 +82,7 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Manufacturer</th>
                   <th className="px-4 py-3 font-medium">EPA #</th>
-                  <th className="px-4 py-3 font-medium">Label rate range</th>
+                  <th className="px-4 py-3 font-medium">Use classification</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
@@ -114,11 +114,7 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
                       </span>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatLabelRateRange(
-                        item.label_min_rate,
-                        item.label_max_rate,
-                        item.rate_unit,
-                      )}
+                      {item.restricted_use ? "Restricted Use Pesticide (RUP)" : "General Use"}
                     </p>
                     <p
                       className={cn(
@@ -198,10 +194,14 @@ function ProductRow({ product }: { product: Product }) {
       <td className="px-4 py-3">{product.manufacturer || "—"}</td>
       <td className="px-4 py-3">{product.epa_number || "—"}</td>
       <td className="px-4 py-3">
-        {formatLabelRateRange(
-          product.label_min_rate,
-          product.label_max_rate,
-          product.rate_unit,
+        {product.restricted_use ? (
+          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+            RUP
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+            General Use
+          </span>
         )}
       </td>
       <td className="px-4 py-3">
@@ -235,24 +235,4 @@ function ProductRow({ product }: { product: Product }) {
       </td>
     </tr>
   );
-}
-
-function formatLabelRateRange(
-  min: number | null,
-  max: number | null,
-  unit: string | null,
-): string {
-  if (min === null && max === null) return "—";
-  if (!unit) return "—";
-
-  const unitLabel = `${formatRateUnit(unit)}/ac`;
-  if (min !== null && max !== null) return `${min}-${max} ${unitLabel}`;
-  if (min !== null) return `>=${min} ${unitLabel}`;
-  if (max !== null) return `<=${max} ${unitLabel}`;
-  return "—";
-}
-
-function formatRateUnit(unit: string): string {
-  if (unit === "fl_oz") return "fl oz";
-  return unit;
 }

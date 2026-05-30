@@ -5,11 +5,9 @@ import { useActionState } from "react";
 import type { ProductFormState } from "@/app/(app)/products/actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DecimalInput } from "@/components/ui/decimal-input";
 import { FormAlert } from "@/components/ui/form-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 const initialState: ProductFormState = { error: null };
@@ -18,9 +16,7 @@ type ProductFormValues = {
   name: string;
   manufacturer: string | null;
   epaNumber: string | null;
-  labelMinRate: number | null;
-  labelMaxRate: number | null;
-  rateUnit: "oz" | "fl_oz" | "gal" | "lb" | null;
+  restrictedUse: boolean;
   active: boolean;
   notes: string | null;
 };
@@ -89,61 +85,21 @@ export function ProductForm({
         ) : null}
       </div>
 
-      <section className="space-y-3 rounded-md border border-border/80 p-4">
-        <h2 className="text-sm font-medium">Label rate range</h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="labelMinRate">Label minimum rate</Label>
-            <DecimalInput
-              id="labelMinRate"
-              name="labelMinRate"
-              type="text"
-              inputMode="decimal"
-              defaultValue={defaultValues?.labelMinRate ?? ""}
-              aria-invalid={Boolean(errorFor(state, "labelMinRate"))}
-              placeholder="28"
-            />
-            {errorFor(state, "labelMinRate") ? (
-              <p className="text-sm text-destructive">{errorFor(state, "labelMinRate")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="labelMaxRate">Label maximum rate</Label>
-            <DecimalInput
-              id="labelMaxRate"
-              name="labelMaxRate"
-              type="text"
-              inputMode="decimal"
-              defaultValue={defaultValues?.labelMaxRate ?? ""}
-              aria-invalid={Boolean(errorFor(state, "labelMaxRate"))}
-              placeholder="32"
-            />
-            {errorFor(state, "labelMaxRate") ? (
-              <p className="text-sm text-destructive">{errorFor(state, "labelMaxRate")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rateUnit">Rate unit</Label>
-            <Select
-              id="rateUnit"
-              name="rateUnit"
-              defaultValue={defaultValues?.rateUnit ?? ""}
-              aria-invalid={Boolean(errorFor(state, "rateUnit"))}
-            >
-              <option value="">No rate unit selected</option>
-              <option value="oz">oz</option>
-              <option value="fl_oz">fl oz</option>
-              <option value="gal">gal</option>
-              <option value="lb">lb</option>
-            </Select>
-            {errorFor(state, "rateUnit") ? (
-              <p className="text-sm text-destructive">{errorFor(state, "rateUnit")}</p>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      <div className="space-y-2">
+        <Label htmlFor="restrictedUse" className="flex min-h-11 items-center gap-3">
+          <input type="hidden" name="restrictedUse" value="false" />
+          <Checkbox
+            id="restrictedUse"
+            name="restrictedUse"
+            value="true"
+            defaultChecked={defaultValues?.restrictedUse ?? false}
+          />
+          Restricted Use Pesticide (RUP)
+        </Label>
+        <p className="pl-7 text-sm text-muted-foreground">
+          Restricted Use Pesticides require a certified applicator license to purchase and apply.
+        </p>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="active" className="flex min-h-11 items-center gap-3">
