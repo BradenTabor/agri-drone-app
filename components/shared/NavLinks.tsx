@@ -40,7 +40,7 @@ export function NavLinks({ orientation = "horizontal", onNavigate }: NavLinksPro
   const isVertical = orientation === "vertical";
 
   return (
-    <nav className={cn("flex", isVertical ? "flex-col gap-2" : "items-center gap-1")}>
+    <nav className={cn("flex", isVertical ? "flex-col gap-2" : "flex-wrap items-center gap-1")}>
       {navItems.map((item) => {
         const active = isActivePath(pathname, item.href);
 
