@@ -1,0 +1,78 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type SignupState = {
+  error: string | null;
+  success: string | null;
+};
+
+export async function signupAction(
+  _previousState: SignupState,
+  formData: FormData,
+): Promise<SignupState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!email || !password || !confirmPassword) {
+    return { error: "Email, password, and confirmation are required.", success: null };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match.", success: null };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters.", success: null };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      const errorCode = String(error.code ?? "");
+      const errorMessage = String(error.message ?? "");
+
+      if (
+        errorCode === "over_email_send_rate_limit" ||
+        errorCode === "over_request_rate_limit" ||
+        /rate limit/i.test(errorMessage)
+      ) {
+        return {
+          error:
+            "Too many signup emails were requested recently. Please wait a bit and try again.",
+          success: null,
+        };
+      }
+
+      if (error.code === "user_already_exists" || error.code === "email_exists") {
+        return {
+          error: "An account with that email already exists. Try signing in instead.",
+          success: null,
+        };
+      }
+      if (error.code === "email_address_invalid") {
+        return {
+          error:
+            "That email address was rejected by authentication settings. Use a valid, deliverable email address.",
+          success: null,
+        };
+      }
+      console.error("[signup] supabase error", { email, code: error.code, message: error.message });
+      return { error: "Unable to create account right now. Please try again.", success: null };
+    }
+  } catch {
+    return { error: "Signup is temporarily unavailable. Please try again.", success: null };
+  }
+
+  return {
+    error: null,
+    success:
+      "Account created. If email confirmation is enabled, check your inbox before signing in.",
+  };
+}

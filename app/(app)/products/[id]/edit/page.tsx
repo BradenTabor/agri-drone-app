@@ -1,0 +1,72 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { ProductForm } from "@/components/products/ProductForm";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
+
+import { updateProductAction } from "../../actions";
+
+type EditProductPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function EditProductPage({ params }: EditProductPageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: product, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .single();
+
+  if (error || !product) {
+    notFound();
+  }
+
+  const action = updateProductAction.bind(null, product.id);
+
+  return (
+    <section className="space-y-4">
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">Edit Product</h1>
+          <Link href="/products" className={buttonVariants({ variant: "outline" })}>
+            Cancel
+          </Link>
+        </div>
+        <p className="text-sm text-muted-foreground">{product.name}</p>
+      </header>
+
+      <Card>
+        <CardContent className="p-5">
+        <ProductForm
+          action={action}
+          submitLabel="Save Product"
+          pendingLabel="Saving..."
+          defaultValues={{
+            name: product.name,
+            manufacturer: product.manufacturer,
+            epaNumber: product.epa_number,
+            labelMinRate: product.label_min_rate,
+            labelMaxRate: product.label_max_rate,
+            // TODO(0002): Add DB CHECK constraint for products.rate_unit and remove this fallback.
+            rateUnit:
+              product.rate_unit === "oz" ||
+              product.rate_unit === "fl_oz" ||
+              product.rate_unit === "gal" ||
+              product.rate_unit === "lb"
+                ? product.rate_unit
+                : null,
+            active: product.active,
+            notes: product.notes,
+          }}
+        />
+        </CardContent>
+      </Card>
+    </section>
+  );
+}

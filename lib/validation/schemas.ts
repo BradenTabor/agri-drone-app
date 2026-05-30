@@ -1,0 +1,260 @@
+import { z } from "zod";
+
+const emptyStringToUndefined = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
+
+const optionalText = (maxLength: number) =>
+  z.preprocess(
+    emptyStringToUndefined,
+    z
+      .string()
+      .trim()
+      .max(maxLength, `Must be ${maxLength} characters or fewer.`)
+      .optional(),
+  );
+
+const optionalEmail = () =>
+  z.preprocess(
+    emptyStringToUndefined,
+    z
+      .string()
+      .trim()
+      .email("Enter a valid email address.")
+      .max(255, "Email must be 255 characters or fewer.")
+      .optional(),
+  );
+
+const optionalDecimal = (opts: { min?: number; max?: number; label: string }) =>
+  z.preprocess(
+    emptyStringToUndefined,
+    z
+      .union([z.number(), z.string().trim()])
+      .transform((value) => (typeof value === "number" ? value : Number(value)))
+      .refine((value) => Number.isFinite(value), {
+        message: `${opts.label} must be a number.`,
+      })
+      .refine((value) => opts.min === undefined || value >= opts.min, {
+        message: `${opts.label} must be at least ${opts.min}.`,
+      })
+      .refine((value) => opts.max === undefined || value <= opts.max, {
+        message: `${opts.label} must be no more than ${opts.max}.`,
+      })
+      .optional(),
+  );
+
+const checkboxBoolean = (defaultValue: boolean) =>
+  z.preprocess(
+    (value) => {
+      if (value === "true" || value === true) return true;
+      if (value === "false" || value === false) return false;
+      return defaultValue;
+    },
+    z.boolean(),
+  );
+
+export const customerCreateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Customer name is required.")
+    .max(120, "Customer name must be 120 characters or fewer."),
+  contactName: optionalText(120),
+  email: optionalEmail(),
+  phone: optionalText(40),
+  address: optionalText(255),
+  city: optionalText(120),
+  state: optionalText(32),
+  zip: optionalText(20),
+  notes: optionalText(2000),
+});
+
+export const customerUpdateSchema = customerCreateSchema;
+
+export type CustomerCreateInput = z.infer<typeof customerCreateSchema>;
+export type CustomerUpdateInput = z.infer<typeof customerUpdateSchema>;
+
+export const fieldCreateSchema = z.object({
+  name: z.string().trim().min(1, "Field name is required.").max(120),
+  defaultLat: optionalDecimal({ min: -90, max: 90, label: "Latitude" }),
+  defaultLng: optionalDecimal({ min: -180, max: 180, label: "Longitude" }),
+  acres: optionalDecimal({ min: 0, max: 100000, label: "Acres" }),
+  notes: optionalText(2000),
+});
+
+export const fieldUpdateSchema = fieldCreateSchema;
+
+export type FieldCreateInput = z.infer<typeof fieldCreateSchema>;
+export type FieldUpdateInput = z.infer<typeof fieldUpdateSchema>;
+
+const equipmentTypeSchema = z.enum(["truck", "sprayer", "drone"], {
+  message: "Type must be truck, sprayer, or drone.",
+});
+
+export const equipmentCreateSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Identifier is required.")
+    .max(80, "Identifier must be 80 characters or fewer."),
+  type: z.preprocess(emptyStringToUndefined, equipmentTypeSchema.optional()),
+  notes: optionalText(2000),
+  active: checkboxBoolean(true),
+});
+
+export const equipmentUpdateSchema = equipmentCreateSchema;
+
+export type EquipmentCreateInput = z.infer<typeof equipmentCreateSchema>;
+export type EquipmentUpdateInput = z.infer<typeof equipmentUpdateSchema>;
+
+const rateUnitSchema = z.enum(["oz", "fl_oz", "gal", "lb"], {
+  message: "Rate unit must be oz, fl_oz, gal, or lb.",
+});
+
+const optionalRateUnit = () => z.preprocess(emptyStringToUndefined, rateUnitSchema.optional());
+
+export const productCreateSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Product name is required.")
+      .max(120, "Product name must be 120 characters or fewer."),
+    epaNumber: optionalText(40),
+    manufacturer: optionalText(120),
+    labelMinRate: optionalDecimal({ min: 0, max: 10000, label: "Label min rate" }),
+    labelMaxRate: optionalDecimal({ min: 0, max: 10000, label: "Label max rate" }),
+    rateUnit: optionalRateUnit(),
+    notes: optionalText(2000),
+    active: checkboxBoolean(true),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.labelMinRate !== undefined &&
+      data.labelMaxRate !== undefined &&
+      data.labelMaxRate < data.labelMinRate
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["labelMaxRate"],
+        message: "Label max rate must be greater than or equal to label min rate.",
+      });
+    }
+
+    const hasAnyRate = data.labelMinRate !== undefined || data.labelMaxRate !== undefined;
+    if (hasAnyRate && !data.rateUnit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["rateUnit"],
+        message: "Rate unit is required when a label rate is set.",
+      });
+    }
+  });
+
+export const productUpdateSchema = productCreateSchema;
+
+export type ProductCreateInput = z.infer<typeof productCreateSchema>;
+export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+
+const requiredDecimal = (opts: { min?: number; max?: number; label: string }) =>
+  z
+    .union([z.number(), z.string().trim()])
+    .transform((value) => (typeof value === "number" ? value : Number(value)))
+    .refine((value) => Number.isFinite(value), {
+      message: `${opts.label} must be a number.`,
+    })
+    .refine((value) => opts.min === undefined || value >= opts.min, {
+      message: `${opts.label} must be at least ${opts.min}.`,
+    })
+    .refine((value) => opts.max === undefined || value <= opts.max, {
+      message: `${opts.label} must be no more than ${opts.max}.`,
+    });
+
+const amountUnitSchema = z.enum(["gal", "oz", "fl_oz", "lb"], {
+  message: "Amount unit must be gal, oz, fl_oz, or lb.",
+});
+
+const surfactantUnitSchema = z.enum(["oz", "fl_oz", "gal", "%"], {
+  message: "Surfactant unit must be oz, fl_oz, gal, or %.",
+});
+
+const windDirectionSchema = z.enum(["N", "NE", "E", "SE", "S", "SW", "W", "NW"], {
+  message: "Wind direction must be one of N, NE, E, SE, S, SW, W, or NW.",
+});
+
+const optionalUuid = () =>
+  z.preprocess(emptyStringToUndefined, z.string().uuid("Invalid ID.").optional());
+
+const mixRecordProductLineSchema = z
+  .object({
+    productId: optionalUuid(),
+    amountAdded: requiredDecimal({ min: 0, max: 100000, label: "Amount added" }),
+    amountUnit: amountUnitSchema,
+    ratePerAcre: optionalDecimal({ min: 0, max: 100000, label: "Rate per acre" }),
+    rateUnit: z.preprocess(emptyStringToUndefined, rateUnitSchema.optional()),
+    sortOrder: z.number().int().min(0).default(0),
+  })
+  .superRefine((line, ctx) => {
+    if (line.ratePerAcre !== undefined && !line.rateUnit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["rateUnit"],
+        message: "Rate unit is required when rate per acre is set.",
+      });
+    }
+  });
+
+export const mixRecordCreateSchema = z
+  .object({
+    recordDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format."),
+    timeMixed: z
+      .string()
+      .trim()
+      .regex(/^\d{2}:\d{2}(:\d{2})?$/, "Time must be in HH:MM format."),
+    applicatorId: optionalUuid(),
+    applicatorNameOverride: optionalText(120),
+    licenseCertNo: optionalText(80),
+    equipmentId: optionalUuid(),
+    customerId: z.string().uuid("Customer is required."),
+    fieldId: z.string().uuid("Field is required."),
+    mixLat: requiredDecimal({ min: -90, max: 90, label: "Latitude" }),
+    mixLng: requiredDecimal({ min: -180, max: 180, label: "Longitude" }),
+    tankSizeGal: requiredDecimal({ min: 0, max: 100000, label: "Tank size" }),
+    targetGpa: requiredDecimal({ min: 0.01, max: 100000, label: "Target GPA" }),
+    waterGal: requiredDecimal({ min: 0, max: 100000, label: "Water" }),
+    surfactantName: optionalText(120),
+    surfactantAmount: optionalDecimal({ min: 0, max: 100000, label: "Surfactant amount" }),
+    surfactantUnit: z.preprocess(emptyStringToUndefined, surfactantUnitSchema.optional()),
+    totalMixGal: requiredDecimal({ min: 0, max: 1000000, label: "Total mix" }),
+    expectedAcres: requiredDecimal({ min: 0, max: 100000, label: "Expected acres" }),
+    actualAcres: optionalDecimal({ min: 0, max: 100000, label: "Actual acres" }),
+    windSpeedMph: requiredDecimal({ min: 0, max: 200, label: "Wind speed" }),
+    windDirection: windDirectionSchema,
+    tempF: optionalDecimal({ min: -100, max: 200, label: "Temperature" }),
+    humidityPct: optionalDecimal({ min: 0, max: 100, label: "Humidity" }),
+    notes: optionalText(4000),
+    signedTypedName: z
+      .string()
+      .trim()
+      .min(1, "Typed signature is required.")
+      .max(120, "Typed signature must be 120 characters or fewer."),
+    signatureAttested: checkboxBoolean(false),
+    productLines: z.array(mixRecordProductLineSchema).min(1, "Add at least one product line."),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.signatureAttested) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["signatureAttested"],
+        message: "Attestation is required before submitting.",
+      });
+    }
+  });
+
+export const mixRecordUpdateSchema = mixRecordCreateSchema;
+
+export type MixRecordCreateInput = z.infer<typeof mixRecordCreateSchema>;
+export type MixRecordUpdateInput = z.infer<typeof mixRecordUpdateSchema>;
+export type MixRecordProductLineInput = z.infer<typeof mixRecordProductLineSchema>;
