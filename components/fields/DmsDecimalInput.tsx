@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DecimalInput } from "@/components/ui/decimal-input";
@@ -44,6 +44,10 @@ function toDmsInputValue(decimal: number, axis: "lat" | "lng"): DmsInputValue {
     seconds: dms.seconds.toFixed(2),
     hemisphere: dms.hemisphere,
   };
+}
+
+function areCloseDecimals(left: number, right: number): boolean {
+  return Math.abs(left - right) < 1e-6;
 }
 
 function parseDmsToDecimal(value: DmsInputValue, axis: "lat" | "lng"): { value: number | null; error: string | null } {
@@ -126,6 +130,7 @@ export function DmsDecimalInput({
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue?.toString() ?? "");
   const [inputMode, setInputMode] = useState<"decimal" | "dms">("decimal");
   const [clientError, setClientError] = useState<string | null>(null);
+  const lastWrittenDmsValueRef = useRef<number | null>(null);
 
   const value = controlledValue ?? uncontrolledValue;
   const parsedValue = value.trim() === "" ? null : Number(value);
@@ -154,14 +159,24 @@ export function DmsDecimalInput({
         }
       : toDmsInputValue(normalizedValue, axis),
   );
+  const displayError = error ?? clientError;
+  const isDmsMode = inputMode === "dms";
 
   useEffect(() => {
     if (normalizedValue === null) return;
-    setDmsInput(toDmsInputValue(normalizedValue, axis));
-  }, [axis, normalizedValue]);
 
-  const displayError = error ?? clientError;
-  const isDmsMode = inputMode === "dms";
+    if (
+      isDmsMode &&
+      lastWrittenDmsValueRef.current !== null &&
+      areCloseDecimals(lastWrittenDmsValueRef.current, normalizedValue)
+    ) {
+      lastWrittenDmsValueRef.current = null;
+      return;
+    }
+
+    lastWrittenDmsValueRef.current = null;
+    setDmsInput(toDmsInputValue(normalizedValue, axis));
+  }, [axis, isDmsMode, normalizedValue]);
 
   function writeValue(nextValue: string) {
     if (controlledValue === undefined) {
@@ -205,10 +220,12 @@ export function DmsDecimalInput({
                 }
                 if (parsed.value === null) {
                   setClientError(null);
+                  lastWrittenDmsValueRef.current = null;
                   writeValue("");
                   return;
                 }
                 setClientError(null);
+                lastWrittenDmsValueRef.current = parsed.value;
                 writeValue(String(parsed.value));
               }}
               className={cn(displayError ? "border-destructive" : "")}
@@ -227,10 +244,12 @@ export function DmsDecimalInput({
                 }
                 if (parsed.value === null) {
                   setClientError(null);
+                  lastWrittenDmsValueRef.current = null;
                   writeValue("");
                   return;
                 }
                 setClientError(null);
+                lastWrittenDmsValueRef.current = parsed.value;
                 writeValue(String(parsed.value));
               }}
               className={cn(displayError ? "border-destructive" : "")}
@@ -249,10 +268,12 @@ export function DmsDecimalInput({
                 }
                 if (parsed.value === null) {
                   setClientError(null);
+                  lastWrittenDmsValueRef.current = null;
                   writeValue("");
                   return;
                 }
                 setClientError(null);
+                lastWrittenDmsValueRef.current = parsed.value;
                 writeValue(String(parsed.value));
               }}
               className={cn(displayError ? "border-destructive" : "")}
@@ -272,10 +293,12 @@ export function DmsDecimalInput({
                 }
                 if (parsed.value === null) {
                   setClientError(null);
+                  lastWrittenDmsValueRef.current = null;
                   writeValue("");
                   return;
                 }
                 setClientError(null);
+                lastWrittenDmsValueRef.current = parsed.value;
                 writeValue(String(parsed.value));
               }}
               className={cn(displayError ? "border-destructive" : "")}
