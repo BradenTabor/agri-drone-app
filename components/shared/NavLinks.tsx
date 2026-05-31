@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  ClipboardList,
+  DollarSign,
+  type LucideIcon,
+  Package2,
+  Settings2,
+  Users,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -9,6 +17,8 @@ import { cn } from "@/lib/utils";
 type NavItem = {
   href: string;
   label: string;
+  subtitle?: string;
+  icon?: LucideIcon;
 };
 
 const coreNavItems: NavItem[] = [
@@ -19,11 +29,11 @@ const coreNavItems: NavItem[] = [
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { href: "/customers", label: "Customers" },
-  { href: "/equipment", label: "Equipment" },
-  { href: "/products", label: "Products" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/quotes", label: "Quotes" },
+  { href: "/customers", label: "Customers", subtitle: "Grow customer records", icon: Users },
+  { href: "/equipment", label: "Equipment", subtitle: "Manage drone fleet", icon: Settings2 },
+  { href: "/products", label: "Products", subtitle: "Track materials", icon: Package2 },
+  { href: "/pricing", label: "Pricing", subtitle: "Set default rates", icon: DollarSign },
+  { href: "/quotes", label: "Quotes", subtitle: "Prepare estimates", icon: ClipboardList },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -83,10 +93,14 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
             More
             <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
-          <div className="absolute right-0 z-40 mt-2 w-52 rounded-2xl border border-white/65 bg-white/60 p-2 shadow-[0_20px_45px_rgba(15,23,42,0.18)] backdrop-blur-3xl dark:border-white/20 dark:bg-slate-950/70 dark:shadow-[0_20px_45px_rgba(2,6,23,0.55)]">
-            <div className="flex flex-col gap-1">
+          <div className="liquid-reactive animate-liquid-rise absolute right-0 z-40 mt-2 w-64 rounded-2xl border border-white/75 bg-white/93 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_22px_46px_rgba(15,23,42,0.2)] backdrop-blur-3xl dark:border-white/20 dark:bg-slate-950/92 dark:shadow-[0_22px_46px_rgba(2,6,23,0.6)]">
+            <p className="px-2 pb-1 text-[0.68rem] font-semibold tracking-[0.14em] text-slate-500 uppercase dark:text-slate-300/85">
+              Workflow links
+            </p>
+            <div className="flex flex-col gap-1.5">
               {secondaryNavItems.map((item) => {
                 const active = isActivePath(pathname, item.href);
+                const ItemIcon = item.icon;
 
                 return (
                   <Link
@@ -95,13 +109,25 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "press-physics liquid-refraction inline-flex h-8 items-center justify-start rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+                      "press-physics liquid-refraction inline-flex min-h-11 items-center justify-start gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium tracking-tight transition-all",
                       active
                         ? "border border-white/65 bg-white/72 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-white/20 dark:bg-white/15 dark:text-white"
                         : "text-slate-700/90 hover:bg-white/46 hover:text-slate-900 dark:text-slate-200/90 dark:hover:bg-white/10 dark:hover:text-white",
                     )}
                   >
-                    {item.label}
+                    {ItemIcon ? (
+                      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg border border-white/65 bg-white/72 dark:border-white/20 dark:bg-white/10">
+                        <ItemIcon className="size-3.5" aria-hidden={true} />
+                      </span>
+                    ) : null}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate">{item.label}</span>
+                      {item.subtitle ? (
+                        <span className="truncate text-[0.68rem] font-normal tracking-normal text-slate-500 dark:text-slate-300/75">
+                          {item.subtitle}
+                        </span>
+                      ) : null}
+                    </span>
                   </Link>
                 );
               })}
