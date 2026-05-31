@@ -65,16 +65,16 @@ export function CustomersListClient({ customers }: CustomersListClientProps) {
       />
 
       {!filteredCustomers.length ? (
-        <Card>
+        <Card className="liquid-reactive rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
           <CardContent className="p-5 text-sm text-muted-foreground">
             No customers match your search.
           </CardContent>
         </Card>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
+          <div className="liquid-reactive hidden overflow-x-auto rounded-2xl border border-white/60 bg-white/52 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl md:block">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
+              <thead className="bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(244,249,255,0.48))] text-left text-slate-700">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Contact</th>
@@ -92,28 +92,40 @@ export function CustomersListClient({ customers }: CustomersListClientProps) {
 
           <div className="grid gap-3 md:hidden">
             {paginatedCustomers.map((customer) => (
-              <Card key={customer.id}>
+              <Card
+                key={customer.id}
+                className="liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]"
+              >
                 <CardContent className="p-4">
-                  <div className="space-y-1">
-                    <h2 className="font-medium">{customer.name}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {customer.contact_name || "No contact name"}
-                    </p>
+                  <div className="space-y-1.5">
+                    <h2 className="text-base font-semibold tracking-tight">{customer.name}</h2>
+                    <p className="text-sm text-muted-foreground">{customer.contact_name || "No contact name"}</p>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {[customer.city, customer.state].filter(Boolean).join(", ") ||
                       "Location not set"}
                   </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{customer.email || customer.phone || "No email or phone"}</p>
                   <div className="mt-4 flex gap-2">
                     <Link
                       href={`/customers/${customer.id}`}
-                      className={buttonVariants({ size: "sm", variant: "outline" })}
+                      className={buttonVariants({
+                        size: "sm",
+                        variant: "outline",
+                        className:
+                          "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                      })}
                     >
                       View
                     </Link>
                     <Link
                       href={`/customers/${customer.id}/edit`}
-                      className={buttonVariants({ size: "sm", variant: "outline" })}
+                      className={buttonVariants({
+                        size: "sm",
+                        variant: "outline",
+                        className:
+                          "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                      })}
                     >
                       Edit
                     </Link>
@@ -123,14 +135,19 @@ export function CustomersListClient({ customers }: CustomersListClientProps) {
             ))}
           </div>
           {totalPages > 1 ? (
-            <div className="flex items-center justify-between rounded-lg border bg-card/90 p-3">
+            <div className="liquid-reactive flex items-center justify-between rounded-2xl border border-white/60 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
               <p className="text-xs text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className:
+                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  })}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={currentPage === 1}
                 >
@@ -138,7 +155,12 @@ export function CustomersListClient({ customers }: CustomersListClientProps) {
                 </button>
                 <button
                   type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className:
+                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  })}
                   onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   disabled={currentPage === totalPages}
                 >
@@ -155,11 +177,11 @@ export function CustomersListClient({ customers }: CustomersListClientProps) {
 
 function CustomerRow({ customer }: { customer: Customer }) {
   return (
-    <tr className="border-t">
+    <tr className="border-t border-white/55 transition-colors hover:bg-white/34">
       <td className="px-4 py-3">{customer.name}</td>
       <td className="px-4 py-3">
         <div>{customer.contact_name || "—"}</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-slate-600">
           {customer.email || customer.phone || "No email or phone"}
         </div>
       </td>
@@ -170,13 +192,23 @@ function CustomerRow({ customer }: { customer: Customer }) {
         <div className="flex gap-2">
           <Link
             href={`/customers/${customer.id}`}
-            className={buttonVariants({ size: "sm", variant: "outline" })}
+            className={buttonVariants({
+              size: "sm",
+              variant: "outline",
+              className:
+                "press-physics liquid-refraction rounded-xl border-white/70 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+            })}
           >
             View
           </Link>
           <Link
             href={`/customers/${customer.id}/edit`}
-            className={buttonVariants({ size: "sm", variant: "outline" })}
+            className={buttonVariants({
+              size: "sm",
+              variant: "outline",
+              className:
+                "press-physics liquid-refraction rounded-xl border-white/70 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+            })}
           >
             Edit
           </Link>
