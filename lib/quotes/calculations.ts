@@ -87,9 +87,15 @@ export function seedFeeLines(config: PricingConfigForSeed): SeededLineItem[] {
   return lines;
 }
 
-export function computeTotals(lineItems: Array<{ amount: number }>): { subtotal: number; total: number } {
+export function computeTotals(
+  lineItems: Array<{ amount: number }>,
+  taxRate: number = 0,
+  otherAmount: number = 0,
+): { subtotal: number; tax: number; total: number } {
   const subtotal = round2(lineItems.reduce((sum, li) => sum + (Number(li.amount) || 0), 0));
-  return { subtotal, total: subtotal };
+  const tax = round2(subtotal * ((Number(taxRate) || 0) / 100));
+  const total = round2(subtotal + tax + (Number(otherAmount) || 0));
+  return { subtotal, tax, total };
 }
 
 export function lineAmount(quantity: number, unitPrice: number): number {

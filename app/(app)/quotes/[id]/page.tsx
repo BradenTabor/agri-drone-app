@@ -63,14 +63,14 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           <Link href="/quotes" className={buttonVariants({ variant: "outline" })}>
             Back
           </Link>
-          <button
-            type="button"
+          <Link
+            href={`/api/quote-pdf/${quote.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className={buttonVariants({ variant: "outline" })}
-            disabled
-            aria-disabled="true"
           >
             Download PDF
-          </button>
+          </Link>
           <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit
           </Link>
@@ -132,9 +132,37 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
               </tbody>
             </table>
           </div>
-          <div className="mt-4 space-y-1 text-sm">
-            <p>Subtotal: <span className="font-medium">{formatMoney(quote.subtotal)}</span></p>
-            <p>Total: <span className="text-lg font-semibold">{formatMoney(quote.total)}</span></p>
+          <div className="mt-4 text-sm">
+            {(() => {
+              const subtotal = Number(quote.subtotal || 0);
+              const taxRate = Number(quote.tax_rate || 0);
+              const tax = Math.round((subtotal * (taxRate / 100) + Number.EPSILON) * 100) / 100;
+              const otherAmount = Number(quote.other_amount || 0);
+              return (
+                <div className="space-y-1 text-right">
+                  {quote.service_for ? (
+                    <p className="text-sm text-muted-foreground">For: {quote.service_for}</p>
+                  ) : null}
+                  <p>
+                    Subtotal: <span className="font-medium">{formatMoney(subtotal)}</span>
+                  </p>
+                  {taxRate > 0 ? (
+                    <p>
+                      Tax ({taxRate}%): <span className="font-medium">{formatMoney(tax)}</span>
+                    </p>
+                  ) : null}
+                  {otherAmount !== 0 ? (
+                    <p>
+                      {quote.other_label || "Other"}:{" "}
+                      <span className="font-medium">{formatMoney(otherAmount)}</span>
+                    </p>
+                  ) : null}
+                  <p>
+                    Total: <span className="text-lg font-semibold">{formatMoney(quote.total)}</span>
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </CardContent>
       </Card>

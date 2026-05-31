@@ -152,6 +152,7 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
               sourceAppRecordId: sourceAppRecordId || null,
               status: "draft",
               acres: defaultAcres,
+              serviceFor: fromRecord ? "Herbicide Application" : null,
               terms: pricingConfig?.payment_terms ?? null,
             }}
             defaultLineItems={seededLineItems}

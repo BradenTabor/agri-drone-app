@@ -39,6 +39,10 @@ function extractQuoteFormData(formData: FormData) {
     quoteDate: String(formData.get("quoteDate") ?? ""),
     validUntil: String(formData.get("validUntil") ?? ""),
     acres: String(formData.get("acres") ?? ""),
+    serviceFor: String(formData.get("serviceFor") ?? ""),
+    taxRate: String(formData.get("taxRate") ?? "0"),
+    otherLabel: String(formData.get("otherLabel") ?? ""),
+    otherAmount: String(formData.get("otherAmount") ?? "0"),
     notes: String(formData.get("notes") ?? ""),
     terms: String(formData.get("terms") ?? ""),
     lineItems: parseLineItems(String(formData.get("lineItems") ?? "[]")),
@@ -79,7 +83,7 @@ export async function createQuoteAction(
     };
   }
 
-  const totals = computeTotals(parsed.data.lineItems);
+  const totals = computeTotals(parsed.data.lineItems, parsed.data.taxRate, parsed.data.otherAmount);
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
     .insert({
@@ -92,6 +96,10 @@ export async function createQuoteAction(
       quote_date: parsed.data.quoteDate,
       valid_until: parsed.data.validUntil ?? null,
       acres: parsed.data.acres ?? null,
+      service_for: parsed.data.serviceFor ?? null,
+      tax_rate: parsed.data.taxRate,
+      other_label: parsed.data.otherLabel ?? null,
+      other_amount: parsed.data.otherAmount,
       notes: parsed.data.notes ?? null,
       terms: parsed.data.terms ?? null,
       subtotal: totals.subtotal,
@@ -140,7 +148,7 @@ export async function updateQuoteAction(
     };
   }
 
-  const totals = computeTotals(parsed.data.lineItems);
+  const totals = computeTotals(parsed.data.lineItems, parsed.data.taxRate, parsed.data.otherAmount);
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
     .update({
@@ -153,6 +161,10 @@ export async function updateQuoteAction(
       quote_date: parsed.data.quoteDate,
       valid_until: parsed.data.validUntil ?? null,
       acres: parsed.data.acres ?? null,
+      service_for: parsed.data.serviceFor ?? null,
+      tax_rate: parsed.data.taxRate,
+      other_label: parsed.data.otherLabel ?? null,
+      other_amount: parsed.data.otherAmount,
       notes: parsed.data.notes ?? null,
       terms: parsed.data.terms ?? null,
       subtotal: totals.subtotal,

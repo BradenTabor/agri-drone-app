@@ -77,6 +77,10 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               quoteDate: quote.quote_date,
               validUntil: quote.valid_until,
               acres: quote.acres,
+              serviceFor: quote.service_for,
+              taxRate: quote.tax_rate,
+              otherLabel: quote.other_label,
+              otherAmount: quote.other_amount,
               notes: quote.notes,
               terms: quote.terms,
             }}

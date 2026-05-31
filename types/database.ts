@@ -821,11 +821,15 @@ export type Database = {
           field_id: string | null
           id: string
           notes: string | null
+          other_amount: number
+          other_label: string | null
           quote_date: string
           quote_number: string | null
+          service_for: string | null
           source_app_record_id: string | null
           status: string
           subtotal: number
+          tax_rate: number
           terms: string | null
           total: number
           updated_at: string
@@ -841,11 +845,15 @@ export type Database = {
           field_id?: string | null
           id?: string
           notes?: string | null
+          other_amount?: number
+          other_label?: string | null
           quote_date: string
           quote_number?: string | null
+          service_for?: string | null
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          tax_rate?: number
           terms?: string | null
           total?: number
           updated_at?: string
@@ -861,11 +869,15 @@ export type Database = {
           field_id?: string | null
           id?: string
           notes?: string | null
+          other_amount?: number
+          other_label?: string | null
           quote_date?: string
           quote_number?: string | null
+          service_for?: string | null
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          tax_rate?: number
           terms?: string | null
           total?: number
           updated_at?: string

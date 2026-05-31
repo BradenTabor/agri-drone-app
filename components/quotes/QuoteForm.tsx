@@ -25,6 +25,10 @@ type QuoteFormValues = {
   quoteDate: string;
   validUntil: string | null;
   acres: number | null;
+  serviceFor: string | null;
+  taxRate: number | null;
+  otherLabel: string | null;
+  otherAmount: number | null;
   notes: string | null;
   terms: string | null;
 };
@@ -148,6 +152,12 @@ export function QuoteForm({
   const [lineItems, setLineItems] = useState<LineItemRow[]>(
     defaultLineItems?.length ? defaultLineItems.map(toLineItemRow) : [newLineItem()],
   );
+  const [taxRate, setTaxRate] = useState<string>(
+    defaultValues?.taxRate != null ? String(defaultValues.taxRate) : "0",
+  );
+  const [otherAmount, setOtherAmount] = useState<string>(
+    defaultValues?.otherAmount != null ? String(defaultValues.otherAmount) : "0",
+  );
 
   const visibleFields = useMemo(
     () => fields.filter((field) => field.customer_id === customerId),
@@ -160,8 +170,10 @@ export function QuoteForm({
         lineItems.map((line) => ({
           amount: parseNumber(line.amount),
         })),
+        Number(taxRate) || 0,
+        Number(otherAmount) || 0,
       ),
-    [lineItems],
+    [lineItems, taxRate, otherAmount],
   );
 
   function setLineItemValue(
@@ -295,6 +307,20 @@ export function QuoteForm({
             />
             {errorFor(state, "acres") ? (
               <p className="text-sm text-destructive">{errorFor(state, "acres")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="serviceFor">For (service description)</Label>
+            <Input
+              id="serviceFor"
+              name="serviceFor"
+              defaultValue={defaultValues?.serviceFor ?? ""}
+              placeholder="Herbicide Application"
+              aria-invalid={Boolean(errorFor(state, "serviceFor"))}
+            />
+            {errorFor(state, "serviceFor") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "serviceFor")}</p>
             ) : null}
           </div>
 
@@ -447,13 +473,49 @@ export function QuoteForm({
             <p className="text-sm text-destructive">{errorFor(state, "lineItems")}</p>
           ) : null}
 
-          <div className="space-y-1 rounded-md border bg-muted/20 p-3">
-            <p className="text-sm text-muted-foreground">Subtotal</p>
-            <p className="text-lg font-semibold">{formatMoney(totals.subtotal)}</p>
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-xl font-semibold">{formatMoney(totals.total)}</p>
+          <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Subtotal</p>
+              <p className="text-sm font-medium">{formatMoney(totals.subtotal)}</p>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="taxRate" className="text-sm text-muted-foreground">
+                Tax rate (%)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="taxRate"
+                  name="taxRate"
+                  value={taxRate}
+                  onChange={(event) => setTaxRate(event.target.value)}
+                  inputMode="decimal"
+                  className="w-20 text-right"
+                />
+                <span className="w-20 text-right text-sm">{formatMoney(totals.tax)}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Input
+                name="otherLabel"
+                defaultValue={defaultValues?.otherLabel ?? ""}
+                placeholder="Other (e.g. acre credit)"
+                className="flex-1"
+              />
+              <Input
+                name="otherAmount"
+                value={otherAmount}
+                onChange={(event) => setOtherAmount(event.target.value)}
+                inputMode="decimal"
+                className="w-24 text-right"
+                placeholder="0.00"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t pt-2">
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-xl font-semibold">{formatMoney(totals.total)}</p>
+            </div>
             {minimumJobFee != null && totals.total < minimumJobFee ? (
-              <p className="text-sm text-amber-700 dark:text-amber-400">
+              <p className="text-xs text-amber-600 dark:text-amber-400">
                 Below your minimum job fee of {formatMoney(minimumJobFee)}.
               </p>
             ) : null}
