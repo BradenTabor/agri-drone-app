@@ -60,7 +60,7 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "inline-flex h-8 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+                "press-physics liquid-refraction inline-flex h-8 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
                 active
                   ? "border border-white/70 bg-white/70 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_6px_16px_rgba(15,23,42,0.14)] backdrop-blur-2xl"
                   : "border border-transparent text-slate-700/90 hover:border-white/50 hover:bg-white/42 hover:text-slate-900 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_6px_14px_rgba(15,23,42,0.1)]",
@@ -74,7 +74,7 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
         <details className="group relative">
           <summary
             className={cn(
-              "inline-flex h-8 list-none cursor-pointer select-none items-center gap-1 rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+              "press-physics liquid-refraction inline-flex h-8 list-none cursor-pointer select-none items-center gap-1 rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
               hasActiveSecondary
                 ? "border border-white/70 bg-white/70 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_6px_16px_rgba(15,23,42,0.14)] backdrop-blur-2xl"
                 : "border border-transparent text-slate-700/90 hover:border-white/50 hover:bg-white/42 hover:text-slate-900 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_6px_14px_rgba(15,23,42,0.1)]",
@@ -95,7 +95,7 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex h-8 items-center justify-start rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+                      "press-physics liquid-refraction inline-flex h-8 items-center justify-start rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
                       active
                         ? "border border-white/65 bg-white/72 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-white/20 dark:bg-white/15 dark:text-white"
                         : "text-slate-700/90 hover:bg-white/46 hover:text-slate-900 dark:text-slate-200/90 dark:hover:bg-white/10 dark:hover:text-white",
@@ -125,8 +125,8 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
             aria-current={active ? "page" : undefined}
             className={cn(
               isVertical
-                ? "inline-flex min-h-11 items-center justify-start rounded-xl px-4 text-sm font-medium transition-all"
-                : "inline-flex h-9 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+                ? "press-physics liquid-refraction inline-flex min-h-11 items-center justify-start rounded-xl px-4 text-sm font-medium transition-all"
+                : "press-physics liquid-refraction inline-flex h-9 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
               active
                 ? "border border-white/60 bg-white/66 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] dark:border-white/20 dark:bg-white/18 dark:text-white"
                 : "text-slate-700/90 hover:bg-white/42 hover:text-slate-900 dark:text-slate-200/90 dark:hover:bg-white/10 dark:hover:text-white",
