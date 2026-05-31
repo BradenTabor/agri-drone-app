@@ -57,6 +57,12 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
           <Link href="/app-records" className={buttonVariants({ variant: "outline" })}>
             Back
           </Link>
+          <Link
+            href={`/quotes/new?fromRecord=${record.id}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Generate Quote
+          </Link>
           <button type="button" className={buttonVariants({ variant: "outline" })}>
             Download PDF
           </button>

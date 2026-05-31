@@ -25,7 +25,11 @@ export default async function CustomerDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: customer, error: customerError }, { data: fields, error: fieldsError }] =
+  const [
+    { data: customer, error: customerError },
+    { data: fields, error: fieldsError },
+    { data: quotes, error: quotesError },
+  ] =
     await Promise.all([
       supabase
         .from("customers")
@@ -39,6 +43,12 @@ export default async function CustomerDetailPage({
         .eq("customer_id", id)
         .is("deleted_at", null)
         .order("name", { ascending: true }),
+      supabase
+        .from("quotes")
+        .select("id,quote_number,quote_date,status,total")
+        .eq("customer_id", id)
+        .is("deleted_at", null)
+        .order("quote_date", { ascending: false }),
     ]);
 
   if (customerError || !customer) {
@@ -47,6 +57,9 @@ export default async function CustomerDetailPage({
 
   if (fieldsError) {
     throw new Error("Unable to load customer fields.");
+  }
+  if (quotesError) {
+    throw new Error("Unable to load customer quotes.");
   }
 
   const deleteAction = softDeleteCustomerAction.bind(null, customer.id);
@@ -109,35 +122,101 @@ export default async function CustomerDetailPage({
           <CardTitle>Fields</CardTitle>
         </CardHeader>
         <CardContent className="p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">
-            {fields?.length
-              ? `${fields.length} field${fields.length === 1 ? "" : "s"}`
-              : "No fields yet"}
-          </p>
-          <Link
-            href={`/customers/${customer.id}/fields/new`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            + Add Field
-          </Link>
-        </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {fields?.length
+                ? `${fields.length} field${fields.length === 1 ? "" : "s"}`
+                : "No fields yet"}
+            </p>
+            <Link
+              href={`/customers/${customer.id}/fields/new`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              + Add Field
+            </Link>
+          </div>
 
-        {!fields?.length ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No fields added yet. Use &quot;+ Add Field&quot; to add the first one.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {fields.map((field) => (
-              <FieldRow key={field.id} customerId={customer.id} field={field} />
-            ))}
-          </ul>
-        )}
+          {!fields?.length ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No fields added yet. Use &quot;+ Add Field&quot; to add the first one.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {fields.map((field) => (
+                <FieldRow key={field.id} customerId={customer.id} field={field} />
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="p-5 pb-0">
+          <CardTitle>Quotes</CardTitle>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {quotes?.length
+                ? `${quotes.length} quote${quotes.length === 1 ? "" : "s"}`
+                : "No quotes yet"}
+            </p>
+            <Link
+              href={`/quotes/new?customerId=${customer.id}`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              + New Quote
+            </Link>
+          </div>
+
+          {!quotes?.length ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              No quotes created yet. Use &quot;+ New Quote&quot; to create the first one.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {quotes.map((quote) => (
+                <li key={quote.id}>
+                  <Card className="bg-muted/20">
+                    <CardContent className="px-3 py-3 text-sm">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <Link href={`/quotes/${quote.id}`} className="font-medium hover:underline">
+                            {quote.quote_number || "Unnumbered quote"}
+                          </Link>
+                          <p className="text-muted-foreground">{quote.quote_date}</p>
+                          <p className="text-muted-foreground">${Number(quote.total || 0).toFixed(2)}</p>
+                        </div>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${quoteStatusBadgeClass(quote.status)}`}
+                        >
+                          {quoteStatusLabel(quote.status)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </section>
   );
+}
+
+function quoteStatusLabel(status: string): string {
+  if (status === "sent") return "Sent";
+  if (status === "accepted") return "Accepted";
+  if (status === "declined") return "Declined";
+  return "Draft";
+}
+
+function quoteStatusBadgeClass(status: string): string {
+  if (status === "sent") return "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300";
+  if (status === "accepted") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+  if (status === "declined") return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
+  return "bg-muted text-muted-foreground";
 }
 
 function formatCoordinate(value: number | null, axis: "lat" | "lng"): string {

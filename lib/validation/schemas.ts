@@ -262,6 +262,48 @@ export const pricingConfigSchema = z.object({
 
 export type PricingConfigInput = z.infer<typeof pricingConfigSchema>;
 
+const quoteLineKindSchema = z.enum(["aerial", "product", "fee", "custom"], {
+  message: "Invalid line item type.",
+});
+const quoteBasisSchema = z.enum(["per_acre", "flat"], { message: "Invalid basis." });
+const quoteStatusSchema = z.enum(["draft", "sent", "accepted", "declined"], {
+  message: "Invalid status.",
+});
+
+const quoteLineItemSchema = z.object({
+  kind: quoteLineKindSchema.default("custom"),
+  productId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
+  description: z.string().trim().min(1, "Line description is required.").max(200),
+  basis: quoteBasisSchema.default("flat"),
+  quantity: z.coerce.number().min(0, "Quantity must be 0 or greater."),
+  unitPrice: z.coerce.number(),
+  amount: z.coerce.number(),
+});
+
+export const quoteCreateSchema = z.object({
+  quoteNumber: optionalText(40),
+  status: quoteStatusSchema.default("draft"),
+  customerId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
+  fieldId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
+  customerName: z.string().trim().min(1, "Customer name is required.").max(120),
+  sourceAppRecordId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
+  quoteDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
+  validUntil: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD.").optional(),
+  ),
+  acres: optionalDecimal({ min: 0, max: 100000, label: "Acres" }),
+  notes: optionalText(2000),
+  terms: optionalText(2000),
+  lineItems: z.array(quoteLineItemSchema).min(1, "Add at least one line item."),
+});
+
+export const quoteUpdateSchema = quoteCreateSchema;
+
+export type QuoteCreateInput = z.infer<typeof quoteCreateSchema>;
+export type QuoteUpdateInput = z.infer<typeof quoteUpdateSchema>;
+export type QuoteLineItemInput = z.infer<typeof quoteLineItemSchema>;
+
 const appMethodSchema = z.enum(
   ["backpack", "boom", "handgun", "utv", "truck_rig", "drone"],
   { message: "Select a valid application method." },

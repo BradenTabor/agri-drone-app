@@ -750,6 +750,158 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_line_items: {
+        Row: {
+          amount: number
+          basis: string
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          sort_order: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          basis?: string
+          created_at?: string
+          description: string
+          id?: string
+          kind?: string
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          basis?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_line_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          acres: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string
+          deleted_at: string | null
+          field_id: string | null
+          id: string
+          notes: string | null
+          quote_date: string
+          quote_number: string | null
+          source_app_record_id: string | null
+          status: string
+          subtotal: number
+          terms: string | null
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          acres?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name: string
+          deleted_at?: string | null
+          field_id?: string | null
+          id?: string
+          notes?: string | null
+          quote_date: string
+          quote_number?: string | null
+          source_app_record_id?: string | null
+          status?: string
+          subtotal?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          acres?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          deleted_at?: string | null
+          field_id?: string | null
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number?: string | null
+          source_app_record_id?: string | null
+          status?: string
+          subtotal?: number
+          terms?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_app_record_id_fkey"
+            columns: ["source_app_record_id"]
+            isOneToOne: false
+            referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_filters: {
         Row: {
           created_at: string
