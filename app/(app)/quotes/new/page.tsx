@@ -145,6 +145,12 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
             action={createQuoteAction}
             customers={customers ?? []}
             fields={fields ?? []}
+            products={(products ?? []).map((product) => ({
+              id: product.id,
+              name: product.name,
+              unitCost: product.unit_cost,
+              costUnit: product.cost_unit,
+            }))}
             minimumJobFee={config.minimum_job_fee}
             defaultValues={{
               customerId: defaultCustomerId || null,

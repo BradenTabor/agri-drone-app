@@ -55,12 +55,20 @@ type QuoteDefaultLineItem = {
   amount: number;
 };
 
+type QuoteProductOption = {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  costUnit: string | null;
+};
+
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
   pendingLabel?: string;
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
+  products: QuoteProductOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
@@ -135,6 +143,7 @@ export function QuoteForm({
   pendingLabel = "Saving...",
   customers,
   fields,
+  products,
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
@@ -163,6 +172,7 @@ export function QuoteForm({
     () => fields.filter((field) => field.customer_id === customerId),
     [fields, customerId],
   );
+  const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
   const totals = useMemo(
     () =>
@@ -195,6 +205,48 @@ export function QuoteForm({
           updated.amount = String(lineAmount(quantity, unitPrice));
         }
         return updated;
+      }),
+    );
+  }
+
+  function formatProductDescription(product: QuoteProductOption): string {
+    return product.costUnit ? `${product.name} (${product.costUnit})` : product.name;
+  }
+
+  function handleProductSelect(rowId: string, productId: string) {
+    setLineItems((current) =>
+      current.map((line) => {
+        if (line.rowId !== rowId) return line;
+        if (!productId) {
+          return {
+            ...line,
+            productId: null,
+            kind: line.kind === "product" ? "custom" : line.kind,
+          };
+        }
+
+        const product = productsById.get(productId);
+        if (!product) return line;
+
+        const next = {
+          ...line,
+          kind: "product" as const,
+          productId,
+          description: formatProductDescription(product),
+        };
+
+        const suggestedUnitPrice = product.unitCost ?? 0;
+        const shouldReplaceUnitPrice =
+          line.unitPrice.trim() === "" || Number(line.unitPrice) === 0 || line.productId !== productId;
+
+        if (shouldReplaceUnitPrice) {
+          next.unitPrice = String(suggestedUnitPrice);
+        }
+        if (!line.amountTouched) {
+          next.amount = String(lineAmount(parseNumber(line.quantity), parseNumber(next.unitPrice)));
+        }
+
+        return next;
       }),
     );
   }
@@ -416,6 +468,21 @@ export function QuoteForm({
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeLine(line.rowId)}>
                   Remove
                 </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Product from library</Label>
+                <Select
+                  value={line.productId ?? ""}
+                  onChange={(event) => handleProductSelect(line.rowId, event.target.value)}
+                >
+                  <option value="">Custom line</option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </Select>
               </div>
 
               <div className="space-y-2">

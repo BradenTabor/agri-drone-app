@@ -22,6 +22,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
     { data: lineItems, error: lineItemsError },
     { data: customers },
     { data: fields },
+    { data: products },
     { data: pricingConfig },
   ] = await Promise.all([
     supabase.from("quotes").select("*").eq("id", id).is("deleted_at", null).single(),
@@ -32,6 +33,12 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
       .order("sort_order", { ascending: true }),
     supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
     supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
+    supabase
+      .from("products")
+      .select("id,name,unit_cost,cost_unit")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
     supabase.from("pricing_config").select("minimum_job_fee").eq("id", SINGLETON_ID).maybeSingle(),
   ]);
 
@@ -66,6 +73,12 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
             pendingLabel="Saving..."
             customers={customers ?? []}
             fields={fields ?? []}
+            products={(products ?? []).map((product) => ({
+              id: product.id,
+              name: product.name,
+              unitCost: product.unit_cost,
+              costUnit: product.cost_unit,
+            }))}
             minimumJobFee={pricingConfig?.minimum_job_fee ?? null}
             defaultValues={{
               quoteNumber: quote.quote_number,
