@@ -76,14 +76,23 @@ export default async function AppLandingPage() {
   const openAcreageChecks = pendingAcreageCount ?? 0;
   const activeCustomers = customersCount ?? 0;
   const submissionsToday = mixToday + appToday;
+  const readinessScore = Math.max(35, Math.min(100, 100 - openAcreageChecks * 12));
 
-  const kpis: { label: string; value: number; hint: string; tone: KpiTone; icon: LucideIcon }[] = [
+  const kpis: {
+    label: string;
+    value: number;
+    hint: string;
+    tone: KpiTone;
+    icon: LucideIcon;
+    href: string;
+  }[] = [
     {
       label: "Mix records today",
       value: mixToday,
       hint: "Submitted since midnight UTC",
       tone: "emerald",
       icon: Sprout,
+      href: "/records",
     },
     {
       label: "Application records today",
@@ -91,6 +100,7 @@ export default async function AppLandingPage() {
       hint: "Field application log volume",
       tone: "sky",
       icon: ClipboardCheck,
+      href: "/app-records",
     },
     {
       label: "Open acreage checks",
@@ -98,6 +108,7 @@ export default async function AppLandingPage() {
       hint: "Records missing actual acres",
       tone: "amber",
       icon: Gauge,
+      href: "/records",
     },
     {
       label: "Active customers",
@@ -105,6 +116,7 @@ export default async function AppLandingPage() {
       hint: "Available for new records",
       tone: "violet",
       icon: Users2,
+      href: "/customers",
     },
   ];
 
@@ -208,6 +220,25 @@ export default async function AppLandingPage() {
                   {openAcreageChecks > 0 ? "Needs review" : "Healthy"}
                 </span>
               </div>
+              <div className="space-y-1.5 rounded-xl border border-white/70 bg-white/44 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/10 dark:bg-white/5 dark:shadow-none">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium tracking-[0.08em] text-slate-600 uppercase dark:text-slate-300/85">
+                    Readiness score
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-100">{readinessScore}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/65 dark:bg-white/12">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      readinessScore < 70
+                        ? "bg-amber-500/75 dark:bg-amber-400/70"
+                        : "bg-emerald-500/75 dark:bg-emerald-400/70",
+                    )}
+                    style={{ width: `${readinessScore}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -220,20 +251,25 @@ export default async function AppLandingPage() {
             className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]"
             style={{ animationDelay: `${index * 80 + 120}ms` }}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-medium tracking-[0.09em] text-muted-foreground uppercase">{kpi.label}</p>
-                <span
-                  className={cn(
-                    "inline-flex size-8 items-center justify-center rounded-md bg-gradient-to-br ring-1",
-                    kpiToneStyles[kpi.tone],
-                  )}
-                >
-                  <kpi.icon className="size-4" aria-hidden="true" />
-                </span>
-              </div>
-              <p className="mt-2 text-3xl leading-none font-semibold tracking-tight">{kpi.value}</p>
-              <p className="mt-2 text-xs text-muted-foreground">{kpi.hint}</p>
+            <CardContent className="p-0">
+              <Link href={kpi.href} className="press-physics liquid-refraction block rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium tracking-[0.09em] text-muted-foreground uppercase">{kpi.label}</p>
+                  <span
+                    className={cn(
+                      "inline-flex size-8 items-center justify-center rounded-md bg-gradient-to-br ring-1",
+                      kpiToneStyles[kpi.tone],
+                    )}
+                  >
+                    <kpi.icon className="size-4" aria-hidden="true" />
+                  </span>
+                </div>
+                <p className="mt-2 text-3xl leading-none font-semibold tracking-tight">{kpi.value}</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">{kpi.hint}</p>
+                  <ArrowRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                </div>
+              </Link>
             </CardContent>
           </Card>
         ))}
