@@ -68,16 +68,16 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
       />
 
       {!filteredProducts.length ? (
-        <Card>
+        <Card className="liquid-reactive rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
           <CardContent className="p-5 text-sm text-muted-foreground">
             No products match your search.
           </CardContent>
         </Card>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-lg border lg:block">
+          <div className="liquid-reactive hidden overflow-x-auto rounded-2xl border border-white/60 bg-white/52 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl lg:block">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
+              <thead className="bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(244,249,255,0.48))] text-left text-slate-700">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Manufacturer</th>
@@ -99,11 +99,14 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
             {paginatedProducts.map((item) => (
               <Card
                 key={item.id}
-                className={cn(!item.active && "border-dashed opacity-80")}
+                className={cn(
+                  "liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]",
+                  !item.active && "border-dashed",
+                )}
               >
                 <CardContent className="p-4">
                   <div className="space-y-1">
-                    <h2 className="font-medium">{item.name}</h2>
+                    <h2 className="text-[1.34rem] font-semibold tracking-tight">{item.name}</h2>
                     <p className="text-sm text-muted-foreground">
                       {item.manufacturer || "No manufacturer"}
                     </p>
@@ -116,24 +119,31 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
                     <p className="text-sm text-muted-foreground">
                       {item.restricted_use ? "Restricted Use Pesticide (RUP)" : "General Use"}
                     </p>
-                    <p
+                    <span
                       className={cn(
-                        "text-xs",
-                        item.active ? "text-emerald-600" : "text-amber-600",
+                        "inline-flex w-fit rounded-full border px-2 py-0.5 text-xs font-medium",
+                        item.active
+                          ? "border-emerald-300/80 bg-emerald-100 text-emerald-700"
+                          : "border-amber-300/80 bg-amber-100 text-amber-700",
                       )}
                     >
                       {item.active ? "Active" : "Retired"}
-                    </p>
+                    </span>
                   </div>
                   {item.notes ? (
-                    <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                       {item.notes}
                     </p>
                   ) : null}
                   <div className="mt-4 flex gap-2">
                     <Link
                       href={`/products/${item.id}/edit`}
-                      className={buttonVariants({ size: "sm", variant: "outline" })}
+                      className={buttonVariants({
+                        size: "sm",
+                        variant: "outline",
+                        className:
+                          "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                      })}
                     >
                       Edit
                     </Link>
@@ -141,6 +151,7 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
                       <ConfirmSubmitButton
                         size="sm"
                         variant="destructive"
+                        className="press-physics liquid-refraction rounded-xl border border-red-300/65 bg-red-100/78 text-red-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-red-100"
                         confirmMessage={`Delete product ${item.name}? This can only be recovered by an admin.`}
                       >
                         Delete
@@ -152,14 +163,19 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
             ))}
           </div>
           {totalPages > 1 ? (
-            <div className="flex items-center justify-between rounded-lg border bg-card/90 p-3">
+            <div className="liquid-reactive flex items-center justify-between rounded-2xl border border-white/60 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
               <p className="text-xs text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className:
+                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  })}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={currentPage === 1}
                 >
@@ -167,7 +183,12 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
                 </button>
                 <button
                   type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className:
+                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  })}
                   onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   disabled={currentPage === totalPages}
                 >
@@ -186,11 +207,11 @@ function ProductRow({ product }: { product: Product }) {
   return (
     <tr
       className={cn(
-        "border-t",
-        !product.active && "bg-muted/20 text-muted-foreground",
+        "border-t border-white/55 transition-colors hover:bg-white/34",
+        !product.active && "bg-amber-50/20 text-muted-foreground",
       )}
     >
-      <td className="px-4 py-3 font-medium">{product.name}</td>
+      <td className="px-4 py-3 font-medium tracking-tight">{product.name}</td>
       <td className="px-4 py-3">{product.manufacturer || "—"}</td>
       <td className="px-4 py-3">{product.epa_number || "—"}</td>
       <td className="px-4 py-3">
@@ -207,8 +228,10 @@ function ProductRow({ product }: { product: Product }) {
       <td className="px-4 py-3">
         <span
           className={cn(
-            "text-xs",
-            product.active ? "text-emerald-600" : "text-amber-600",
+            "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
+            product.active
+              ? "border-emerald-300/80 bg-emerald-100 text-emerald-700"
+              : "border-amber-300/80 bg-amber-100 text-amber-700",
           )}
         >
           {product.active ? "Active" : "Retired"}
@@ -218,7 +241,12 @@ function ProductRow({ product }: { product: Product }) {
         <div className="flex gap-2">
           <Link
             href={`/products/${product.id}/edit`}
-            className={buttonVariants({ size: "sm", variant: "outline" })}
+            className={buttonVariants({
+              size: "sm",
+              variant: "outline",
+              className:
+                "press-physics liquid-refraction rounded-xl border-white/70 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+            })}
           >
             Edit
           </Link>
@@ -226,6 +254,7 @@ function ProductRow({ product }: { product: Product }) {
             <ConfirmSubmitButton
               size="sm"
               variant="destructive"
+              className="press-physics liquid-refraction rounded-xl border border-red-300/65 bg-red-100/78 text-red-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-red-100"
               confirmMessage={`Delete product ${product.name}? This can only be recovered by an admin.`}
             >
               Delete
