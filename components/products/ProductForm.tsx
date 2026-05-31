@@ -5,9 +5,11 @@ import { useActionState } from "react";
 import type { ProductFormState } from "@/app/(app)/products/actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { FormAlert } from "@/components/ui/form-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 const initialState: ProductFormState = { error: null };
@@ -16,6 +18,8 @@ type ProductFormValues = {
   name: string;
   manufacturer: string | null;
   epaNumber: string | null;
+  unitCost: number | null;
+  costUnit: "gal" | "oz" | "fl_oz" | "lb" | null;
   restrictedUse: boolean;
   active: boolean;
   notes: string | null;
@@ -82,6 +86,43 @@ export function ProductForm({
         />
         {errorFor(state, "epaNumber") ? (
           <p className="text-sm text-destructive">{errorFor(state, "epaNumber")}</p>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="unitCost">Product cost</Label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              $
+            </span>
+            <DecimalInput
+              id="unitCost"
+              name="unitCost"
+              className="pl-7"
+              defaultValue={defaultValues?.unitCost ?? ""}
+              placeholder="0.00"
+              aria-invalid={Boolean(errorFor(state, "unitCost"))}
+            />
+          </div>
+          <Select
+            name="costUnit"
+            defaultValue={defaultValues?.costUnit ?? ""}
+            className="w-28"
+            aria-label="Cost unit"
+          >
+            <option value="">Unit</option>
+            <option value="gal">per gal</option>
+            <option value="oz">per oz</option>
+            <option value="fl_oz">per fl oz</option>
+            <option value="lb">per lb</option>
+          </Select>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Your cost for this product. Used to calculate quote pricing with markup.
+        </p>
+        {errorFor(state, "unitCost") ? (
+          <p className="text-sm text-destructive">{errorFor(state, "unitCost")}</p>
         ) : null}
       </div>
 

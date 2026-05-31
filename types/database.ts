@@ -666,6 +666,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          cost_unit: string | null
           created_at: string
           deleted_at: string | null
           documents: Json
@@ -675,10 +676,12 @@ export type Database = {
           name: string
           notes: string | null
           restricted_use: boolean
+          unit_cost: number | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          cost_unit?: string | null
           created_at?: string
           deleted_at?: string | null
           documents?: Json
@@ -688,10 +691,12 @@ export type Database = {
           name: string
           notes?: string | null
           restricted_use?: boolean
+          unit_cost?: number | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          cost_unit?: string | null
           created_at?: string
           deleted_at?: string | null
           documents?: Json
@@ -701,6 +706,7 @@ export type Database = {
           name?: string
           notes?: string | null
           restricted_use?: boolean
+          unit_cost?: number | null
           updated_at?: string
         }
         Relationships: []

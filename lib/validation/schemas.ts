@@ -106,6 +106,10 @@ export const equipmentUpdateSchema = equipmentCreateSchema;
 export type EquipmentCreateInput = z.infer<typeof equipmentCreateSchema>;
 export type EquipmentUpdateInput = z.infer<typeof equipmentUpdateSchema>;
 
+const costUnitSchema = z.enum(["gal", "oz", "fl_oz", "lb"], {
+  message: "Cost unit must be gal, oz, fl_oz, or lb.",
+});
+
 export const productCreateSchema = z.object({
   name: z
     .string()
@@ -114,6 +118,8 @@ export const productCreateSchema = z.object({
     .max(120, "Product name must be 120 characters or fewer."),
   epaNumber: optionalText(40),
   manufacturer: optionalText(120),
+  unitCost: optionalDecimal({ min: 0, max: 1000000, label: "Unit cost" }),
+  costUnit: z.preprocess(emptyStringToUndefined, costUnitSchema.optional()),
   restrictedUse: checkboxBoolean(false),
   notes: optionalText(2000),
   active: checkboxBoolean(true),
