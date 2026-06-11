@@ -19,16 +19,32 @@ function formatMethod(value: string | null): string {
     .join(" ");
 }
 
+function formatAppType(value: string | null): string {
+  if (!value) return "—";
+  return value[0]?.toUpperCase() + value.slice(1);
+}
+
 export default async function AppRecordDetailPage({ params }: AppRecordDetailPageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: record, error: recordError }, { data: pesticides, error: pesticidesError }] =
+  const [{ data: record, error: recordError }, { data: pesticides, error: pesticidesError }, { data: mixLinks, error: mixLinksError }] =
     await Promise.all([
       supabase.from("app_records").select("*").eq("id", id).is("deleted_at", null).single(),
       supabase
         .from("app_record_pesticides")
         .select("id,sort_order,is_surfactant,epa_reg_number,product_name,active_ingredient")
+        .eq("app_record_id", id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("app_record_mix_records")
+        .select(
+          `
+          mix_record_id,
+          sort_order,
+          mix_records(record_date, customer_name_snapshot, field_name_snapshot, deleted_at)
+        `,
+        )
         .eq("app_record_id", id)
         .order("sort_order", { ascending: true }),
     ]);
@@ -39,6 +55,22 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
   if (pesticidesError) {
     throw new Error("Unable to load record pesticides.");
   }
+  if (mixLinksError) {
+    throw new Error("Unable to load linked mix records.");
+  }
+
+  const linkedMixRecords = (mixLinks ?? [])
+    .map((link) => {
+      const mix = Array.isArray(link.mix_records) ? link.mix_records[0] : link.mix_records;
+      if (!mix || mix.deleted_at) return null;
+      return {
+        mixRecordId: link.mix_record_id,
+        recordDate: mix.record_date,
+        customerName: mix.customer_name_snapshot,
+        fieldName: mix.field_name_snapshot,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item != null);
 
   const targetVegetation = Array.isArray(record.target_vegetation)
     ? record.target_vegetation.filter((v: unknown): v is string => typeof v === "string")
@@ -127,10 +159,30 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
           <Detail label="Target vegetation">{targetVegetation.join(", ") || "—"}</Detail>
           <Detail label="Other vegetation">{record.target_veg_other || "—"}</Detail>
           <Detail label="Method">{formatMethod(record.app_method)}</Detail>
+          <Detail label="Application type">{formatAppType(record.app_type)}</Detail>
           <Detail label="Start time">{record.start_time ?? "—"}</Detail>
           <Detail label="End time">{record.end_time ?? "—"}</Detail>
         </CardContent>
       </Card>
+
+      {linkedMixRecords.length > 0 ? (
+        <Card>
+          <CardHeader className="p-5 pb-0">
+            <CardTitle>Mix Records</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 p-5 text-sm">
+            {linkedMixRecords.map((mix) => (
+              <Link
+                key={mix.mixRecordId}
+                href={`/records/${mix.mixRecordId}`}
+                className="block rounded-md border px-3 py-2 hover:bg-muted/50"
+              >
+                {mix.recordDate} · {mix.customerName ?? "—"} — {mix.fieldName ?? "—"}
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader className="p-5 pb-0">

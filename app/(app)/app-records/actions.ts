@@ -4,11 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  mapMixRow,
+  MIX_RECORD_ATTACH_SELECT,
+  type AttachableMixRecord,
+} from "@/lib/app-records/mixAttach";
+import { checkboxValue } from "@/lib/form-data";
+import {
   appRecordCreateSchema,
   appRecordUpdateSchema,
   type AppRecordCreateInput,
 } from "@/lib/validation/schemas";
-import { checkboxValue } from "@/lib/form-data";
 import { createClient } from "@/lib/supabase/server";
 
 type AppRecordFieldErrors = Partial<Record<keyof AppRecordCreateInput, string[]>>;
@@ -34,6 +39,7 @@ function extractAppRecordFormData(formData: FormData) {
     targetVegetation: JSON.parse(String(formData.get("targetVegetation") ?? "[]")),
     targetVegOther: String(formData.get("targetVegOther") ?? ""),
     appMethod: String(formData.get("appMethod") ?? ""),
+    appType: String(formData.get("appType") ?? ""),
     startTime: String(formData.get("startTime") ?? ""),
     endTime: String(formData.get("endTime") ?? ""),
     totalGallons: String(formData.get("totalGallons") ?? ""),
@@ -50,7 +56,64 @@ function extractAppRecordFormData(formData: FormData) {
     applicatorSig: String(formData.get("applicatorSig") ?? ""),
     licenseCertNo: String(formData.get("licenseCertNo") ?? ""),
     pesticides: JSON.parse(String(formData.get("pesticides") ?? "[]")),
+    mixRecordIds: JSON.parse(String(formData.get("mixRecordIds") ?? "[]")),
   };
+}
+
+function normalizeAppRecordPayload(d: AppRecordCreateInput) {
+  return {
+    job_date: d.jobDate,
+    applicator_name: d.applicatorName,
+    customer_name: d.customerName,
+    site_address: d.siteAddress ?? "",
+    job_site_id: d.jobSiteId ?? "",
+    location_lat: d.locationLat?.toString() ?? "",
+    location_lng: d.locationLng?.toString() ?? "",
+    temp_f: d.tempF?.toString() ?? "",
+    wind_speed_mph: d.windSpeedMph?.toString() ?? "",
+    wind_direction: d.windDirection ?? "",
+    sky_condition: d.skyCondition ?? "",
+    target_vegetation: d.targetVegetation,
+    target_veg_other: d.targetVegOther ?? "",
+    app_method: d.appMethod ?? "",
+    app_type: d.appType ?? "",
+    start_time: d.startTime ?? "",
+    end_time: d.endTime ?? "",
+    total_gallons: d.totalGallons?.toString() ?? "",
+    gallons_per_acre: d.gallonsPerAcre?.toString() ?? "",
+    acres_treated: d.acresTreated?.toString() ?? "",
+    tank_mix_record: d.tankMixRecord ?? "",
+    equipment_notes: d.equipmentNotes ?? "",
+    truck_id: d.truckId ?? "",
+    nozzle_type: d.nozzleType ?? "",
+    rei: d.rei ?? "",
+    safe_reentry_date: d.safeReentryDate ?? "",
+    additional_notes: d.additionalNotes ?? "",
+    cert_attested: d.certAttested,
+    applicator_sig: d.applicatorSig,
+    license_cert_no: d.licenseCertNo ?? "",
+  };
+}
+
+function normalizePesticidesForRpc(pesticides: AppRecordCreateInput["pesticides"]) {
+  return pesticides.map((p, i) => ({
+    sort_order: i,
+    is_surfactant: p.isSurfactant,
+    epa_reg_number: p.epaRegNumber ?? null,
+    product_name: p.productName,
+    active_ingredient: p.activeIngredient ?? null,
+  }));
+}
+
+function rpcErrorMessage(error: { message: string } | null): string | null {
+  if (!error) return null;
+  if (error.message.includes("already attached")) {
+    return error.message;
+  }
+  if (error.message.includes("no longer exist")) {
+    return error.message;
+  }
+  return null;
 }
 
 export async function createAppRecordAction(
@@ -72,61 +135,18 @@ export async function createAppRecordAction(
   }
 
   const d = parsed.data;
-  const { data: record, error: recordError } = await supabase
-    .from("app_records")
-    .insert({
-      job_date: d.jobDate,
-      applicator_name: d.applicatorName,
-      customer_name: d.customerName,
-      site_address: d.siteAddress ?? null,
-      job_site_id: d.jobSiteId ?? null,
-      location_lat: d.locationLat ?? null,
-      location_lng: d.locationLng ?? null,
-      temp_f: d.tempF ?? null,
-      wind_speed_mph: d.windSpeedMph ?? null,
-      wind_direction: d.windDirection ?? null,
-      sky_condition: d.skyCondition ?? null,
-      target_vegetation: d.targetVegetation,
-      target_veg_other: d.targetVegOther ?? null,
-      app_method: d.appMethod ?? null,
-      start_time: d.startTime || null,
-      end_time: d.endTime || null,
-      total_gallons: d.totalGallons ?? null,
-      gallons_per_acre: d.gallonsPerAcre ?? null,
-      acres_treated: d.acresTreated ?? null,
-      tank_mix_record: d.tankMixRecord ?? null,
-      equipment_notes: d.equipmentNotes ?? null,
-      truck_id: d.truckId ?? null,
-      nozzle_type: d.nozzleType ?? null,
-      rei: d.rei ?? null,
-      safe_reentry_date: d.safeReentryDate || null,
-      additional_notes: d.additionalNotes ?? null,
-      cert_attested: d.certAttested,
-      applicator_sig: d.applicatorSig,
-      license_cert_no: d.licenseCertNo ?? null,
-      submitted_by: user.id,
-    })
-    .select("id")
-    .single();
+  const { data: recordId, error } = await supabase.rpc("create_app_record_with_children", {
+    p_record: normalizeAppRecordPayload(d),
+    p_pesticides: normalizePesticidesForRpc(d.pesticides),
+    p_mix_record_ids: d.mixRecordIds,
+  });
 
-  if (recordError || !record) return { error: "Unable to create record. Please try again." };
-
-  if (d.pesticides.length > 0) {
-    const { error: pesticideError } = await supabase.from("app_record_pesticides").insert(
-      d.pesticides.map((p, i) => ({
-        app_record_id: record.id,
-        sort_order: i,
-        is_surfactant: p.isSurfactant,
-        epa_reg_number: p.epaRegNumber ?? null,
-        product_name: p.productName,
-        active_ingredient: p.activeIngredient ?? null,
-      })),
-    );
-    if (pesticideError) return { error: "Record created but failed to save products. Please edit to fix." };
-  }
+  const specificError = rpcErrorMessage(error);
+  if (specificError) return { error: specificError };
+  if (error || !recordId) return { error: "Unable to create record. Please try again." };
 
   revalidatePath("/app-records");
-  redirect(`/app-records/${record.id}`);
+  redirect(`/app-records/${recordId}`);
 }
 
 export async function updateAppRecordAction(
@@ -149,62 +169,94 @@ export async function updateAppRecordAction(
   }
 
   const d = parsed.data;
-  const { error: updateError } = await supabase
-    .from("app_records")
-    .update({
-      job_date: d.jobDate,
-      applicator_name: d.applicatorName,
-      customer_name: d.customerName,
-      site_address: d.siteAddress ?? null,
-      job_site_id: d.jobSiteId ?? null,
-      location_lat: d.locationLat ?? null,
-      location_lng: d.locationLng ?? null,
-      temp_f: d.tempF ?? null,
-      wind_speed_mph: d.windSpeedMph ?? null,
-      wind_direction: d.windDirection ?? null,
-      sky_condition: d.skyCondition ?? null,
-      target_vegetation: d.targetVegetation,
-      target_veg_other: d.targetVegOther ?? null,
-      app_method: d.appMethod ?? null,
-      start_time: d.startTime || null,
-      end_time: d.endTime || null,
-      total_gallons: d.totalGallons ?? null,
-      gallons_per_acre: d.gallonsPerAcre ?? null,
-      acres_treated: d.acresTreated ?? null,
-      tank_mix_record: d.tankMixRecord ?? null,
-      equipment_notes: d.equipmentNotes ?? null,
-      truck_id: d.truckId ?? null,
-      nozzle_type: d.nozzleType ?? null,
-      rei: d.rei ?? null,
-      safe_reentry_date: d.safeReentryDate || null,
-      additional_notes: d.additionalNotes ?? null,
-      cert_attested: d.certAttested,
-      applicator_sig: d.applicatorSig,
-      license_cert_no: d.licenseCertNo ?? null,
-      last_modified_by: user.id,
-      last_modified_at: new Date().toISOString(),
-    })
-    .eq("id", recordId)
-    .is("deleted_at", null);
+  const { error } = await supabase.rpc("update_app_record_with_children", {
+    p_record_id: recordId,
+    p_record: normalizeAppRecordPayload(d),
+    p_pesticides: normalizePesticidesForRpc(d.pesticides),
+    p_mix_record_ids: d.mixRecordIds,
+  });
 
-  if (updateError) return { error: "Unable to update record. Please try again." };
-
-  await supabase.from("app_record_pesticides").delete().eq("app_record_id", recordId);
-  if (d.pesticides.length > 0) {
-    await supabase.from("app_record_pesticides").insert(
-      d.pesticides.map((p, i) => ({
-        app_record_id: recordId,
-        sort_order: i,
-        is_surfactant: p.isSurfactant,
-        epa_reg_number: p.epaRegNumber ?? null,
-        product_name: p.productName,
-        active_ingredient: p.activeIngredient ?? null,
-      })),
-    );
-  }
+  const specificError = rpcErrorMessage(error);
+  if (specificError) return { error: specificError };
+  if (error) return { error: "Unable to update record. Please try again." };
 
   revalidatePath("/app-records");
   redirect(`/app-records/${recordId}`);
+}
+
+export async function searchAttachableMixRecords(
+  search: string,
+  currentAppRecordId: string | null,
+): Promise<AttachableMixRecord[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  let takenQuery = supabase.from("app_record_mix_records").select("mix_record_id");
+  if (currentAppRecordId) {
+    takenQuery = takenQuery.neq("app_record_id", currentAppRecordId);
+  }
+  const { data: takenRows, error: takenError } = await takenQuery;
+  if (takenError) {
+    throw new Error("Unable to load attached mix records.");
+  }
+
+  const taken = (takenRows ?? []).map((row) => row.mix_record_id);
+
+  let mixQuery = supabase
+    .from("mix_records")
+    .select(MIX_RECORD_ATTACH_SELECT)
+    .is("deleted_at", null)
+    .is("mix_record_products.deleted_at", null)
+    .order("record_date", { ascending: false })
+    .order("time_mixed", { ascending: false })
+    .order("sort_order", { referencedTable: "mix_record_products", ascending: true })
+    .limit(25);
+
+  if (taken.length > 0) {
+    mixQuery = mixQuery.not("id", "in", `(${taken.join(",")})`);
+  }
+
+  const sanitized = search.replace(/[,()]/g, " ").trim();
+  if (sanitized) {
+    mixQuery = mixQuery.or(
+      `customer_name_snapshot.ilike.%${sanitized}%,field_name_snapshot.ilike.%${sanitized}%`,
+    );
+  }
+
+  const { data: rows, error: mixError } = await mixQuery;
+  if (mixError) {
+    throw new Error("Unable to search mix records.");
+  }
+
+  return (rows ?? []).map((row) => mapMixRow(row as Parameters<typeof mapMixRow>[0]));
+}
+
+export async function loadAttachedMixRecords(mixRecordIds: string[]): Promise<AttachableMixRecord[]> {
+  if (mixRecordIds.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("mix_records")
+    .select(MIX_RECORD_ATTACH_SELECT)
+    .in("id", mixRecordIds)
+    .is("deleted_at", null)
+    .is("mix_record_products.deleted_at", null)
+    .order("sort_order", { referencedTable: "mix_record_products", ascending: true });
+
+  if (error) {
+    throw new Error("Unable to load attached mix records.");
+  }
+
+  const byId = new Map(
+    (rows ?? []).map((row) => [row.id, mapMixRow(row as Parameters<typeof mapMixRow>[0])]),
+  );
+  return mixRecordIds.flatMap((id) => {
+    const mix = byId.get(id);
+    return mix ? [mix] : [];
+  });
 }
 
 export async function softDeleteAppRecordAction(recordId: string): Promise<void> {
