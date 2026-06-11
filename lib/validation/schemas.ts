@@ -86,17 +86,13 @@ export const fieldUpdateSchema = fieldCreateSchema;
 export type FieldCreateInput = z.infer<typeof fieldCreateSchema>;
 export type FieldUpdateInput = z.infer<typeof fieldUpdateSchema>;
 
-const equipmentTypeSchema = z.enum(["truck", "sprayer", "drone"], {
-  message: "Type must be truck, sprayer, or drone.",
-});
-
 export const equipmentCreateSchema = z.object({
   identifier: z
     .string()
     .trim()
     .min(1, "Identifier is required.")
     .max(80, "Identifier must be 80 characters or fewer."),
-  type: z.preprocess(emptyStringToUndefined, equipmentTypeSchema.optional()),
+  type: optionalText(50),
   notes: optionalText(2000),
   active: checkboxBoolean(true),
 });
@@ -110,6 +106,14 @@ const costUnitSchema = z.enum(["gal", "oz", "fl_oz", "lb"], {
   message: "Cost unit must be gal, oz, fl_oz, or lb.",
 });
 
+const productIngredientSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Ingredient name is required.")
+    .max(200, "Ingredient name must be 200 characters or fewer."),
+});
+
 export const productCreateSchema = z.object({
   name: z
     .string()
@@ -118,9 +122,11 @@ export const productCreateSchema = z.object({
     .max(120, "Product name must be 120 characters or fewer."),
   epaNumber: optionalText(40),
   manufacturer: optionalText(120),
-  unitCost: optionalDecimal({ min: 0, max: 1000000, label: "Unit cost" }),
+  unitCost: optionalDecimal({ min: 0, max: 1000000, label: "Wholesale cost" }),
+  retailCost: optionalDecimal({ min: 0, max: 1000000, label: "Retail cost" }),
   costUnit: z.preprocess(emptyStringToUndefined, costUnitSchema.optional()),
   restrictedUse: checkboxBoolean(false),
+  ingredients: z.array(productIngredientSchema).max(50, "A product can have at most 50 ingredients.").default([]),
   notes: optionalText(2000),
   active: checkboxBoolean(true),
 });
@@ -129,6 +135,30 @@ export const productUpdateSchema = productCreateSchema;
 
 export type ProductCreateInput = z.infer<typeof productCreateSchema>;
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+
+const defaultUnitSchema = z.enum(["oz", "fl_oz", "gal", "%"], {
+  message: "Default unit must be oz, fl_oz, gal, or %.",
+});
+
+export const surfactantCreateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Surfactant name is required.")
+    .max(120, "Surfactant name must be 120 characters or fewer."),
+  manufacturer: optionalText(120),
+  epaNumber: optionalText(40),
+  defaultUnit: z.preprocess(emptyStringToUndefined, defaultUnitSchema.optional()),
+  unitCost: optionalDecimal({ min: 0, max: 1000000, label: "Unit cost" }),
+  costUnit: z.preprocess(emptyStringToUndefined, costUnitSchema.optional()),
+  notes: optionalText(2000),
+  active: checkboxBoolean(true),
+});
+
+export const surfactantUpdateSchema = surfactantCreateSchema;
+
+export type SurfactantCreateInput = z.infer<typeof surfactantCreateSchema>;
+export type SurfactantUpdateInput = z.infer<typeof surfactantUpdateSchema>;
 
 const requiredDecimal = (opts: { min?: number; max?: number; label: string }) =>
   z
@@ -313,6 +343,10 @@ const appMethodSchema = z.enum(
   { message: "Select a valid application method." },
 );
 
+const appTypeSchema = z.enum(["spraying", "spreading"], {
+  message: "Select spraying or spreading.",
+});
+
 const targetVegSchema = z.enum(
   ["broadleaf", "grasses", "brush", "woody", "aquatic", "other"],
   { message: "Invalid vegetation type." },
@@ -351,6 +385,7 @@ export const appRecordCreateSchema = z
     targetVegOther: optionalText(120),
 
     appMethod: z.preprocess(emptyStringToUndefined, appMethodSchema.optional()),
+    appType: z.preprocess(emptyStringToUndefined, appTypeSchema.optional()),
 
     startTime: z
       .string()
@@ -386,6 +421,7 @@ export const appRecordCreateSchema = z
     licenseCertNo: optionalText(80),
 
     pesticides: z.array(appRecordPesticideSchema).min(1, "Add at least one product."),
+    mixRecordIds: z.array(z.string().uuid()).default([]),
   })
   .superRefine((data, ctx) => {
     if (!data.certAttested) {
@@ -393,6 +429,22 @@ export const appRecordCreateSchema = z
         code: z.ZodIssueCode.custom,
         path: ["certAttested"],
         message: "Attestation is required before submitting.",
+      });
+    }
+
+    if (data.appMethod && !data.appType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["appType"],
+        message: "Select spraying or spreading.",
+      });
+    }
+
+    if (data.appType && !data.appMethod) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["appMethod"],
+        message: "Select an application method.",
       });
     }
   });

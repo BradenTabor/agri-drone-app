@@ -12,7 +12,7 @@ export default async function NewMixRecordPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: customers }, { data: fields }, { data: equipment }, { data: products }, { data: profiles }, { data: selfProfile }] =
+  const [{ data: customers }, { data: fields }, { data: equipment }, { data: products }, { data: surfactants }, { data: profiles }, { data: selfProfile }] =
     await Promise.all([
       supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
       supabase
@@ -29,6 +29,12 @@ export default async function NewMixRecordPage() {
       supabase
         .from("products")
         .select("id,name,epa_number,active")
+        .is("deleted_at", null)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("surfactants")
+        .select("id,name,epa_number,default_unit,active")
         .is("deleted_at", null)
         .eq("active", true)
         .order("name", { ascending: true }),
@@ -79,6 +85,13 @@ export default async function NewMixRecordPage() {
             name: product.name,
             epaNumber: product.epa_number,
             active: product.active,
+          }))}
+          surfactants={(surfactants ?? []).map((surfactant) => ({
+            id: surfactant.id,
+            name: surfactant.name,
+            epaNumber: surfactant.epa_number,
+            defaultUnit: surfactant.default_unit as "oz" | "fl_oz" | "gal" | "%" | null,
+            active: surfactant.active,
           }))}
           applicators={(profiles ?? []).map((profile) => ({
             id: profile.id,

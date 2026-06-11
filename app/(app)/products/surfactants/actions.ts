@@ -4,62 +4,50 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
-  productCreateSchema,
-  productUpdateSchema,
-  type ProductCreateInput,
+  surfactantCreateSchema,
+  surfactantUpdateSchema,
+  type SurfactantCreateInput,
 } from "@/lib/validation/schemas";
 import { checkboxValue } from "@/lib/form-data";
 import { createClient } from "@/lib/supabase/server";
 
-type ProductFieldErrors = Partial<Record<keyof ProductCreateInput, string[]>>;
+type SurfactantFieldErrors = Partial<Record<keyof SurfactantCreateInput, string[]>>;
 
-export type ProductFormState = {
+export type SurfactantFormState = {
   error: string | null;
-  fieldErrors?: ProductFieldErrors;
+  fieldErrors?: SurfactantFieldErrors;
 };
 
-function parseIngredientsField(formData: FormData) {
-  try {
-    return JSON.parse(String(formData.get("ingredients") ?? "[]"));
-  } catch {
-    return [];
-  }
-}
-
-function extractProductFormData(formData: FormData) {
+function extractSurfactantFormData(formData: FormData) {
   return {
     name: String(formData.get("name") ?? ""),
     manufacturer: String(formData.get("manufacturer") ?? ""),
     epaNumber: String(formData.get("epaNumber") ?? ""),
+    defaultUnit: String(formData.get("defaultUnit") ?? ""),
     unitCost: String(formData.get("unitCost") ?? ""),
-    retailCost: String(formData.get("retailCost") ?? ""),
     costUnit: String(formData.get("costUnit") ?? ""),
-    restrictedUse: checkboxValue(formData, "restrictedUse"),
-    ingredients: parseIngredientsField(formData),
     notes: String(formData.get("notes") ?? ""),
     active: checkboxValue(formData, "active"),
   };
 }
 
-function normalizeProductInput(input: ProductCreateInput) {
+function normalizeSurfactantInput(input: SurfactantCreateInput) {
   return {
     name: input.name,
     manufacturer: input.manufacturer ?? null,
     epa_number: input.epaNumber ?? null,
+    default_unit: input.defaultUnit ?? null,
     unit_cost: input.unitCost ?? null,
-    retail_cost: input.retailCost ?? null,
     cost_unit: input.costUnit ?? null,
-    restricted_use: input.restrictedUse,
-    ingredients: input.ingredients.map((ingredient) => ingredient.name),
     notes: input.notes ?? null,
     active: input.active,
   };
 }
 
-export async function createProductAction(
-  _previousState: ProductFormState,
+export async function createSurfactantAction(
+  _previousState: SurfactantFormState,
   formData: FormData,
-): Promise<ProductFormState> {
+): Promise<SurfactantFormState> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -69,7 +57,7 @@ export async function createProductAction(
     return { error: "Your session expired. Please sign in again." };
   }
 
-  const parsed = productCreateSchema.safeParse(extractProductFormData(formData));
+  const parsed = surfactantCreateSchema.safeParse(extractSurfactantFormData(formData));
   if (!parsed.success) {
     return {
       error: "Please correct the highlighted fields.",
@@ -77,21 +65,21 @@ export async function createProductAction(
     };
   }
 
-  const { error } = await supabase.from("products").insert(normalizeProductInput(parsed.data));
+  const { error } = await supabase.from("surfactants").insert(normalizeSurfactantInput(parsed.data));
 
   if (error) {
-    return { error: "Unable to create product. Please try again." };
+    return { error: "Unable to create surfactant. Please try again." };
   }
 
   revalidatePath("/products");
-  redirect("/products");
+  redirect("/products?tab=surfactants");
 }
 
-export async function updateProductAction(
-  productId: string,
-  _previousState: ProductFormState,
+export async function updateSurfactantAction(
+  surfactantId: string,
+  _previousState: SurfactantFormState,
   formData: FormData,
-): Promise<ProductFormState> {
+): Promise<SurfactantFormState> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,7 +89,7 @@ export async function updateProductAction(
     return { error: "Your session expired. Please sign in again." };
   }
 
-  const parsed = productUpdateSchema.safeParse(extractProductFormData(formData));
+  const parsed = surfactantUpdateSchema.safeParse(extractSurfactantFormData(formData));
   if (!parsed.success) {
     return {
       error: "Please correct the highlighted fields.",
@@ -110,22 +98,22 @@ export async function updateProductAction(
   }
 
   const { data, error } = await supabase
-    .from("products")
-    .update(normalizeProductInput(parsed.data))
-    .eq("id", productId)
+    .from("surfactants")
+    .update(normalizeSurfactantInput(parsed.data))
+    .eq("id", surfactantId)
     .is("deleted_at", null)
     .select("id")
     .single();
 
   if (error || !data) {
-    return { error: "Unable to update product. Please try again." };
+    return { error: "Unable to update surfactant. Please try again." };
   }
 
   revalidatePath("/products");
-  redirect("/products");
+  redirect("/products?tab=surfactants");
 }
 
-export async function softDeleteProductAction(productId: string): Promise<void> {
+export async function softDeleteSurfactantAction(surfactantId: string): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -136,15 +124,15 @@ export async function softDeleteProductAction(productId: string): Promise<void> 
   }
 
   const { error } = await supabase
-    .from("products")
+    .from("surfactants")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", productId)
+    .eq("id", surfactantId)
     .is("deleted_at", null);
 
   if (error) {
-    throw new Error("Unable to delete product.");
+    throw new Error("Unable to delete surfactant.");
   }
 
   revalidatePath("/products");
-  redirect("/products");
+  redirect("/products?tab=surfactants");
 }

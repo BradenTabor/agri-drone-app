@@ -23,6 +23,7 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
     { data: fields },
     { data: equipment },
     { data: products },
+    { data: surfactants },
     { data: profiles },
   ] = await Promise.all([
     supabase.from("mix_records").select("*").eq("id", id).is("deleted_at", null).single(),
@@ -52,6 +53,12 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
     supabase
       .from("products")
       .select("id,name,epa_number,active")
+      .is("deleted_at", null)
+      .order("active", { ascending: false })
+      .order("name", { ascending: true }),
+    supabase
+      .from("surfactants")
+      .select("id,name,epa_number,default_unit,active")
       .is("deleted_at", null)
       .order("active", { ascending: false })
       .order("name", { ascending: true }),
@@ -162,6 +169,13 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
             name: product.name,
             epaNumber: product.epa_number,
             active: product.active,
+          }))}
+          surfactants={(surfactants ?? []).map((surfactant) => ({
+            id: surfactant.id,
+            name: surfactant.name,
+            epaNumber: surfactant.epa_number,
+            defaultUnit: surfactant.default_unit as "oz" | "fl_oz" | "gal" | "%" | null,
+            active: surfactant.active,
           }))}
           applicators={(profiles ?? []).map((profile) => ({
             id: profile.id,

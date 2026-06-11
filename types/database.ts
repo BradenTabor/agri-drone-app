@@ -83,11 +83,51 @@ export type Database = {
           },
         ]
       }
+      app_record_mix_records: {
+        Row: {
+          app_record_id: string
+          created_at: string
+          id: string
+          mix_record_id: string
+          sort_order: number
+        }
+        Insert: {
+          app_record_id: string
+          created_at?: string
+          id?: string
+          mix_record_id: string
+          sort_order?: number
+        }
+        Update: {
+          app_record_id?: string
+          created_at?: string
+          id?: string
+          mix_record_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_record_mix_records_app_record_id_fkey"
+            columns: ["app_record_id"]
+            isOneToOne: false
+            referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_record_mix_records_mix_record_id_fkey"
+            columns: ["mix_record_id"]
+            isOneToOne: false
+            referencedRelation: "mix_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_records: {
         Row: {
           acres_treated: number | null
           additional_notes: string | null
           app_method: string | null
+          app_type: string | null
           applicator_name: string
           applicator_sig: string | null
           cert_attested: boolean
@@ -127,6 +167,7 @@ export type Database = {
           acres_treated?: number | null
           additional_notes?: string | null
           app_method?: string | null
+          app_type?: string | null
           applicator_name: string
           applicator_sig?: string | null
           cert_attested?: boolean
@@ -166,6 +207,7 @@ export type Database = {
           acres_treated?: number | null
           additional_notes?: string | null
           app_method?: string | null
+          app_type?: string | null
           applicator_name?: string
           applicator_sig?: string | null
           cert_attested?: boolean
@@ -672,9 +714,11 @@ export type Database = {
           documents: Json
           epa_number: string | null
           id: string
+          ingredients: string[]
           manufacturer: string | null
           name: string
           notes: string | null
+          retail_cost: number | null
           restricted_use: boolean
           unit_cost: number | null
           updated_at: string
@@ -687,9 +731,11 @@ export type Database = {
           documents?: Json
           epa_number?: string | null
           id?: string
+          ingredients?: string[]
           manufacturer?: string | null
           name: string
           notes?: string | null
+          retail_cost?: number | null
           restricted_use?: boolean
           unit_cost?: number | null
           updated_at?: string
@@ -702,10 +748,57 @@ export type Database = {
           documents?: Json
           epa_number?: string | null
           id?: string
+          ingredients?: string[]
           manufacturer?: string | null
           name?: string
           notes?: string | null
+          retail_cost?: number | null
           restricted_use?: boolean
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      surfactants: {
+        Row: {
+          active: boolean
+          cost_unit: string | null
+          created_at: string
+          default_unit: string | null
+          deleted_at: string | null
+          epa_number: string | null
+          id: string
+          manufacturer: string | null
+          name: string
+          notes: string | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          cost_unit?: string | null
+          created_at?: string
+          default_unit?: string | null
+          deleted_at?: string | null
+          epa_number?: string | null
+          id?: string
+          manufacturer?: string | null
+          name: string
+          notes?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          cost_unit?: string | null
+          created_at?: string
+          default_unit?: string | null
+          deleted_at?: string | null
+          epa_number?: string | null
+          id?: string
+          manufacturer?: string | null
+          name?: string
+          notes?: string | null
           unit_cost?: number | null
           updated_at?: string
         }
@@ -957,11 +1050,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_app_record_with_children: {
+        Args: { p_mix_record_ids: Json; p_pesticides: Json; p_record: Json }
+        Returns: string
+      }
       create_mix_record_with_lines: {
         Args: { p_lines: Json; p_record: Json }
         Returns: string
       }
       current_user_role: { Args: never; Returns: string }
+      update_app_record_with_children: {
+        Args: {
+          p_mix_record_ids: Json
+          p_pesticides: Json
+          p_record: Json
+          p_record_id: string
+        }
+        Returns: undefined
+      }
       update_mix_record_with_lines: {
         Args: { p_lines: Json; p_record: Json; p_record_id: string }
         Returns: boolean

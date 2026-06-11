@@ -79,6 +79,13 @@ type MixRecordFormProps = {
     epaNumber: string | null;
     active: boolean;
   }>;
+  surfactants: Array<{
+    id: string;
+    name: string;
+    epaNumber: string | null;
+    defaultUnit: "oz" | "fl_oz" | "gal" | "%" | null;
+    active: boolean;
+  }>;
   applicators: Array<{ id: string; label: string }>;
 };
 
@@ -114,6 +121,15 @@ function errorFor(state: MixRecordFormState, field: keyof MixRecordFieldValues |
   return state.fieldErrors?.[field]?.[0] ?? null;
 }
 
+function matchSurfactantId(
+  surfactants: MixRecordFormProps["surfactants"],
+  surfactantName: string | null | undefined,
+): string {
+  if (!surfactantName) return "";
+  const match = surfactants.find((surfactant) => surfactant.name === surfactantName);
+  return match?.id ?? "";
+}
+
 export function MixRecordForm({
   action,
   submitLabel,
@@ -125,6 +141,7 @@ export function MixRecordForm({
   fields,
   equipment,
   products,
+  surfactants,
   applicators,
 }: MixRecordFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -141,6 +158,10 @@ export function MixRecordForm({
   const [surfactantUnit, setSurfactantUnit] = useState<MixRecordFieldValues["surfactantUnit"]>(
     defaultValues?.surfactantUnit ?? "",
   );
+  const [surfactantId, setSurfactantId] = useState(
+    matchSurfactantId(surfactants, defaultValues?.surfactantName),
+  );
+  const [surfactantName, setSurfactantName] = useState(defaultValues?.surfactantName ?? "");
   const [equipmentId, setEquipmentId] = useState(defaultValues?.equipmentId ?? "");
 
   useEffect(() => {
@@ -527,8 +548,32 @@ export function MixRecordForm({
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="surfactantName">Surfactant name</Label>
-            <Input id="surfactantName" name="surfactantName" defaultValue={defaultValues?.surfactantName ?? ""} />
+            <Label htmlFor="surfactantId">Surfactant</Label>
+            <Select
+              id="surfactantId"
+              value={surfactantId}
+              onChange={(event) => {
+                const nextId = event.target.value;
+                const selectedSurfactant = surfactants.find((item) => item.id === nextId) ?? null;
+                setSurfactantId(nextId);
+                setSurfactantName(selectedSurfactant?.name ?? "");
+                if (selectedSurfactant?.defaultUnit) {
+                  setSurfactantUnit(selectedSurfactant.defaultUnit);
+                }
+              }}
+            >
+              <option value="">None</option>
+              {surfactants.map((surfactant) => (
+                <option key={surfactant.id} value={surfactant.id}>
+                  {surfactant.name}
+                </option>
+              ))}
+            </Select>
+            <input type="hidden" name="surfactantName" value={surfactantName} />
+            <p className="text-xs text-muted-foreground">
+              EPA #:{" "}
+              {surfactants.find((item) => item.id === surfactantId)?.epaNumber || "—"}
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="surfactantAmount">Surfactant amount</Label>

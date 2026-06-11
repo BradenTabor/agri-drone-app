@@ -49,13 +49,7 @@ export default async function EditEquipmentPage({ params }: EditEquipmentPagePro
           pendingLabel="Saving..."
           defaultValues={{
             identifier: equipment.identifier,
-            // TODO(0002): Add DB CHECK constraint for equipment.type and remove this defensive fallback.
-            type:
-              equipment.type === "truck" ||
-              equipment.type === "sprayer" ||
-              equipment.type === "drone"
-                ? equipment.type
-                : null,
+            type: equipment.type,
             active: equipment.active,
             notes: equipment.notes,
           }}

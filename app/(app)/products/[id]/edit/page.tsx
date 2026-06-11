@@ -52,9 +52,11 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             manufacturer: product.manufacturer,
             epaNumber: product.epa_number,
             unitCost: product.unit_cost,
+            retailCost: product.retail_cost,
             costUnit: product.cost_unit as "gal" | "oz" | "fl_oz" | "lb" | null,
             restrictedUse: product.restricted_use ?? false,
             active: product.active,
+            ingredients: product.ingredients ?? [],
             notes: product.notes,
           }}
         />

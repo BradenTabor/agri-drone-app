@@ -7,15 +7,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FormAlert } from "@/components/ui/form-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { EquipmentFormState } from "@/app/(app)/equipment/actions";
 
 const initialState: EquipmentFormState = { error: null };
 
+const SUGGESTED_EQUIPMENT_TYPES = ["Truck", "Sprayer", "Drone"] as const;
+
 type EquipmentFormValues = {
   identifier: string;
-  type: "truck" | "sprayer" | "drone" | null;
+  type: string | null;
   active: boolean;
   notes: string | null;
 };
@@ -65,17 +66,23 @@ export function EquipmentForm({
         <Label htmlFor="type">
           Type
         </Label>
-        <Select
+        <Input
           id="type"
           name="type"
+          list="equipment-type-suggestions"
           defaultValue={defaultValues?.type ?? ""}
           aria-invalid={Boolean(errorFor(state, "type"))}
-        >
-          <option value="">No type selected</option>
-          <option value="truck">Truck</option>
-          <option value="sprayer">Sprayer</option>
-          <option value="drone">Drone</option>
-        </Select>
+          placeholder="Truck, Sprayer, Drone, or enter your own"
+          autoComplete="off"
+        />
+        <datalist id="equipment-type-suggestions">
+          {SUGGESTED_EQUIPMENT_TYPES.map((type) => (
+            <option key={type} value={type} />
+          ))}
+        </datalist>
+        <p className="text-sm text-muted-foreground">
+          Pick a common type from the list or type a custom equipment category.
+        </p>
         {errorFor(state, "type") ? (
           <p className="text-sm text-destructive">{errorFor(state, "type")}</p>
         ) : null}

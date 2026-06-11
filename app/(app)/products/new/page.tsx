@@ -17,7 +17,7 @@ export default function NewProductPage() {
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          Add a product that can be selected in mix records.
+          Add a product that can be selected in mix and application records.
         </p>
       </header>
 
