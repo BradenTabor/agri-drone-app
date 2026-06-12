@@ -25,7 +25,12 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
+          className="text-base sm:text-sm"
         />
       </div>
 
@@ -39,6 +44,7 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          className="text-base sm:text-sm"
         />
       </div>
 
@@ -48,7 +54,7 @@ export function LoginForm() {
         </FormAlert>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full min-h-11 text-base sm:text-sm" disabled={isPending}>
         {isPending ? "Signing in..." : "Sign in"}
       </Button>
     </form>

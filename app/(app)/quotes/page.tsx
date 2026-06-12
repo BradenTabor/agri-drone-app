@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { QuotesListClient } from "@/components/quotes/QuotesListClient";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -18,22 +19,20 @@ export default async function QuotesPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Quotes</h1>
-          <p className="text-sm text-muted-foreground">
-            Draft, send, and track customer estimates.
-          </p>
-        </div>
-        <Link href="/quotes/new" className={buttonVariants()}>
-          + New Quote
-        </Link>
-      </header>
+    <section className="space-y-3 sm:space-y-4">
+      <PageHeader
+        title="Quotes"
+        description="Draft, send, and track customer estimates."
+        action={
+          <Link href="/quotes/new" className={buttonVariants()}>
+            + New Quote
+          </Link>
+        }
+      />
 
       {!quotes?.length ? (
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
+        <Card className="liquid-reactive rounded-xl border-white/60 sm:rounded-2xl">
+          <CardContent className="p-3 text-sm text-muted-foreground sm:p-5">
             No quotes yet. Create your first quote to get started.
           </CardContent>
         </Card>

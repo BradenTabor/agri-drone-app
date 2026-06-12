@@ -71,7 +71,7 @@ export function RecordsMapClient({ points, mapboxToken }: RecordsMapClientProps)
   }, [points]);
 
   return (
-    <div className="h-[70vh] min-h-[460px] w-full overflow-hidden rounded-lg border">
+    <div className="h-[min(52vh,420px)] min-h-[280px] w-full overflow-hidden rounded-xl border sm:h-[70vh] sm:min-h-[460px] sm:rounded-lg">
       <Map
         ref={mapRef}
         mapboxAccessToken={mapboxToken}

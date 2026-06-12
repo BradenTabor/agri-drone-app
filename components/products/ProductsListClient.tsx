@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { softDeleteProductAction } from "@/app/(app)/products/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { ListSearchToolbar } from "@/components/shared/ListSearchToolbar";
+import {
+  RecordsListTable,
+  RecordsPagination,
+  type RecordsTableColumn,
+} from "@/components/shared/RecordsListTable";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/types/database";
-
-import { softDeleteProductAction } from "@/app/(app)/products/actions";
 
 type Product = Tables<"products">;
 
@@ -22,7 +26,6 @@ function formatIngredients(ingredients: string[] | null | undefined) {
   if (!ingredients?.length) {
     return "—";
   }
-
   return ingredients.join(", ");
 }
 
@@ -46,6 +49,33 @@ function matchesSearch(product: Product, search: string) {
   return haystack.includes(search);
 }
 
+function statusBadge(active: boolean) {
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
+        active
+          ? "border-emerald-300/80 bg-emerald-100 text-emerald-700"
+          : "border-amber-300/80 bg-amber-100 text-amber-700",
+      )}
+    >
+      {active ? "Active" : "Retired"}
+    </span>
+  );
+}
+
+function classificationBadge(restrictedUse: boolean) {
+  return restrictedUse ? (
+    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+      RUP
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+      General Use
+    </span>
+  );
+}
+
 export function ProductsListClient({ products }: ProductsListClientProps) {
   const PAGE_SIZE = 8;
   const [query, setQuery] = useState("");
@@ -61,207 +91,49 @@ export function ProductsListClient({ products }: ProductsListClientProps) {
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + PAGE_SIZE);
 
-  return (
-    <div className="space-y-4">
-      <ListSearchToolbar
-        id="product-search"
-        label="Search products"
-        placeholder="Name, manufacturer, EPA number, ingredients, notes"
-        query={query}
-        onQueryChange={(value) => {
-          setQuery(value);
-          setPage(1);
-        }}
-        filteredCount={filteredProducts.length}
-        totalCount={products.length}
-      />
-
-      {!filteredProducts.length ? (
-        <Card className="liquid-reactive rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
-          <CardContent className="p-5 text-sm text-muted-foreground">
-            No products match your search.
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="liquid-reactive hidden overflow-x-auto rounded-2xl border border-white/60 bg-white/52 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl lg:block">
-            <table className="w-full text-sm">
-              <thead className="bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(244,249,255,0.48))] text-left text-slate-700">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Manufacturer</th>
-                  <th className="px-4 py-3 font-medium">EPA #</th>
-                  <th className="px-4 py-3 font-medium">Ingredients</th>
-                  <th className="px-4 py-3 font-medium">Use classification</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedProducts.map((item) => (
-                  <ProductRow key={item.id} product={item} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 lg:hidden">
-            {paginatedProducts.map((item) => (
-              <Card
-                key={item.id}
-                className={cn(
-                  "liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]",
-                  !item.active && "border-dashed",
-                )}
-              >
-                <CardContent className="p-4">
-                  <div className="space-y-1">
-                    <h2 className="text-[1.34rem] font-semibold tracking-tight">{item.name}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {item.manufacturer || "No manufacturer"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      EPA:{" "}
-                      <span className="font-mono text-xs">
-                        {item.epa_number || "—"}
-                      </span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Ingredients: {formatIngredients(item.ingredients)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.restricted_use ? "Restricted Use Pesticide (RUP)" : "General Use"}
-                    </p>
-                    <span
-                      className={cn(
-                        "inline-flex w-fit rounded-full border px-2 py-0.5 text-xs font-medium",
-                        item.active
-                          ? "border-emerald-300/80 bg-emerald-100 text-emerald-700"
-                          : "border-amber-300/80 bg-amber-100 text-amber-700",
-                      )}
-                    >
-                      {item.active ? "Active" : "Retired"}
-                    </span>
-                  </div>
-                  {item.notes ? (
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                      {item.notes}
-                    </p>
-                  ) : null}
-                  <div className="mt-4 flex gap-2">
-                    <Link
-                      href={`/products/${item.id}/edit`}
-                      className={buttonVariants({
-                        size: "sm",
-                        variant: "outline",
-                        className:
-                          "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                      })}
-                    >
-                      Edit
-                    </Link>
-                    <form action={softDeleteProductAction.bind(null, item.id)}>
-                      <ConfirmSubmitButton
-                        size="sm"
-                        variant="destructive"
-                        className="press-physics liquid-refraction rounded-xl border border-red-300/65 bg-red-100/78 text-red-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-red-100"
-                        confirmMessage={`Delete product ${item.name}? This can only be recovered by an admin.`}
-                      >
-                        Delete
-                      </ConfirmSubmitButton>
-                    </form>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {totalPages > 1 ? (
-            <div className="liquid-reactive flex items-center justify-between rounded-2xl border border-white/60 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-              <p className="text-xs text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className={buttonVariants({
-                    variant: "outline",
-                    size: "sm",
-                    className:
-                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                  })}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className={buttonVariants({
-                    variant: "outline",
-                    size: "sm",
-                    className:
-                      "press-physics liquid-refraction rounded-xl border-white/70 bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
-                  })}
-                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </>
-      )}
-    </div>
-  );
-}
-
-function ProductRow({ product }: { product: Product }) {
-  return (
-    <tr
-      className={cn(
-        "border-t border-white/55 transition-colors hover:bg-white/34",
-        !product.active && "bg-amber-50/20 text-muted-foreground",
-      )}
-    >
-      <td className="px-4 py-3 font-medium tracking-tight">{product.name}</td>
-      <td className="px-4 py-3">{product.manufacturer || "—"}</td>
-      <td className="px-4 py-3">{product.epa_number || "—"}</td>
-      <td className="max-w-xs px-4 py-3 text-muted-foreground">
-        <span className="line-clamp-2">{formatIngredients(product.ingredients)}</span>
-      </td>
-      <td className="px-4 py-3">
-        {product.restricted_use ? (
-          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-            RUP
-          </span>
-        ) : (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-            General Use
-          </span>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <span
-          className={cn(
-            "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-            product.active
-              ? "border-emerald-300/80 bg-emerald-100 text-emerald-700"
-              : "border-amber-300/80 bg-amber-100 text-amber-700",
-          )}
-        >
-          {product.active ? "Active" : "Retired"}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex gap-2">
+  const columns: RecordsTableColumn<Product>[] = [
+    {
+      id: "name",
+      header: "Name",
+      render: (product) => <span className="font-medium">{product.name}</span>,
+    },
+    {
+      id: "manufacturer",
+      header: "Manufacturer",
+      hideOnMobile: true,
+      render: (product) => product.manufacturer || "—",
+    },
+    {
+      id: "epa",
+      header: "EPA #",
+      hideOnMobile: true,
+      render: (product) => product.epa_number || "—",
+    },
+    {
+      id: "classification",
+      header: "Use classification",
+      hideOnMobile: true,
+      render: (product) => classificationBadge(product.restricted_use),
+    },
+    {
+      id: "status",
+      header: "Status",
+      render: (product) => statusBadge(product.active),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (product) => (
+        <div className="flex flex-wrap justify-end gap-2">
           <Link
             href={`/products/${product.id}/edit`}
             className={buttonVariants({
               size: "sm",
               variant: "outline",
               className:
-                "press-physics liquid-refraction rounded-xl border-white/70 bg-white/76 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
+                "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-white/20 dark:bg-white/10",
             })}
           >
             Edit
@@ -277,7 +149,89 @@ function ProductRow({ product }: { product: Product }) {
             </ConfirmSubmitButton>
           </form>
         </div>
-      </td>
-    </tr>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <ListSearchToolbar
+        id="product-search"
+        label="Search products"
+        placeholder="Name, manufacturer, EPA #, ingredients..."
+        query={query}
+        onQueryChange={(value) => {
+          setQuery(value);
+          setPage(1);
+        }}
+        filteredCount={filteredProducts.length}
+        totalCount={products.length}
+      />
+
+      {!filteredProducts.length ? (
+        <Card className="liquid-reactive rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))] sm:rounded-2xl">
+          <CardContent className="p-3 text-sm text-muted-foreground sm:p-5">No products match your search.</CardContent>
+        </Card>
+      ) : (
+        <>
+          <RecordsListTable
+            rows={paginatedProducts}
+            columns={columns}
+            getRowKey={(product) => product.id}
+            getRowHref={(product) => `/products/${product.id}/edit`}
+            emptyMessage="No products match your search."
+            mobileSummary={(product) => (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold tracking-tight">{product.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {product.manufacturer || "No manufacturer"}
+                    </p>
+                  </div>
+                  {statusBadge(product.active)}
+                </div>
+                <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                  <span>EPA: {product.epa_number || "—"}</span>
+                  <span>{product.restricted_use ? "RUP" : "General Use"}</span>
+                </div>
+                <p className="line-clamp-2 text-xs text-muted-foreground">
+                  {formatIngredients(product.ingredients)}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link
+                    href={`/products/${product.id}/edit`}
+                    className={buttonVariants({
+                      size: "sm",
+                      variant: "outline",
+                      className:
+                        "press-physics liquid-refraction rounded-xl border-white/70 bg-white/74 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-white/20 dark:bg-white/10",
+                    })}
+                  >
+                    Edit
+                  </Link>
+                  <form action={softDeleteProductAction.bind(null, product.id)}>
+                    <ConfirmSubmitButton
+                      size="sm"
+                      variant="destructive"
+                      className="press-physics liquid-refraction rounded-xl border border-red-300/65 bg-red-100/78 text-red-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-red-100"
+                      confirmMessage={`Delete product ${product.name}? This can only be recovered by an admin.`}
+                    >
+                      Delete
+                    </ConfirmSubmitButton>
+                  </form>
+                </div>
+              </>
+            )}
+          />
+          <RecordsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+            onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
+          />
+        </>
+      )}
+    </div>
   );
 }

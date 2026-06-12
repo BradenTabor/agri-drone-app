@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Building2, MapPinned, Users } from "lucide-react";
 
 import { CustomersListClient } from "@/components/customers/CustomersListClient";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { SummaryStatCard, SummaryStatsGrid } from "@/components/shared/SummaryStatCard";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -24,61 +26,47 @@ export default async function CustomersPage() {
   const withLocation = (customers ?? []).filter((customer) => customer.city || customer.state).length;
 
   return (
-    <section className="space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Customers</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage customer accounts and field relationships.
-          </p>
-        </div>
-        <Link
-          href="/customers/new"
-          className={cn(
-            buttonVariants(),
-            "press-physics liquid-refraction rounded-xl border border-emerald-300/70 bg-emerald-500/90 text-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_12px_24px_rgba(16,185,129,0.26)] hover:bg-emerald-500",
-          )}
-        >
-          + New Customer
-        </Link>
-      </header>
+    <section className="space-y-3 sm:space-y-5">
+      <PageHeader
+        title="Customers"
+        description="Manage customer accounts and field relationships."
+        action={
+          <Link
+            href="/customers/new"
+            className={cn(
+              buttonVariants(),
+              "press-physics liquid-refraction rounded-xl border border-emerald-300/70 bg-emerald-500/90 text-emerald-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_12px_24px_rgba(16,185,129,0.26)] hover:bg-emerald-500",
+            )}
+          >
+            + New Customer
+          </Link>
+        }
+      />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">Total customers</p>
-              <Users className="size-4 text-emerald-600/80" aria-hidden="true" />
-            </div>
-            <p className="mt-2 text-3xl leading-none font-semibold">{totalCustomers}</p>
-          </CardContent>
-        </Card>
-        <Card className="liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">With contact info</p>
-              <Building2 className="size-4 text-sky-600/80" aria-hidden="true" />
-            </div>
-            <p className="mt-2 text-3xl leading-none font-semibold">{withEmailOrPhone}</p>
-          </CardContent>
-        </Card>
-        <Card className="liquid-reactive liquid-refraction surface-lift rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">With location</p>
-              <MapPinned className="size-4 text-violet-600/80" aria-hidden="true" />
-            </div>
-            <p className="mt-2 text-3xl leading-none font-semibold">{withLocation}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <SummaryStatsGrid>
+        <SummaryStatCard label="Total customers" value={totalCustomers} icon={Users} iconClassName="text-emerald-600/80" />
+        <SummaryStatCard
+          label="With contact info"
+          value={withEmailOrPhone}
+          icon={Building2}
+          iconClassName="text-sky-600/80"
+        />
+        <SummaryStatCard
+          label="With location"
+          value={withLocation}
+          icon={MapPinned}
+          iconClassName="text-violet-600/80"
+        />
+      </SummaryStatsGrid>
 
       {!customers?.length ? (
-        <Card className="liquid-reactive rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))]">
-          <CardHeader className="pb-0">
-            <CardTitle>No customers yet</CardTitle>
+        <Card className="liquid-reactive rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.58),rgba(244,249,255,0.38))] sm:rounded-2xl">
+          <CardHeader className="p-3 pb-0 sm:p-6 sm:pb-0">
+            <CardTitle className="text-base sm:text-lg">No customers yet</CardTitle>
           </CardHeader>
-          <CardContent className="p-5 text-sm text-muted-foreground">Create your first customer to get started.</CardContent>
+          <CardContent className="p-3 pt-2 text-sm text-muted-foreground sm:p-5">
+            Create your first customer to get started.
+          </CardContent>
         </Card>
       ) : (
         <CustomersListClient customers={customers} />

@@ -93,14 +93,14 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <input type="hidden" name="specialRates" defaultValue="[]" />
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl sm:rounded-lg">
+        <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="text-base">Service rates</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className="grid gap-3 p-3 pt-0 sm:gap-4 sm:p-6 sm:pt-0 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="aerialRatePerAcre">Aerial application rate (per acre)</Label>
             <div className="relative">
@@ -179,11 +179,11 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl sm:rounded-lg">
+        <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="text-base">Product markup</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className="grid gap-3 p-3 pt-0 sm:gap-4 sm:p-6 sm:pt-0 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="productMarkupPct">Markup percentage</Label>
             <div className="relative">
@@ -227,14 +227,14 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="rounded-xl sm:rounded-lg">
+        <CardHeader className="flex flex-col gap-2 p-3 pb-2 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-2">
           <CardTitle className="text-base">Special rates</CardTitle>
-          <Button type="button" variant="outline" size="sm" onClick={addSpecialRate}>
+          <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={addSpecialRate}>
             + Add rate
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-3 pt-0 sm:p-6 sm:pt-0">
           {specialRates.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No special rates added. Use this to track custom line items like spot treatments or
@@ -256,7 +256,7 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
                     $
                   </span>
                   <Input
-                    className="w-28 pl-7"
+                    className="w-full pl-7 sm:w-28"
                     placeholder="0.00"
                     value={row.rate}
                     onChange={(e) => updateSpecialRate(row.rowId, "rate", e.target.value)}
@@ -268,7 +268,7 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
                   onChange={(e) =>
                     updateSpecialRate(row.rowId, "unit", e.target.value as SpecialRate["unit"])
                   }
-                  className="w-32"
+                  className="w-full sm:w-32"
                 >
                   {(Object.entries(UNIT_LABELS) as [SpecialRate["unit"], string][]).map(
                     ([val, label]) => (
@@ -282,6 +282,7 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
                   type="button"
                   variant="ghost"
                   size="sm"
+                  className="w-full justify-center sm:w-auto"
                   onClick={() => removeSpecialRate(row.rowId)}
                 >
                   Remove
@@ -292,11 +293,11 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl sm:rounded-lg">
+        <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="text-base">Payment terms &amp; notes</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
           <Textarea
             id="paymentTerms"
             name="paymentTerms"
@@ -313,7 +314,7 @@ export function PricingForm({ action, defaultValues }: PricingFormProps) {
       {state.error ? <FormAlert variant="error">{state.error}</FormAlert> : null}
       {state.success ? <FormAlert variant="success">Pricing saved.</FormAlert> : null}
 
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
         {isPending ? "Saving..." : "Save pricing"}
       </Button>
     </form>

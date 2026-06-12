@@ -131,59 +131,76 @@ export default async function AppLandingPage() {
   };
 
   return (
-    <section className="space-y-5 md:space-y-6">
-      <Card className="glass-noise liquid-reactive liquid-refraction surface-lift animate-liquid-rise relative overflow-hidden rounded-[26px] border-white/65 bg-[linear-gradient(135deg,rgba(255,255,255,0.58),rgba(237,247,244,0.36))] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_45px_rgba(15,23,42,0.14)] backdrop-blur-3xl dark:border-white/15 dark:bg-[linear-gradient(135deg,rgba(8,16,24,0.84),rgba(16,34,27,0.7))] dark:text-slate-100 dark:shadow-[0_24px_60px_rgba(2,6,23,0.45)]">
+    <section className="space-y-3 sm:space-y-5 md:space-y-6">
+      <Card className="glass-noise liquid-reactive liquid-refraction surface-lift animate-liquid-rise relative overflow-hidden rounded-[22px] border-white/65 bg-[linear-gradient(135deg,rgba(255,255,255,0.58),rgba(237,247,244,0.36))] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_45px_rgba(15,23,42,0.14)] backdrop-blur-3xl sm:rounded-[26px] dark:border-white/15 dark:bg-[linear-gradient(135deg,rgba(8,16,24,0.84),rgba(16,34,27,0.7))] dark:text-slate-100 dark:shadow-[0_24px_60px_rgba(2,6,23,0.45)]">
         <div className="animate-liquid-float pointer-events-none absolute -top-14 -right-16 size-56 rounded-full bg-emerald-200/55 blur-3xl dark:bg-emerald-500/18" />
         <div className="animate-liquid-float pointer-events-none absolute -bottom-20 left-10 size-64 rounded-full bg-sky-100/45 blur-3xl dark:bg-sky-500/12" />
         <div className="animate-liquid-shimmer pointer-events-none absolute inset-y-0 -left-1/3 w-2/3 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.26),transparent)] dark:bg-[linear-gradient(110deg,transparent,rgba(148,163,184,0.15),transparent)]" />
-        <CardContent className="relative grid gap-4 p-4 sm:p-5 lg:grid-cols-[1.45fr_0.95fr]">
-          <div className="space-y-3">
-            <div className="space-y-2.5">
-              <p className="inline-flex rounded-full border border-white/70 bg-white/48 px-2.5 py-1 text-[0.68rem] font-semibold tracking-[0.18em] text-emerald-700 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-emerald-200/20 dark:bg-emerald-500/12 dark:text-emerald-100">
+        <CardContent className="relative grid gap-3 p-3 sm:gap-4 sm:p-5 lg:grid-cols-[1.45fr_0.95fr]">
+          <div className="space-y-2.5 sm:space-y-3">
+            <div className="space-y-1.5 sm:space-y-2.5">
+              <p className="inline-flex rounded-full border border-white/70 bg-white/48 px-2 py-0.5 text-[0.62rem] font-semibold tracking-[0.16em] text-emerald-700 uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:px-2.5 sm:py-1 sm:text-[0.68rem] sm:tracking-[0.18em] dark:border-emerald-200/20 dark:bg-emerald-500/12 dark:text-emerald-100">
                 Today&apos;s Operations
               </p>
-              <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl md:text-4xl">
+              <h1 className="text-xl leading-tight font-semibold tracking-tight sm:text-3xl md:text-4xl">
                 Field-ready dashboard
               </h1>
-              <p className="max-w-2xl text-base text-slate-700 dark:text-slate-200/85">
+              <p className="hidden max-w-2xl text-base text-slate-700 sm:block dark:text-slate-200/85">
                 Run record workflows faster, surface compliance risk early, and keep crews moving with clear next actions.
               </p>
             </div>
-            <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+            <div className="grid gap-2">
               <Link
                 href="/records/new"
                 className={cn(
                   buttonVariants(),
-                  "press-physics liquid-refraction animate-pulse-soft min-h-11 w-full justify-center rounded-xl border border-emerald-300/80 bg-emerald-400/95 text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.68),0_10px_18px_rgba(16,185,129,0.22)] hover:bg-emerald-300 sm:min-h-10 sm:w-auto dark:border-emerald-300/35 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400",
+                  "press-physics liquid-refraction animate-pulse-soft min-h-10 w-full justify-center rounded-xl border border-emerald-300/80 bg-emerald-400/95 text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.68),0_10px_18px_rgba(16,185,129,0.22)] hover:bg-emerald-300 sm:min-h-11 dark:border-emerald-300/35 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400",
                 )}
               >
                 <Plus className="size-4" aria-hidden="true" />
                 New Mix Record
               </Link>
-              <Link
-                href="/app-records/new"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "press-physics liquid-refraction min-h-11 w-full justify-center rounded-xl border-white/70 bg-white/44 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] hover:bg-white/68 sm:min-h-10 sm:w-auto dark:border-slate-200/20 dark:bg-slate-950/25 dark:text-slate-100 dark:hover:bg-slate-100/12",
-                )}
-              >
-                <ClipboardCheck className="size-4" aria-hidden="true" />
-                New App Record
-              </Link>
-              <Link
-                href="/map"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "press-physics liquid-refraction min-h-11 w-full justify-center rounded-xl border-white/70 bg-white/44 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] hover:bg-white/68 sm:min-h-10 sm:w-auto dark:border-slate-200/20 dark:bg-slate-950/20 dark:text-slate-100 dark:hover:bg-slate-100/12",
-                )}
-              >
-                <MapPinned className="size-4" aria-hidden="true" />
-                Open Map
-              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/app-records/new"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "press-physics liquid-refraction min-h-10 justify-center rounded-xl border-white/70 bg-white/44 px-2 text-sm text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] hover:bg-white/68 dark:border-slate-200/20 dark:bg-slate-950/25 dark:text-slate-100 dark:hover:bg-slate-100/12",
+                  )}
+                >
+                  <ClipboardCheck className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">App Record</span>
+                </Link>
+                <Link
+                  href="/map"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "press-physics liquid-refraction min-h-10 justify-center rounded-xl border-white/70 bg-white/44 px-2 text-sm text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] hover:bg-white/68 dark:border-slate-200/20 dark:bg-slate-950/20 dark:text-slate-100 dark:hover:bg-slate-100/12",
+                  )}
+                >
+                  <MapPinned className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">Open Map</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 md:hidden">
+              <div className="rounded-xl border border-white/70 bg-white/44 px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/10 dark:bg-white/5">
+                <p className="text-[0.62rem] font-medium tracking-wide text-muted-foreground uppercase">Today</p>
+                <p className="mt-0.5 text-lg leading-none font-semibold">{submissionsToday}</p>
+              </div>
+              <div className="rounded-xl border border-white/70 bg-white/44 px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/10 dark:bg-white/5">
+                <p className="text-[0.62rem] font-medium tracking-wide text-muted-foreground uppercase">Pending</p>
+                <p className="mt-0.5 text-lg leading-none font-semibold">{openAcreageChecks}</p>
+              </div>
+              <div className="rounded-xl border border-white/70 bg-white/44 px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/10 dark:bg-white/5">
+                <p className="text-[0.62rem] font-medium tracking-wide text-muted-foreground uppercase">Ready</p>
+                <p className="mt-0.5 text-lg leading-none font-semibold">{readinessScore}%</p>
+              </div>
             </div>
           </div>
 
-          <div className="liquid-reactive animate-liquid-rise rounded-2xl border border-white/65 bg-white/38 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] backdrop-blur-2xl dark:border-white/15 dark:bg-slate-950/28 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] sm:p-4">
+          <div className="liquid-reactive animate-liquid-rise hidden rounded-2xl border border-white/65 bg-white/38 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] backdrop-blur-2xl md:block dark:border-white/15 dark:bg-slate-950/28 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] sm:p-4">
             <p className="text-xs font-semibold tracking-[0.14em] text-slate-700/80 uppercase dark:text-slate-200/80">Ops Pulse</p>
             <div className="mt-3 space-y-2.5 text-sm">
               <div className="flex items-center justify-between gap-3 rounded-xl border border-white/70 bg-white/44 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/10 dark:bg-white/5 dark:shadow-none">
@@ -244,28 +261,30 @@ export default async function AppLandingPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         {kpis.map((kpi, index) => (
           <Card
             key={kpi.label}
-            className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]"
+            className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:rounded-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]"
             style={{ animationDelay: `${index * 80 + 120}ms` }}
           >
             <CardContent className="p-0">
-              <Link href={kpi.href} className="press-physics liquid-refraction block rounded-2xl p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium tracking-[0.09em] text-muted-foreground uppercase">{kpi.label}</p>
+              <Link href={kpi.href} className="press-physics liquid-refraction block rounded-xl p-3 sm:rounded-2xl sm:p-4">
+                <div className="flex items-start justify-between gap-1.5">
+                  <p className="text-[0.65rem] leading-snug font-medium tracking-[0.06em] text-muted-foreground uppercase sm:text-xs sm:tracking-[0.09em]">
+                    {kpi.label}
+                  </p>
                   <span
                     className={cn(
-                      "inline-flex size-8 items-center justify-center rounded-md bg-gradient-to-br ring-1",
+                      "inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ring-1 sm:size-8",
                       kpiToneStyles[kpi.tone],
                     )}
                   >
-                    <kpi.icon className="size-4" aria-hidden="true" />
+                    <kpi.icon className="size-3.5 sm:size-4" aria-hidden="true" />
                   </span>
                 </div>
-                <p className="mt-2 text-3xl leading-none font-semibold tracking-tight">{kpi.value}</p>
-                <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="mt-1.5 text-2xl leading-none font-semibold tracking-tight sm:mt-2 sm:text-3xl">{kpi.value}</p>
+                <div className="mt-1.5 hidden items-center justify-between gap-2 sm:mt-2 sm:flex">
                   <p className="text-xs text-muted-foreground">{kpi.hint}</p>
                   <ArrowRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
                 </div>
@@ -275,22 +294,22 @@ export default async function AppLandingPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)] lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2">
-            <CardTitle className="tracking-tight">Recent Mix Records</CardTitle>
+      <div className="grid gap-3 lg:grid-cols-3 lg:gap-4">
+        <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:rounded-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)] lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-1 sm:p-5 sm:pb-2">
+            <CardTitle className="text-base tracking-tight sm:text-lg">Recent Mix Records</CardTitle>
             <Link
               href="/records"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "press-physics liquid-refraction h-8 rounded-xl border border-white/65 bg-white/45 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/70 dark:border-white/15 dark:bg-white/8 dark:text-slate-100 dark:hover:bg-white/15",
+                "press-physics liquid-refraction h-8 shrink-0 rounded-xl border border-white/65 bg-white/45 px-2 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/70 sm:px-3 dark:border-white/15 dark:bg-white/8 dark:text-slate-100 dark:hover:bg-white/15",
               )}
             >
               View all
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
           </CardHeader>
-          <CardContent className="p-5 pt-2">
+          <CardContent className="p-3 pt-1 sm:p-5 sm:pt-2">
             {!records.length ? (
               <p className="text-sm text-muted-foreground">No records yet. Create your first mix record to get started.</p>
             ) : (
@@ -346,43 +365,35 @@ export default async function AppLandingPage() {
                   </table>
                 </div>
 
-                <div className="grid gap-2.5 md:hidden">
+                <div className="divide-y divide-white/55 md:hidden dark:divide-white/10">
                   {records.map((record) => (
-                    <div
+                    <Link
                       key={`${record.id}-mobile`}
-                      className="animate-liquid-rise rounded-xl border border-white/65 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] dark:border-white/15 dark:bg-white/5 dark:shadow-none"
+                      href={`/records/${record.id}`}
+                      className="press-physics flex items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold">{record.record_date}</p>
-                          <p className="text-sm text-slate-700 dark:text-slate-200">
-                            {record.customer_name_snapshot || "—"} / {record.field_name_snapshot || "—"}
-                          </p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">{record.signed_typed_name || "—"}</p>
+                          <span
+                            className={cn(
+                              "inline-flex shrink-0 rounded-full border px-1.5 py-0.5 text-[0.62rem] leading-none font-semibold",
+                              record.actual_acres == null
+                                ? "border-amber-300/80 bg-amber-100 text-amber-800 dark:border-amber-300/25 dark:bg-amber-500/20 dark:text-amber-100"
+                                : "border-emerald-300/80 bg-emerald-100 text-emerald-800 dark:border-emerald-300/25 dark:bg-emerald-500/20 dark:text-emerald-100",
+                            )}
+                          >
+                            {record.actual_acres == null ? "Pending" : "Done"}
+                          </span>
                         </div>
-                        <span
-                          className={cn(
-                            "inline-flex whitespace-nowrap rounded-full border px-2 py-1 text-xs leading-none font-semibold",
-                            record.actual_acres == null
-                              ? "border-amber-300/80 bg-amber-100 text-amber-800 dark:border-amber-300/25 dark:bg-amber-500/20 dark:text-amber-100"
-                              : "border-emerald-300/80 bg-emerald-100 text-emerald-800 dark:border-emerald-300/25 dark:bg-emerald-500/20 dark:text-emerald-100",
-                          )}
-                        >
-                          {record.actual_acres == null ? "Needs acreage check" : "Complete"}
-                        </span>
+                        <p className="truncate text-sm text-slate-700 dark:text-slate-200">
+                          {record.customer_name_snapshot || "—"}
+                          {record.field_name_snapshot ? ` · ${record.field_name_snapshot}` : ""}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">{record.signed_typed_name || "—"}</p>
                       </div>
-                      <div className="mt-3 flex justify-end">
-                        <Link
-                          href={`/records/${record.id}`}
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "press-physics liquid-refraction rounded-xl border-white/70 bg-white/62 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] hover:bg-white/80 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/15",
-                          )}
-                        >
-                          View
-                        </Link>
-                      </div>
-                    </div>
+                      <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    </Link>
                   ))}
                 </div>
               </>
@@ -390,64 +401,64 @@ export default async function AppLandingPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
-          <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]">
-            <CardHeader className="p-5 pb-2">
-              <CardTitle className="tracking-tight">Alerts</CardTitle>
+        <div className="grid gap-3 sm:space-y-0 lg:space-y-4">
+          <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:rounded-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]">
+            <CardHeader className="p-3 pb-1 sm:p-5 sm:pb-2">
+              <CardTitle className="text-base tracking-tight sm:text-lg">Alerts</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 p-5 pt-2">
+            <CardContent className="space-y-2 p-3 pt-1 sm:p-5 sm:pt-2">
               {openAcreageChecks > 0 ? (
-                <div className="rounded-xl border border-amber-300/90 bg-amber-50/90 p-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-amber-400/20 dark:bg-amber-500/10 dark:shadow-none">
+                <div className="rounded-xl border border-amber-300/90 bg-amber-50/90 p-2.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-3 dark:border-amber-400/20 dark:bg-amber-500/10 dark:shadow-none">
                   <p className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
-                    <AlertTriangle className="size-4" aria-hidden="true" />
+                    <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
                     {openAcreageChecks} records missing actual acres
                   </p>
-                  <p className="mt-1 break-words text-amber-800/95 dark:text-amber-100/80">
+                  <p className="mt-1 text-xs break-words text-amber-800/95 sm:text-sm dark:text-amber-100/80">
                     Review these before close-of-day to avoid incomplete records.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-emerald-300/90 bg-emerald-50/90 p-3 text-sm text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-none">
+                <div className="rounded-xl border border-emerald-300/90 bg-emerald-50/90 p-2.5 text-sm text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-3 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-none">
                   All recent records have acreage captured.
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-2xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]">
-            <CardHeader className="p-5 pb-2">
-              <CardTitle className="tracking-tight">Next Best Actions</CardTitle>
+          <Card className="liquid-reactive liquid-refraction surface-lift animate-liquid-rise rounded-xl border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.52),rgba(244,249,255,0.34))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_14px_30px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:rounded-2xl dark:border-white/15 dark:bg-[linear-gradient(145deg,rgba(15,23,42,0.66),rgba(15,23,42,0.4))] dark:shadow-[0_12px_30px_rgba(2,6,23,0.25)]">
+            <CardHeader className="p-3 pb-1 sm:p-5 sm:pb-2">
+              <CardTitle className="text-base tracking-tight sm:text-lg">Next Best Actions</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-2 p-5 pt-2">
+            <CardContent className="grid gap-1.5 p-3 pt-1 sm:gap-2 sm:p-5 sm:pt-2">
               <Link
                 href="/customers/new"
-                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-3 py-3 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
+                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-2.5 py-2.5 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 sm:px-3 sm:py-3 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
               >
-                <span className="flex flex-col">
-                  <span className="text-base font-medium">New customer</span>
-                  <span className="text-xs text-muted-foreground">Create account and field profile</span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium sm:text-base">New customer</span>
+                  <span className="truncate text-xs text-muted-foreground">Create account and field profile</span>
                 </span>
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
               <Link
                 href="/equipment/new"
-                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-3 py-3 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
+                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-2.5 py-2.5 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 sm:px-3 sm:py-3 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
               >
-                <span className="flex flex-col">
-                  <span className="text-base font-medium">New equipment</span>
-                  <span className="text-xs text-muted-foreground">Register drone and spray setup</span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium sm:text-base">New equipment</span>
+                  <span className="truncate text-xs text-muted-foreground">Register drone and spray setup</span>
                 </span>
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
               <Link
                 href="/products/new"
-                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-3 py-3 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
+                className="press-physics liquid-refraction group flex items-center justify-between rounded-xl border border-white/70 bg-white/56 px-2.5 py-2.5 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] transition-all hover:bg-white/78 sm:px-3 sm:py-3 dark:border-white/20 dark:bg-white/8 dark:text-slate-100 dark:shadow-none dark:hover:bg-white/14"
               >
-                <span className="flex flex-col">
-                  <span className="text-base font-medium">New product</span>
-                  <span className="text-xs text-muted-foreground">Add herbicide and label details</span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium sm:text-base">New product</span>
+                  <span className="truncate text-xs text-muted-foreground">Add herbicide and label details</span>
                 </span>
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </CardContent>
           </Card>

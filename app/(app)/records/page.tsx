@@ -1,11 +1,10 @@
 import Link from "next/link";
 
-import { saveRecordFilterAction } from "@/app/(app)/records/filterActions";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { MixRecordsFilterPanel } from "@/components/records/MixRecordsFilterPanel";
+import { MixRecordsListClient } from "@/components/records/MixRecordsListClient";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { buttonVariants } from "@/components/ui/button";
+import { buildFilterHref, type MixRecordsFilterValues } from "@/lib/records/buildFilterHref";
 import { createClient } from "@/lib/supabase/server";
 
 type RecordRow = {
@@ -33,15 +32,6 @@ type RecordsPageProps = {
     productId?: string;
     page?: string;
   }>;
-};
-
-type SavedFilterState = {
-  q?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  customerId?: string;
-  applicatorId?: string;
-  productId?: string;
 };
 
 export default async function RecordsPage({ searchParams }: RecordsPageProps) {
@@ -134,231 +124,61 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
+  const filterValues: MixRecordsFilterValues = {
+    q: filters.q,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    customerId: filters.customerId,
+    applicatorId: filters.applicatorId,
+    productId: filters.productId,
+  };
+
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Mix Records</h1>
-          <p className="text-sm text-muted-foreground">
-            Review, search, and edit submitted records.
-          </p>
-        </div>
-        <Link href="/records/new" className={buttonVariants()}>
-          + New Mix Record
-        </Link>
-      </header>
+    <section className="space-y-3 sm:space-y-4">
+      <PageHeader
+        title="Mix Records"
+        description="Review, search, and edit submitted records."
+        action={
+          <Link href="/records/new" className={buttonVariants()}>
+            + New Mix Record
+          </Link>
+        }
+      />
 
-      <Card>
-        <CardContent className="p-4">
-          <form method="get" className="grid gap-3 md:grid-cols-6">
-            <Input
-              name="q"
-              placeholder="Search notes, customer, field..."
-              defaultValue={filters.q ?? ""}
-            />
-            <Input name="dateFrom" type="date" defaultValue={filters.dateFrom ?? ""} />
-            <Input name="dateTo" type="date" defaultValue={filters.dateTo ?? ""} />
-            <Select name="customerId" defaultValue={filters.customerId ?? ""}>
-              <option value="">All customers</option>
-              {(customers ?? []).map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
-            <Select name="applicatorId" defaultValue={filters.applicatorId ?? ""}>
-              <option value="">All applicators</option>
-              {(applicators ?? []).map((applicator) => (
-                <option key={applicator.id} value={applicator.id}>
-                  {applicator.full_name || applicator.email || applicator.id}
-                </option>
-              ))}
-            </Select>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Select name="productId" defaultValue={filters.productId ?? ""} className="min-w-0 flex-1">
-                <option value="">All products</option>
-                {(products ?? []).map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </Select>
-              <Button type="submit" variant="outline">
-                Filter
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <MixRecordsFilterPanel
+        filters={filterValues}
+        customers={(customers ?? []).map((customer) => ({ id: customer.id, label: customer.name }))}
+        applicators={(applicators ?? []).map((applicator) => ({
+          id: applicator.id,
+          label: applicator.full_name || applicator.email || applicator.id,
+        }))}
+        products={(products ?? []).map((product) => ({ id: product.id, label: product.name }))}
+        savedFilters={(savedFilters ?? []).map((savedFilter) => ({
+          id: savedFilter.id,
+          name: savedFilter.name,
+          filters: (savedFilter.filters as MixRecordsFilterValues) ?? {},
+        }))}
+        totalCount={totalCount}
+      />
 
-      <Card>
-        <CardContent className="p-3">
-          <form action={saveRecordFilterAction} className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="q" value={filters.q ?? ""} />
-            <input type="hidden" name="dateFrom" value={filters.dateFrom ?? ""} />
-            <input type="hidden" name="dateTo" value={filters.dateTo ?? ""} />
-            <input type="hidden" name="customerId" value={filters.customerId ?? ""} />
-            <input type="hidden" name="applicatorId" value={filters.applicatorId ?? ""} />
-            <input type="hidden" name="productId" value={filters.productId ?? ""} />
-            <Input
-              name="savedFilterName"
-              placeholder="Save current filter as..."
-              className="w-full sm:w-64"
-            />
-            <Button type="submit" variant="outline" size="sm">
-              Save filter
-            </Button>
-            {(savedFilters ?? []).map((savedFilter) => (
-              <Link
-                key={savedFilter.id}
-                href={`/records${buildFilterHref((savedFilter.filters as SavedFilterState) ?? {})}`}
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
-              >
-                {savedFilter.name}
-              </Link>
-            ))}
-          </form>
-        </CardContent>
-      </Card>
-
-      {!typedRecords.length ? (
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
-            No records yet. Create your first mix record to get started.
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Field</th>
-                  <th className="px-4 py-3 font-medium">Applicator</th>
-                  <th className="px-4 py-3 font-medium">Total mix</th>
-                  <th className="px-4 py-3 font-medium">Acres</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {typedRecords.map((record) => (
-                  <tr key={record.id} className="border-t">
-                    <td className="px-4 py-3">
-                      <div>{record.record_date}</div>
-                      <div className="text-xs text-muted-foreground">{record.time_mixed}</div>
-                    </td>
-                    <td className="px-4 py-3">{record.customer_name_snapshot || "—"}</td>
-                    <td className="px-4 py-3">{record.field_name_snapshot || "—"}</td>
-                    <td className="px-4 py-3">{record.signed_typed_name}</td>
-                    <td className="px-4 py-3">{record.total_mix_gal} gal</td>
-                    <td className="px-4 py-3">
-                      <div>Expected {record.expected_acres}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Actual {record.actual_acres ?? "—"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/records/${record.id}`}
-                          className={buttonVariants({ size: "sm", variant: "outline" })}
-                        >
-                          View
-                        </Link>
-                        <Link
-                          href={`/records/${record.id}/edit`}
-                          className={buttonVariants({ size: "sm", variant: "outline" })}
-                        >
-                          Edit
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 md:hidden">
-            {typedRecords.map((record) => (
-              <Card key={record.id}>
-                <CardContent className="p-4">
-                <div className="space-y-1">
-                  <h2 className="font-medium">
-                    {record.record_date} at {record.time_mixed}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {record.customer_name_snapshot || "—"} / {record.field_name_snapshot || "—"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {record.total_mix_gal} gal, expected {record.expected_acres} ac
-                  </p>
-                  <p className={cn("text-xs", "text-muted-foreground")}>
-                    Wind {record.wind_speed_mph} mph {record.wind_direction}
-                  </p>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Link href={`/records/${record.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                    View
-                  </Link>
-                  <Link href={`/records/${record.id}/edit`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                    Edit
-                  </Link>
-                </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {totalPages > 1 ? (
-            <Card>
-              <CardContent className="flex items-center justify-between p-3">
-                <p className="text-xs text-muted-foreground">
-                  Page {currentPage} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  {hasPrev ? (
-                    <Link
-                      href={buildFilterHref({ ...filters, page: String(Math.max(1, currentPage - 1)) })}
-                      className={buttonVariants({ variant: "outline", size: "sm" })}
-                    >
-                      Previous
-                    </Link>
-                  ) : (
-                    <span className={buttonVariants({ variant: "outline", size: "sm", className: "pointer-events-none opacity-50" })}>
-                      Previous
-                    </span>
-                  )}
-                  {hasNext ? (
-                    <Link
-                      href={buildFilterHref({ ...filters, page: String(Math.min(totalPages, currentPage + 1)) })}
-                      className={buttonVariants({ variant: "outline", size: "sm" })}
-                    >
-                      Next
-                    </Link>
-                  ) : (
-                    <span className={buttonVariants({ variant: "outline", size: "sm", className: "pointer-events-none opacity-50" })}>
-                      Next
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-        </>
-      )}
+      <MixRecordsListClient
+        records={typedRecords}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        previousHref={
+          hasPrev ? buildFilterHref({ ...filterValues, page: String(Math.max(1, currentPage - 1)) }) : undefined
+        }
+        nextHref={
+          hasNext
+            ? buildFilterHref({ ...filterValues, page: String(Math.min(totalPages, currentPage + 1)) })
+            : undefined
+        }
+        emptyMessage={
+          totalCount
+            ? "No records match your filters."
+            : "No records yet. Create your first mix record to get started."
+        }
+      />
     </section>
   );
-}
-
-function buildFilterHref(filters: SavedFilterState & { page?: string }): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (typeof value === "string" && value.trim()) {
-      params.set(key, value);
-    }
-  }
-  const query = params.toString();
-  return query ? `?${query}` : "";
 }

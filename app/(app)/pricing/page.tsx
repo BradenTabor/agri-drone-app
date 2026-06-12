@@ -1,4 +1,5 @@
 import { PricingForm } from "@/components/pricing/PricingForm";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 
 import { savePricingConfigAction } from "./actions";
@@ -14,13 +15,11 @@ export default async function PricingPage() {
     .maybeSingle();
 
   return (
-    <section className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Pricing</h1>
-        <p className="text-sm text-muted-foreground">
-          Set your service rates and markup. Used internally for quoting jobs.
-        </p>
-      </header>
+    <section className="space-y-3 sm:space-y-4">
+      <PageHeader
+        title="Pricing"
+        description="Set your service rates and markup. Used internally for quoting jobs."
+      />
 
       <PricingForm
         action={savePricingConfigAction}

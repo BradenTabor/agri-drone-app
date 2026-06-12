@@ -2,9 +2,10 @@ export const PDF_THEME = {
   colors: {
     foreground: "#1A1F1B", // near-black with green undertone
     muted: "#5E6360", // muted gray for field labels
-    accent: "#2F5D3F", // deep field green for accents (page header rule)
+    accent: "#2F5D3F", // deep field green — matches app theme + logo contrast
     divider: "#D6D6D2", // section dividers
     background: "#FFFFFF", // white page
+    brandRule: "#2F5D3F", // header accent rule under logo block
   },
   fonts: {
     // Use built-in fonts only in V1 — no custom font loading

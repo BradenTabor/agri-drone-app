@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { MobileNavMenu } from "@/components/shared/MobileNavMenu";
 import { NavLinks } from "@/components/shared/NavLinks";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -19,28 +20,16 @@ export function Nav({ user }: { user: User }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-[linear-gradient(125deg,rgba(246,250,255,0.3),rgba(229,246,241,0.24))] shadow-[0_14px_35px_rgba(15,23,42,0.12)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(125deg,rgba(7,10,18,0.68),rgba(7,22,20,0.6))] dark:shadow-[0_14px_35px_rgba(2,6,23,0.4)]">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-2.5">
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
           <Link
             href="/"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "press-physics liquid-refraction min-w-0 rounded-2xl border border-white/60 bg-white/45 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-xl hover:bg-white/65 dark:border-white/20 dark:bg-white/8 dark:hover:bg-white/14 sm:px-2.5 md:px-3",
+              "press-physics liquid-refraction h-auto min-h-12 min-w-0 rounded-2xl border border-white/60 bg-white/45 px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-xl hover:bg-white/65 sm:h-auto sm:min-h-14 sm:px-3 sm:py-2 md:min-h-16 md:px-3.5 dark:border-white/20 dark:bg-white/8 dark:hover:bg-white/14",
             )}
           >
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(216,247,236,0.72))] text-[0.68rem] leading-none font-bold tracking-[0.08em] text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_6px_15px_rgba(16,185,129,0.18)] dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.24),rgba(16,185,129,0.22))] dark:text-emerald-100 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.32)]">
-                AD
-              </span>
-              <span className="flex min-w-0 flex-col items-start">
-                <span className="max-w-[8.4rem] truncate text-[0.92rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:max-w-none sm:text-sm">
-                  Agri Drone Ops
-                </span>
-                <span className="hidden text-[0.65rem] tracking-[0.12em] text-emerald-700/85 uppercase dark:text-emerald-100/75 lg:block">
-                  Operations Suite
-                </span>
-              </span>
-            </span>
+            <BrandLogo size="nav" display="overlay" showText className="items-center gap-2 sm:gap-2.5" />
           </Link>
           <div className="hidden rounded-2xl border border-white/60 bg-white/42 px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-2xl dark:border-white/20 dark:bg-white/8 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] md:block">
             <NavLinks strategy="condensed" />

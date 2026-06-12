@@ -6,6 +6,12 @@ import { useMemo, useState } from "react";
 import { softDeleteQuoteAction } from "@/app/(app)/quotes/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { ListSearchToolbar } from "@/components/shared/ListSearchToolbar";
+import {
+  RecordActionLinks,
+  RecordsListTable,
+  RecordsPagination,
+  type RecordsTableColumn,
+} from "@/components/shared/RecordsListTable";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -24,7 +30,10 @@ type QuotesListClientProps = {
 
 function matchesSearch(quote: QuoteListItem, search: string) {
   if (!search) return true;
-  return [quote.quote_number, quote.customer_name, quote.status, quote.quote_date].join(" ").toLowerCase().includes(search);
+  return [quote.quote_number, quote.customer_name, quote.status, quote.quote_date]
+    .join(" ")
+    .toLowerCase()
+    .includes(search);
 }
 
 function formatMoney(value: number) {
@@ -60,8 +69,64 @@ export function QuotesListClient({ quotes }: QuotesListClientProps) {
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedQuotes = filteredQuotes.slice(startIndex, startIndex + PAGE_SIZE);
 
+  const columns: RecordsTableColumn<QuoteListItem>[] = [
+    {
+      id: "quote",
+      header: "Quote # / Date",
+      render: (quote) => (
+        <div>
+          <div className="font-medium">{quote.quote_number || "Unnumbered quote"}</div>
+          <div className="text-xs text-muted-foreground">{quote.quote_date}</div>
+        </div>
+      ),
+    },
+    {
+      id: "customer",
+      header: "Customer",
+      render: (quote) => quote.customer_name,
+    },
+    {
+      id: "status",
+      header: "Status",
+      render: (quote) => (
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(quote.status)}`}>
+          {statusLabel(quote.status)}
+        </span>
+      ),
+    },
+    {
+      id: "total",
+      header: "Total",
+      hideOnMobile: true,
+      render: (quote) => formatMoney(quote.total),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      render: (quote) => (
+        <RecordActionLinks
+          viewHref={`/quotes/${quote.id}`}
+          editHref={`/quotes/${quote.id}/edit`}
+          deleteForm={
+            <form action={softDeleteQuoteAction.bind(null, quote.id)}>
+              <ConfirmSubmitButton
+                size="sm"
+                variant="destructive"
+                confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
+              >
+                Delete
+              </ConfirmSubmitButton>
+            </form>
+          }
+        />
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <ListSearchToolbar
         id="quote-search"
         label="Search quotes"
@@ -76,125 +141,56 @@ export function QuotesListClient({ quotes }: QuotesListClientProps) {
       />
 
       {!filteredQuotes.length ? (
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
-            No quotes match your search.
-          </CardContent>
+        <Card className="liquid-reactive rounded-xl border-white/60 sm:rounded-2xl">
+          <CardContent className="p-3 text-sm text-muted-foreground sm:p-5">No quotes match your search.</CardContent>
         </Card>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-lg border lg:block">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Quote # / Date</th>
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Total</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedQuotes.map((quote) => (
-                  <tr key={quote.id} className="border-t">
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{quote.quote_number || "Unnumbered quote"}</div>
-                      <div className="text-xs text-muted-foreground">{quote.quote_date}</div>
-                    </td>
-                    <td className="px-4 py-3">{quote.customer_name}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(quote.status)}`}>
-                        {statusLabel(quote.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{formatMoney(quote.total)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <Link href={`/quotes/${quote.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                          View
-                        </Link>
-                        <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                          Edit
-                        </Link>
-                        <form action={softDeleteQuoteAction.bind(null, quote.id)}>
-                          <ConfirmSubmitButton
-                            size="sm"
-                            variant="destructive"
-                            confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
-                          >
-                            Delete
-                          </ConfirmSubmitButton>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 lg:hidden">
-            {paginatedQuotes.map((quote) => (
-              <Card key={quote.id}>
-                <CardContent className="p-4">
-                  <div className="space-y-1">
-                    <h2 className="font-medium">{quote.quote_number || "Unnumbered quote"}</h2>
-                    <p className="text-sm text-muted-foreground">{quote.quote_date}</p>
-                    <p className="text-sm text-muted-foreground">{quote.customer_name}</p>
-                    <div>
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(quote.status)}`}>
-                        {statusLabel(quote.status)}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium">{formatMoney(quote.total)}</p>
+          <RecordsListTable
+            rows={paginatedQuotes}
+            columns={columns}
+            getRowKey={(quote) => quote.id}
+            getRowHref={(quote) => `/quotes/${quote.id}`}
+            emptyMessage="No quotes match your search."
+            mobileSummary={(quote) => (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold tracking-tight">{quote.quote_number || "Unnumbered quote"}</p>
+                    <p className="text-xs text-muted-foreground">{quote.quote_date}</p>
                   </div>
-                  <div className="mt-4 flex gap-2">
-                    <Link href={`/quotes/${quote.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                      View
-                    </Link>
-                    <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                      Edit
-                    </Link>
-                    <form action={softDeleteQuoteAction.bind(null, quote.id)}>
-                      <ConfirmSubmitButton
-                        size="sm"
-                        variant="destructive"
-                        confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
-                      >
-                        Delete
-                      </ConfirmSubmitButton>
-                    </form>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {totalPages > 1 ? (
-            <div className="flex items-center justify-between rounded-lg border bg-card/90 p-3">
-              <p className="text-xs text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          ) : null}
+                  <span className="shrink-0 text-sm font-semibold">{formatMoney(quote.total)}</span>
+                </div>
+                <p className="truncate text-sm">{quote.customer_name}</p>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(quote.status)}`}>
+                  {statusLabel(quote.status)}
+                </span>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link
+                    href={`/quotes/${quote.id}/edit`}
+                    className={buttonVariants({ size: "sm", variant: "outline" })}
+                  >
+                    Edit
+                  </Link>
+                  <form action={softDeleteQuoteAction.bind(null, quote.id)}>
+                    <ConfirmSubmitButton
+                      size="sm"
+                      variant="destructive"
+                      confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
+                    >
+                      Delete
+                    </ConfirmSubmitButton>
+                  </form>
+                </div>
+              </>
+            )}
+          />
+          <RecordsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+            onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
+          />
         </>
       )}
     </div>

@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { MapDateFilterPanel } from "@/components/map/MapDateFilterPanel";
 import { RecordsMapClient, type RecordMapPoint } from "@/components/map/RecordsMapClient";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 
 type MapPageProps = {
@@ -17,13 +17,10 @@ export default async function MapPage({ searchParams }: MapPageProps) {
 
   if (!mapboxToken) {
     return (
-      <section className="space-y-4">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight">Map View</h1>
-          <p className="text-sm text-muted-foreground">View mix records on satellite map pins.</p>
-        </header>
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
+      <section className="space-y-3 sm:space-y-4">
+        <PageHeader title="Map View" description="View mix records on satellite map pins." />
+        <Card className="rounded-xl sm:rounded-2xl">
+          <CardContent className="p-3 text-sm text-muted-foreground sm:p-5">
             Missing `NEXT_PUBLIC_MAPBOX_TOKEN`. Add it to `.env.local` and restart `next dev` to enable the
             map.
           </CardContent>
@@ -56,43 +53,25 @@ export default async function MapPage({ searchParams }: MapPageProps) {
   const points = (rows ?? []) as RecordMapPoint[];
 
   return (
-    <section className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Map View</h1>
-        <p className="text-sm text-muted-foreground">View mix records on satellite map pins.</p>
-      </header>
+    <section className="space-y-3 sm:space-y-4">
+      <PageHeader title="Map View" description="View mix records on satellite map pins." />
 
-      <Card>
-        <CardContent className="p-4">
-          <form method="get" className="flex flex-wrap items-end gap-3">
-            <div className="grid gap-1">
-              <label htmlFor="dateFrom" className="text-xs text-muted-foreground">
-                Date from
-              </label>
-              <Input id="dateFrom" name="dateFrom" type="date" defaultValue={filters.dateFrom ?? ""} />
-            </div>
-            <div className="grid gap-1">
-              <label htmlFor="dateTo" className="text-xs text-muted-foreground">
-                Date to
-              </label>
-              <Input id="dateTo" name="dateTo" type="date" defaultValue={filters.dateTo ?? ""} />
-            </div>
-            <Button type="submit" variant="outline">
-              Apply
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <MapDateFilterPanel
+        dateFrom={filters.dateFrom}
+        dateTo={filters.dateTo}
+        pointCount={points.length}
+      />
 
       {points.length ? (
         <RecordsMapClient points={points} mapboxToken={mapboxToken} />
       ) : (
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
+        <Card className="rounded-xl sm:rounded-2xl">
+          <CardContent className="p-3 text-sm text-muted-foreground sm:p-5">
             No records in this date range to map yet.
           </CardContent>
         </Card>
       )}
+
     </section>
   );
 }

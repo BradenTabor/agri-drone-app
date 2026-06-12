@@ -1,5 +1,8 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
+import { BRAND } from "@/lib/brand";
+
+import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
 import type { QuotePdfData } from "./getQuoteForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -213,27 +216,20 @@ function HeaderSection({ data }: { data: QuotePdfData }) {
 
   return (
     <View style={styles.section} wrap={false}>
-      <Text style={styles.title}>Aerial Technology Solutions</Text>
-      <Text style={styles.mutedValue}>11347 NC 3700, Western Grove, AR 72685</Text>
-      <Text style={styles.mutedValue}>(870) 704-0379 | aerialtechnologysolutions@gmail.com</Text>
-      <Text style={[styles.mutedValue, { marginBottom: 8 }]}>Contact: Austin Tabor</Text>
-
-      <View style={styles.subtitleRow}>
-        <Text style={styles.title}>{DOC_LABEL}</Text>
-        <View>
-          <Text style={styles.subtitleText}>
-            Quote #: <Text style={styles.subtitleValue}>{quoteNumber}</Text>
+      <BrandPdfHeader documentTitle={DOC_LABEL}>
+        <Text style={brandPdfMetaStyles.docMeta}>
+          Quote #: <Text style={brandPdfMetaStyles.docMetaValue}>{quoteNumber}</Text>
+        </Text>
+        <Text style={brandPdfMetaStyles.docMeta}>
+          Date: <Text style={brandPdfMetaStyles.docMetaValue}>{formatTimestamp(data.quote.quote_date)}</Text>
+        </Text>
+        {data.quote.valid_until ? (
+          <Text style={brandPdfMetaStyles.docMeta}>
+            Valid until:{" "}
+            <Text style={brandPdfMetaStyles.docMetaValue}>{formatTimestamp(data.quote.valid_until)}</Text>
           </Text>
-          <Text style={styles.subtitleText}>
-            Date: <Text style={styles.subtitleValue}>{formatTimestamp(data.quote.quote_date)}</Text>
-          </Text>
-          {data.quote.valid_until ? (
-            <Text style={styles.subtitleText}>
-              Valid until: <Text style={styles.subtitleValue}>{formatTimestamp(data.quote.valid_until)}</Text>
-            </Text>
-          ) : null}
-        </View>
-      </View>
+        ) : null}
+      </BrandPdfHeader>
     </View>
   );
 }
@@ -350,7 +346,7 @@ function Footer() {
   return (
     <View style={styles.footerRow} fixed>
       <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-      <Text style={styles.footerText}>Aerial Technology Solutions - Quote</Text>
+      <Text style={styles.footerText}>{BRAND.name} — Quote</Text>
     </View>
   );
 }
@@ -360,7 +356,7 @@ export function QuotePdf({ data }: { data: QuotePdfData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
-          {DOC_LABEL}
+          {BRAND.name} — {DOC_LABEL}
         </Text>
         <HeaderSection data={data} />
         <BillToSection data={data} />

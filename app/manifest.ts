@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
 
+import { BRAND } from "@/lib/brand";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Agri Drone Operations Platform",
-    short_name: "AgriDrone",
+    name: `${BRAND.appName} — ${BRAND.name}`,
+    short_name: BRAND.shortName,
     description:
       "Mobile-first tank mix and calibration records for agricultural drone operations.",
     start_url: "/",
@@ -11,6 +13,11 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#f8f8f1",
     theme_color: "#2c6240",
     icons: [
+      {
+        src: BRAND.logoPath,
+        sizes: "408x612",
+        type: "image/png",
+      },
       {
         src: "/favicon.ico",
         sizes: "any",

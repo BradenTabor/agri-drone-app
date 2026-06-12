@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AppRecordsListClient } from "@/components/app-records/AppRecordsListClient";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,18 +18,16 @@ export default async function AppRecordsPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Application Records</h1>
-          <p className="text-sm text-muted-foreground">
-            Commercial herbicide application records.
-          </p>
-        </div>
-        <Link href="/app-records/new" className={buttonVariants()}>
-          + New Application Record
-        </Link>
-      </header>
+    <section className="space-y-3 sm:space-y-4">
+      <PageHeader
+        title="Application Records"
+        description="Commercial herbicide application records."
+        action={
+          <Link href="/app-records/new" className={buttonVariants()}>
+            + New Application Record
+          </Link>
+        }
+      />
 
       <AppRecordsListClient records={records ?? []} />
     </section>

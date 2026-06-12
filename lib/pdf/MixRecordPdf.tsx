@@ -1,7 +1,9 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import { decimalToDms, dmsToString } from "@/lib/formatting/coordinates";
+import { BRAND } from "@/lib/brand";
 
+import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
 import type { MixRecordPdfData } from "./getMixRecordForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -148,11 +150,14 @@ function HeaderSection({ data }: { data: MixRecordPdfData }) {
 
   return (
     <View style={styles.section} wrap={false}>
-      <Text style={styles.title}>Mix Record</Text>
-      <View style={styles.subtitleRow}>
-        <Text style={styles.subtitleText}>Record ID: {formatRecordId(record.id)}</Text>
-        <Text style={styles.subtitleText}>Generated: {new Date().toISOString().slice(0, 10)}</Text>
-      </View>
+      <BrandPdfHeader documentTitle="Mix Record">
+        <Text style={brandPdfMetaStyles.docMeta}>
+          Record ID: <Text style={brandPdfMetaStyles.docMetaValue}>{formatRecordId(record.id)}</Text>
+        </Text>
+        <Text style={brandPdfMetaStyles.docMeta}>
+          Generated: <Text style={brandPdfMetaStyles.docMetaValue}>{new Date().toISOString().slice(0, 10)}</Text>
+        </Text>
+      </BrandPdfHeader>
 
       <View style={styles.row}>
         <View style={styles.column}>
@@ -354,7 +359,7 @@ function Footer() {
   return (
     <View style={styles.footerRow} fixed>
       <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-      <Text style={styles.footerText}>Austin Drone Services - Mix Record</Text>
+      <Text style={styles.footerText}>{BRAND.name} — Mix Record</Text>
     </View>
   );
 }
@@ -364,7 +369,7 @@ export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
-          Mix Record
+          {BRAND.name} — Mix Record
         </Text>
         <HeaderSection data={data} />
         <MixSection data={data} />
