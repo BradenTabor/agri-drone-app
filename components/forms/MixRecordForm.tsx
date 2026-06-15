@@ -1,11 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { MixRecordFormState } from "@/app/(app)/records/actions";
+import { FormDraftStatus } from "@/components/forms/FormDraftStatus";
 import { GpsCapture } from "@/components/forms/GpsCapture";
 import { SignatureBlock } from "@/components/forms/SignatureBlock";
+import {
+  hasMeaningfulMixDraft,
+  type MixRecordDraft,
+  type MixRecordProductLineDraft,
+} from "@/lib/formDrafts/mixRecordDraft";
+import { useFormDraft } from "@/lib/formDrafts/useFormDraft";
 import { DmsDecimalInput } from "@/components/fields/DmsDecimalInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +25,12 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateExpectedAcres, calculateTotalMixGallonsHint } from "@/lib/calculations/mix";
 import { WIND_DIRECTIONS } from "@/lib/constants";
+import {
+  firstFieldErrorKey,
+  listFieldErrorMessages,
+  mixRecordFieldTargetSelector,
+} from "@/lib/form-errors";
+import { cn } from "@/lib/utils";
 
 const initialState: MixRecordFormState = { error: null };
 
@@ -50,19 +63,13 @@ type MixRecordFieldValues = {
   signatureAttested: boolean;
 };
 
-type ProductLineValue = {
-  rowId: string;
-  productId: string;
-  amountAdded: string;
-  amountUnit: "gal" | "oz" | "fl_oz" | "lb";
-  ratePerAcre: string;
-  rateUnit: "" | "oz" | "fl_oz" | "gal" | "lb";
-};
+type ProductLineValue = MixRecordProductLineDraft;
 
 type MixRecordFormProps = {
   action: (state: MixRecordFormState, formData: FormData) => Promise<MixRecordFormState>;
   submitLabel: string;
   pendingLabel: string;
+  draftKey?: string | null;
   defaultValues?: Partial<MixRecordFieldValues>;
   defaultProductLines?: ProductLineValue[];
   existingPhotos?: Array<{
@@ -134,6 +141,7 @@ export function MixRecordForm({
   action,
   submitLabel,
   pendingLabel,
+  draftKey = null,
   defaultValues,
   defaultProductLines,
   existingPhotos,
@@ -146,9 +154,15 @@ export function MixRecordForm({
 }: MixRecordFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const now = useMemo(() => new Date(), []);
+  const [recordDate, setRecordDate] = useState(defaultValues?.recordDate ?? toInputDate(now));
+  const [timeMixed, setTimeMixed] = useState(defaultValues?.timeMixed ?? toInputTime(now));
+  const [applicatorId, setApplicatorId] = useState(defaultValues?.applicatorId ?? "");
+  const [applicatorNameOverride, setApplicatorNameOverride] = useState(defaultValues?.applicatorNameOverride ?? "");
+  const [licenseCertNo, setLicenseCertNo] = useState(defaultValues?.licenseCertNo ?? "");
   const [mixLat, setMixLat] = useState(defaultValues?.mixLat ?? "");
   const [mixLng, setMixLng] = useState(defaultValues?.mixLng ?? "");
   const [selectedCustomerId, setSelectedCustomerId] = useState(defaultValues?.customerId ?? "");
+  const [selectedFieldId, setSelectedFieldId] = useState(defaultValues?.fieldId ?? "");
   const [lines, setLines] = useState<ProductLineValue[]>(defaultProductLines?.length ? defaultProductLines : [newLine()]);
   const autoCaptureAttemptedRef = useRef(false);
   const [tankSizeGal, setTankSizeGal] = useState(defaultValues?.tankSizeGal ?? "");
@@ -163,6 +177,157 @@ export function MixRecordForm({
   );
   const [surfactantName, setSurfactantName] = useState(defaultValues?.surfactantName ?? "");
   const [equipmentId, setEquipmentId] = useState(defaultValues?.equipmentId ?? "");
+  const [totalMixGal, setTotalMixGal] = useState(defaultValues?.totalMixGal ?? "");
+  const [expectedAcres, setExpectedAcres] = useState(defaultValues?.expectedAcres ?? "");
+  const [actualAcres, setActualAcres] = useState(defaultValues?.actualAcres ?? "");
+  const [windSpeedMph, setWindSpeedMph] = useState(defaultValues?.windSpeedMph ?? "");
+  const [windDirection, setWindDirection] = useState<MixRecordFieldValues["windDirection"]>(
+    defaultValues?.windDirection ?? "N",
+  );
+  const [tempF, setTempF] = useState(defaultValues?.tempF ?? "");
+  const [humidityPct, setHumidityPct] = useState(defaultValues?.humidityPct ?? "");
+  const [notes, setNotes] = useState(defaultValues?.notes ?? "");
+  const [signedTypedName, setSignedTypedName] = useState(defaultValues?.signedTypedName ?? "");
+  const [signatureAttested, setSignatureAttested] = useState(defaultValues?.signatureAttested ?? false);
+
+  const applyDraft = useCallback(
+    (draft: MixRecordDraft) => {
+      if (draft.v !== 1) {
+        return;
+      }
+
+      setRecordDate(draft.recordDate);
+      setTimeMixed(draft.timeMixed);
+      setApplicatorId(draft.applicatorId);
+      setApplicatorNameOverride(draft.applicatorNameOverride);
+      setLicenseCertNo(draft.licenseCertNo);
+      setEquipmentId(draft.equipmentId);
+      setSelectedCustomerId(draft.customerId);
+      setSelectedFieldId(draft.fieldId);
+      setMixLat(draft.mixLat);
+      setMixLng(draft.mixLng);
+      setTankSizeGal(draft.tankSizeGal);
+      setTargetGpa(draft.targetGpa);
+      setWaterGal(draft.waterGal);
+      setSurfactantId(draft.surfactantId);
+      setSurfactantName(draft.surfactantName);
+      setSurfactantAmount(draft.surfactantAmount);
+      setSurfactantUnit(draft.surfactantUnit);
+      setLines(draft.lines.length > 0 ? draft.lines : [newLine()]);
+      setTotalMixGal(draft.totalMixGal);
+      setExpectedAcres(draft.expectedAcres);
+      setActualAcres(draft.actualAcres);
+      setWindSpeedMph(draft.windSpeedMph);
+      setWindDirection(draft.windDirection);
+      setTempF(draft.tempF);
+      setHumidityPct(draft.humidityPct);
+      setNotes(draft.notes);
+      setSignedTypedName(draft.signedTypedName);
+      setSignatureAttested(draft.signatureAttested);
+    },
+    [],
+  );
+
+  const visibleFields = useMemo(
+    () => fields.filter((field) => field.customerId === selectedCustomerId),
+    [fields, selectedCustomerId],
+  );
+
+  const effectiveFieldId =
+    selectedFieldId && visibleFields.some((field) => field.id === selectedFieldId)
+      ? selectedFieldId
+      : "";
+
+  const draftValue = useMemo<MixRecordDraft>(
+    () => ({
+      v: 1,
+      recordDate,
+      timeMixed,
+      applicatorId,
+      applicatorNameOverride,
+      licenseCertNo,
+      equipmentId,
+      customerId: selectedCustomerId,
+      fieldId: effectiveFieldId,
+      mixLat,
+      mixLng,
+      tankSizeGal,
+      targetGpa,
+      waterGal,
+      surfactantId,
+      surfactantName,
+      surfactantAmount,
+      surfactantUnit,
+      lines,
+      totalMixGal,
+      expectedAcres,
+      actualAcres,
+      windSpeedMph,
+      windDirection,
+      tempF,
+      humidityPct,
+      notes,
+      signedTypedName,
+      signatureAttested,
+    }),
+    [
+      actualAcres,
+      applicatorId,
+      applicatorNameOverride,
+      equipmentId,
+      expectedAcres,
+      humidityPct,
+      licenseCertNo,
+      lines,
+      mixLat,
+      mixLng,
+      notes,
+      recordDate,
+      selectedCustomerId,
+      effectiveFieldId,
+      signatureAttested,
+      signedTypedName,
+      surfactantAmount,
+      surfactantId,
+      surfactantName,
+      surfactantUnit,
+      tankSizeGal,
+      targetGpa,
+      tempF,
+      timeMixed,
+      totalMixGal,
+      waterGal,
+      windDirection,
+      windSpeedMph,
+    ],
+  );
+
+  const { ready, restoredFromDraft, saveStatus, clearDraft } = useFormDraft({
+    draftKey,
+    value: draftValue,
+    onRestore: applyDraft,
+    hasMeaningfulContent: hasMeaningfulMixDraft,
+  });
+
+  const validationMessages = useMemo(() => listFieldErrorMessages(state.fieldErrors), [state.fieldErrors]);
+  const productLinesError = errorFor(state, "productLines");
+
+  useEffect(() => {
+    const firstErrorField = firstFieldErrorKey(state.fieldErrors);
+    if (!firstErrorField) {
+      return;
+    }
+
+    const target = document.querySelector(mixRecordFieldTargetSelector(firstErrorField));
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (target.matches("input, select, textarea, button")) {
+      target.focus({ preventScroll: true });
+    }
+  }, [state.fieldErrors]);
 
   useEffect(() => {
     if (autoCaptureAttemptedRef.current || mixLat || mixLng || !("geolocation" in navigator)) {
@@ -180,11 +345,6 @@ export function MixRecordForm({
       { enableHighAccuracy: true, maximumAge: 60_000, timeout: 10_000 },
     );
   }, [mixLat, mixLng]);
-
-  const visibleFields = useMemo(
-    () => fields.filter((field) => field.customerId === selectedCustomerId),
-    [fields, selectedCustomerId],
-  );
 
   const expectedAcresHint = calculateExpectedAcres({
     tankSizeGal: parseDecimal(tankSizeGal) ?? 0,
@@ -215,8 +375,49 @@ export function MixRecordForm({
     })),
   );
 
+  function handleSubmit() {
+    clearDraft();
+  }
+
+  function handleDiscardDraft() {
+    clearDraft();
+    setRecordDate(defaultValues?.recordDate ?? toInputDate(now));
+    setTimeMixed(defaultValues?.timeMixed ?? toInputTime(now));
+    setApplicatorId(defaultValues?.applicatorId ?? "");
+    setApplicatorNameOverride(defaultValues?.applicatorNameOverride ?? "");
+    setLicenseCertNo(defaultValues?.licenseCertNo ?? "");
+    setEquipmentId(defaultValues?.equipmentId ?? "");
+    setSelectedCustomerId(defaultValues?.customerId ?? "");
+    setSelectedFieldId(defaultValues?.fieldId ?? "");
+    setMixLat(defaultValues?.mixLat ?? "");
+    setMixLng(defaultValues?.mixLng ?? "");
+    setTankSizeGal(defaultValues?.tankSizeGal ?? "");
+    setTargetGpa(defaultValues?.targetGpa ?? "");
+    setWaterGal(defaultValues?.waterGal ?? "");
+    setSurfactantId(matchSurfactantId(surfactants, defaultValues?.surfactantName));
+    setSurfactantName(defaultValues?.surfactantName ?? "");
+    setSurfactantAmount(defaultValues?.surfactantAmount ?? "");
+    setSurfactantUnit(defaultValues?.surfactantUnit ?? "");
+    setLines(defaultProductLines?.length ? defaultProductLines : [newLine()]);
+    setTotalMixGal(defaultValues?.totalMixGal ?? "");
+    setExpectedAcres(defaultValues?.expectedAcres ?? "");
+    setActualAcres(defaultValues?.actualAcres ?? "");
+    setWindSpeedMph(defaultValues?.windSpeedMph ?? "");
+    setWindDirection(defaultValues?.windDirection ?? "N");
+    setTempF(defaultValues?.tempF ?? "");
+    setHumidityPct(defaultValues?.humidityPct ?? "");
+    setNotes(defaultValues?.notes ?? "");
+    setSignedTypedName(defaultValues?.signedTypedName ?? "");
+    setSignatureAttested(defaultValues?.signatureAttested ?? false);
+  }
+
+  if (!ready) {
+    return <p className="text-sm text-muted-foreground">Loading form...</p>;
+  }
+
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
+      <FormDraftStatus restored={restoredFromDraft} saveStatus={saveStatus} onDiscard={handleDiscardDraft} />
       <input type="hidden" name="productLinesJson" value={productLinesPayload} />
 
       <FormSection title="Header">
@@ -227,7 +428,8 @@ export function MixRecordForm({
               id="recordDate"
               name="recordDate"
               type="date"
-              defaultValue={defaultValues?.recordDate ?? toInputDate(now)}
+              value={recordDate}
+              onChange={(event) => setRecordDate(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "recordDate"))}
               required
             />
@@ -242,7 +444,8 @@ export function MixRecordForm({
               id="timeMixed"
               name="timeMixed"
               type="time"
-              defaultValue={defaultValues?.timeMixed ?? toInputTime(now)}
+              value={timeMixed}
+              onChange={(event) => setTimeMixed(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "timeMixed"))}
               required
             />
@@ -256,7 +459,8 @@ export function MixRecordForm({
             <Select
               id="applicatorId"
               name="applicatorId"
-              defaultValue={defaultValues?.applicatorId ?? ""}
+              value={applicatorId}
+              onChange={(event) => setApplicatorId(event.target.value)}
             >
               <option value="">Unassigned</option>
               {applicators.map((applicator) => (
@@ -272,7 +476,8 @@ export function MixRecordForm({
             <Input
               id="applicatorNameOverride"
               name="applicatorNameOverride"
-              defaultValue={defaultValues?.applicatorNameOverride ?? ""}
+              value={applicatorNameOverride}
+              onChange={(event) => setApplicatorNameOverride(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "applicatorNameOverride"))}
               placeholder="Optional handwritten name"
             />
@@ -300,7 +505,8 @@ export function MixRecordForm({
             <Input
               id="licenseCertNo"
               name="licenseCertNo"
-              defaultValue={defaultValues?.licenseCertNo ?? ""}
+              value={licenseCertNo}
+              onChange={(event) => setLicenseCertNo(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "licenseCertNo"))}
               placeholder="TX-123456"
             />
@@ -343,7 +549,10 @@ export function MixRecordForm({
               id="customerId"
               name="customerId"
               value={selectedCustomerId}
-              onChange={(event) => setSelectedCustomerId(event.target.value)}
+              onChange={(event) => {
+                setSelectedCustomerId(event.target.value);
+                setSelectedFieldId("");
+              }}
               aria-invalid={Boolean(errorFor(state, "customerId"))}
               required
             >
@@ -364,9 +573,11 @@ export function MixRecordForm({
             <Select
               id="fieldId"
               name="fieldId"
-              defaultValue={defaultValues?.fieldId ?? ""}
+              value={effectiveFieldId}
+              onChange={(event) => setSelectedFieldId(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "fieldId"))}
               required
+              disabled={!selectedCustomerId || visibleFields.length === 0}
             >
               <option value="">Select field</option>
               {visibleFields.map((field) => (
@@ -375,6 +586,11 @@ export function MixRecordForm({
                 </option>
               ))}
             </Select>
+            {selectedCustomerId && visibleFields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                This customer has no fields yet. Add a field on the customer page before submitting.
+              </p>
+            ) : null}
             {errorFor(state, "fieldId") ? (
               <p className="text-sm text-destructive">{errorFor(state, "fieldId")}</p>
             ) : null}
@@ -489,13 +705,21 @@ export function MixRecordForm({
                     <Label>Rate / ac</Label>
                     <DecimalInput
                       value={line.ratePerAcre}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const ratePerAcre = event.target.value;
                         setLines((current) =>
                           current.map((item) =>
-                            item.rowId === line.rowId ? { ...item, ratePerAcre: event.target.value } : item,
+                            item.rowId === line.rowId
+                              ? {
+                                  ...item,
+                                  ratePerAcre,
+                                  rateUnit:
+                                    item.rateUnit || (ratePerAcre.trim() ? item.amountUnit : item.rateUnit),
+                                }
+                              : item,
                           ),
-                        )
-                      }
+                        );
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
@@ -511,6 +735,14 @@ export function MixRecordForm({
                           ),
                         )
                       }
+                      aria-invalid={Boolean(
+                        productLinesError && line.ratePerAcre.trim() && !line.rateUnit,
+                      )}
+                      className={cn(
+                        productLinesError && line.ratePerAcre.trim() && !line.rateUnit
+                          ? "border-destructive"
+                          : "",
+                      )}
                     >
                       <option value="">None</option>
                       <option value="oz">oz</option>
@@ -541,8 +773,8 @@ export function MixRecordForm({
               </div>
             );
           })}
-          {errorFor(state, "productLines") ? (
-            <p className="text-sm text-destructive">{errorFor(state, "productLines")}</p>
+          {productLinesError ? (
+            <p className="text-sm text-destructive">{productLinesError}</p>
           ) : null}
         </div>
 
@@ -611,7 +843,8 @@ export function MixRecordForm({
             <DecimalInput
               id="totalMixGal"
               name="totalMixGal"
-              defaultValue={defaultValues?.totalMixGal ?? ""}
+              value={totalMixGal}
+              onChange={(event) => setTotalMixGal(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "totalMixGal"))}
               required
             />
@@ -629,7 +862,8 @@ export function MixRecordForm({
             <DecimalInput
               id="expectedAcres"
               name="expectedAcres"
-              defaultValue={defaultValues?.expectedAcres ?? ""}
+              value={expectedAcres}
+              onChange={(event) => setExpectedAcres(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "expectedAcres"))}
               required
             />
@@ -640,7 +874,12 @@ export function MixRecordForm({
 
           <div className="space-y-2">
             <Label htmlFor="actualAcres">Actual acres (optional)</Label>
-            <DecimalInput id="actualAcres" name="actualAcres" defaultValue={defaultValues?.actualAcres ?? ""} />
+            <DecimalInput
+              id="actualAcres"
+              name="actualAcres"
+              value={actualAcres}
+              onChange={(event) => setActualAcres(event.target.value)}
+            />
           </div>
         </div>
       </FormSection>
@@ -649,14 +888,23 @@ export function MixRecordForm({
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="windSpeedMph">Wind speed (mph)</Label>
-            <DecimalInput id="windSpeedMph" name="windSpeedMph" defaultValue={defaultValues?.windSpeedMph ?? ""} required />
+            <DecimalInput
+              id="windSpeedMph"
+              name="windSpeedMph"
+              value={windSpeedMph}
+              onChange={(event) => setWindSpeedMph(event.target.value)}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="windDirection">Wind direction</Label>
             <Select
               id="windDirection"
               name="windDirection"
-              defaultValue={defaultValues?.windDirection ?? "N"}
+              value={windDirection}
+              onChange={(event) =>
+                setWindDirection(event.target.value as MixRecordFieldValues["windDirection"])
+              }
               required
             >
               {WIND_DIRECTIONS.map((direction) => (
@@ -668,11 +916,16 @@ export function MixRecordForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="tempF">Temp (F)</Label>
-            <DecimalInput id="tempF" name="tempF" defaultValue={defaultValues?.tempF ?? ""} />
+            <DecimalInput id="tempF" name="tempF" value={tempF} onChange={(event) => setTempF(event.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="humidityPct">Humidity (%)</Label>
-            <DecimalInput id="humidityPct" name="humidityPct" defaultValue={defaultValues?.humidityPct ?? ""} />
+            <DecimalInput
+              id="humidityPct"
+              name="humidityPct"
+              value={humidityPct}
+              onChange={(event) => setHumidityPct(event.target.value)}
+            />
           </div>
         </div>
       </FormSection>
@@ -714,17 +967,30 @@ export function MixRecordForm({
       <FormSection title="Notes & Signature">
         <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
-          <Textarea id="notes" name="notes" defaultValue={defaultValues?.notes ?? ""} />
+          <Textarea id="notes" name="notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
         </div>
         <SignatureBlock
-          typedNameDefaultValue={defaultValues?.signedTypedName ?? ""}
-          attestedDefaultChecked={defaultValues?.signatureAttested ?? false}
+          typedNameValue={signedTypedName}
+          onTypedNameChange={setSignedTypedName}
+          attestedChecked={signatureAttested}
+          onAttestedChange={setSignatureAttested}
           typedNameError={errorFor(state, "signedTypedName")}
           attestedError={errorFor(state, "signatureAttested")}
         />
       </FormSection>
 
-      {state.error ? <FormAlert variant="error">{state.error}</FormAlert> : null}
+      {state.error ? (
+        <FormAlert variant="error">
+          <span className="font-medium">{state.error}</span>
+          {validationMessages.length > 0 ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 font-normal">
+              {validationMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          ) : null}
+        </FormAlert>
+      ) : null}
 
       <Button type="submit" className="w-full sm:w-auto" disabled={isPending}>
         {isPending ? pendingLabel : submitLabel}

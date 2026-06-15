@@ -16,11 +16,11 @@ const formAlertVariants = cva("rounded-md border px-3 py-2 text-sm", {
   },
 });
 
-type FormAlertProps = React.ComponentProps<"p"> & VariantProps<typeof formAlertVariants>;
+type FormAlertProps = React.ComponentProps<"div"> & VariantProps<typeof formAlertVariants>;
 
 function FormAlert({ className, variant, ...props }: FormAlertProps) {
   return (
-    <p
+    <div
       role="alert"
       aria-live="polite"
       data-slot="form-alert"

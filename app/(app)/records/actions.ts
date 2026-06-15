@@ -152,6 +152,51 @@ function normalizeProductLinesForRpc(lines: MixRecordProductLineInput[]) {
   }));
 }
 
+function formatMixRecordRpcError(message: string): string {
+  if (message.includes("does not belong to customer")) {
+    return "Selected field does not belong to the chosen customer. Please reselect the field.";
+  }
+  if (message.includes("Invalid customer_id") || message.includes("Invalid field_id")) {
+    return "Customer or field is no longer valid. Refresh the page and try again.";
+  }
+  return "Unable to save mix record. Please try again.";
+}
+
+async function validateFieldBelongsToCustomer(args: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  customerId: string;
+  fieldId: string;
+}): Promise<MixRecordFormState | null> {
+  const { supabase, customerId, fieldId } = args;
+  const { data: field, error } = await supabase
+    .from("fields")
+    .select("id,customer_id")
+    .eq("id", fieldId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[validateFieldBelongsToCustomer] Unable to verify field:", error);
+    return { error: "Unable to verify the selected field. Please try again." };
+  }
+
+  if (!field) {
+    return {
+      error: "Selected field was not found. Choose another field.",
+      fieldErrors: { fieldId: ["Field is required."] },
+    };
+  }
+
+  if (field.customer_id !== customerId) {
+    return {
+      error: "Selected field does not belong to the chosen customer. Please reselect the field.",
+      fieldErrors: { fieldId: ["Field must belong to the selected customer."] },
+    };
+  }
+
+  return null;
+}
+
 async function uploadPhotosForRecord(args: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   recordId: string;
@@ -227,6 +272,15 @@ export async function createMixRecordAction(
     };
   }
 
+  const fieldValidationError = await validateFieldBelongsToCustomer({
+    supabase,
+    customerId: parsed.data.customerId,
+    fieldId: parsed.data.fieldId,
+  });
+  if (fieldValidationError) {
+    return fieldValidationError;
+  }
+
   const { data: insertedRecordId, error: recordError } = await supabase.rpc(
     "create_mix_record_with_lines",
     {
@@ -236,7 +290,9 @@ export async function createMixRecordAction(
   );
 
   if (recordError || !insertedRecordId) {
-    return { error: "Unable to create mix record. Please try again." };
+    const message = recordError?.message ?? "Unknown RPC error";
+    console.error("[createMixRecordAction] RPC failed:", message);
+    return { error: formatMixRecordRpcError(message) };
   }
 
   const photoResult = await uploadPhotosForRecord({
@@ -281,6 +337,15 @@ export async function updateMixRecordAction(
     };
   }
 
+  const fieldValidationError = await validateFieldBelongsToCustomer({
+    supabase,
+    customerId: parsed.data.customerId,
+    fieldId: parsed.data.fieldId,
+  });
+  if (fieldValidationError) {
+    return fieldValidationError;
+  }
+
   const { data: updated, error: updateError } = await supabase.rpc(
     "update_mix_record_with_lines",
     {
@@ -291,7 +356,9 @@ export async function updateMixRecordAction(
   );
 
   if (updateError || !updated) {
-    return { error: "Unable to update mix record. Please try again." };
+    const message = updateError?.message ?? "Unknown RPC error";
+    console.error("[updateMixRecordAction] RPC failed:", message);
+    return { error: formatMixRecordRpcError(message) };
   }
 
   if (removePhotoIds.length) {

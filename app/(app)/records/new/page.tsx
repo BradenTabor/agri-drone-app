@@ -4,6 +4,7 @@ import { createMixRecordAction } from "@/app/(app)/records/actions";
 import { MixRecordForm } from "@/components/forms/MixRecordForm";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildFormDraftKey } from "@/lib/formDrafts/types";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function NewMixRecordPage() {
@@ -66,6 +67,7 @@ export default async function NewMixRecordPage() {
         <CardContent className="p-5">
         <MixRecordForm
           action={createMixRecordAction}
+          draftKey={user ? buildFormDraftKey("mix-record", user.id) : null}
           submitLabel="Create Mix Record"
           pendingLabel="Creating..."
           defaultValues={{

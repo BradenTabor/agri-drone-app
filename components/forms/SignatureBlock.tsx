@@ -5,15 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type SignatureBlockProps = {
-  typedNameDefaultValue: string;
-  attestedDefaultChecked: boolean;
+  typedNameValue: string;
+  onTypedNameChange: (value: string) => void;
+  attestedChecked: boolean;
+  onAttestedChange: (checked: boolean) => void;
   typedNameError?: string | null;
   attestedError?: string | null;
 };
 
 export function SignatureBlock({
-  typedNameDefaultValue,
-  attestedDefaultChecked,
+  typedNameValue,
+  onTypedNameChange,
+  attestedChecked,
+  onAttestedChange,
   typedNameError,
   attestedError,
 }: SignatureBlockProps) {
@@ -24,7 +28,8 @@ export function SignatureBlock({
         <Input
           id="signedTypedName"
           name="signedTypedName"
-          defaultValue={typedNameDefaultValue}
+          value={typedNameValue}
+          onChange={(event) => onTypedNameChange(event.target.value)}
           aria-invalid={Boolean(typedNameError)}
           required
         />
@@ -38,9 +43,12 @@ export function SignatureBlock({
             id="signatureAttested"
             name="signatureAttested"
             value="true"
-            defaultChecked={attestedDefaultChecked}
+            checked={attestedChecked}
+            onChange={(event) => onAttestedChange(event.target.checked)}
+            aria-invalid={Boolean(attestedError)}
+            required
           />
-          I attest the above is accurate.
+          I attest the above is accurate. (required)
         </Label>
         {attestedError ? <p className="text-sm text-destructive">{attestedError}</p> : null}
       </div>

@@ -1,11 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useCallback, useMemo, useState } from "react";
 
 import type { AppRecordFormState } from "@/app/(app)/app-records/actions";
 import type { AttachableMixRecord } from "@/lib/app-records/mixAttach";
 import { MixRecordPicker } from "@/components/app-records/MixRecordPicker";
+import { FormDraftStatus } from "@/components/forms/FormDraftStatus";
+import { useFormDraft } from "@/lib/formDrafts/useFormDraft";
+import {
+  hasMeaningfulAppDraft,
+  type AppRecordDraft,
+  type AppRecordPesticideDraft,
+} from "@/lib/formDrafts/appRecordDraft";
 import { DmsDecimalInput } from "@/components/fields/DmsDecimalInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,16 +80,7 @@ type SurfactantOption = {
   active: boolean;
 };
 
-type PesticideRow = {
-  rowId: string;
-  productId: string;
-  surfactantId: string;
-  epaRegNumber: string;
-  productName: string;
-  activeIngredient: string;
-  isSurfactant: boolean;
-  sourceMixIds: string[];
-};
+type PesticideRow = AppRecordPesticideDraft;
 
 type AttachedMix = AttachableMixRecord;
 
@@ -90,6 +88,7 @@ type AppRecordFormProps = {
   action: (state: AppRecordFormState, formData: FormData) => Promise<AppRecordFormState>;
   submitLabel?: string;
   pendingLabel?: string;
+  draftKey?: string | null;
   currentAppRecordId?: string | null;
   products: ProductOption[];
   surfactants: SurfactantOption[];
@@ -202,6 +201,7 @@ export function AppRecordForm({
   action,
   submitLabel = "Submit Application Record",
   pendingLabel = "Submitting...",
+  draftKey = null,
   currentAppRecordId = null,
   products,
   surfactants,
@@ -211,9 +211,24 @@ export function AppRecordForm({
   const [jobDate, setJobDate] = useState(defaultValues?.jobDate ?? "");
   const [applicatorName, setApplicatorName] = useState(defaultValues?.applicatorName ?? "");
   const [customerName, setCustomerName] = useState(defaultValues?.customerName ?? "");
+  const [siteAddress, setSiteAddress] = useState(defaultValues?.siteAddress ?? "");
+  const [jobSiteId, setJobSiteId] = useState(defaultValues?.jobSiteId ?? "");
   const [locationLat, setLocationLat] = useState(defaultValues?.locationLat ?? "");
   const [locationLng, setLocationLng] = useState(defaultValues?.locationLng ?? "");
+  const [tempF, setTempF] = useState(defaultValues?.tempF ?? "");
+  const [windSpeedMph, setWindSpeedMph] = useState(defaultValues?.windSpeedMph ?? "");
+  const [windDirection, setWindDirection] = useState<AppRecordFieldValues["windDirection"]>(
+    defaultValues?.windDirection ?? "",
+  );
+  const [skyCondition, setSkyCondition] = useState<AppRecordFieldValues["skyCondition"]>(
+    defaultValues?.skyCondition ?? "",
+  );
   const [targetVegetation, setTargetVegetation] = useState<string[]>(defaultValues?.targetVegetation ?? []);
+  const [targetVegOther, setTargetVegOther] = useState(defaultValues?.targetVegOther ?? "");
+  const [appMethod, setAppMethod] = useState<AppRecordFieldValues["appMethod"]>(defaultValues?.appMethod ?? "");
+  const [appType, setAppType] = useState<AppRecordFieldValues["appType"]>(defaultValues?.appType ?? "");
+  const [startTime, setStartTime] = useState(defaultValues?.startTime ?? "");
+  const [endTime, setEndTime] = useState(defaultValues?.endTime ?? "");
   const [attachedMixes, setAttachedMixes] = useState<AttachedMix[]>(defaultValues?.attachedMixes ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pesticides, setPesticides] = useState<PesticideRow[]>(
@@ -238,6 +253,136 @@ export function AppRecordForm({
   const [gallonsPerAcre, setGallonsPerAcre] = useState(defaultValues?.gallonsPerAcre ?? "");
   const [acresTreated, setAcresTreated] = useState(defaultValues?.acresTreated ?? "");
   const [tankMixRecord, setTankMixRecord] = useState(defaultValues?.tankMixRecord ?? "");
+  const [equipmentNotes, setEquipmentNotes] = useState(defaultValues?.equipmentNotes ?? "");
+  const [truckId, setTruckId] = useState(defaultValues?.truckId ?? "");
+  const [nozzleType, setNozzleType] = useState(defaultValues?.nozzleType ?? "");
+  const [rei, setRei] = useState(defaultValues?.rei ?? "");
+  const [safeReentryDate, setSafeReentryDate] = useState(defaultValues?.safeReentryDate ?? "");
+  const [additionalNotes, setAdditionalNotes] = useState(defaultValues?.additionalNotes ?? "");
+  const [certAttested, setCertAttested] = useState(defaultValues?.certAttested ?? false);
+  const [applicatorSig, setApplicatorSig] = useState(defaultValues?.applicatorSig ?? "");
+  const [licenseCertNo, setLicenseCertNo] = useState(defaultValues?.licenseCertNo ?? "");
+
+  const applyDraft = useCallback(
+    (draft: AppRecordDraft) => {
+      if (draft.v !== 1) {
+        return;
+      }
+
+      setJobDate(draft.jobDate);
+      setApplicatorName(draft.applicatorName);
+      setCustomerName(draft.customerName);
+      setSiteAddress(draft.siteAddress);
+      setJobSiteId(draft.jobSiteId);
+      setLocationLat(draft.locationLat);
+      setLocationLng(draft.locationLng);
+      setTempF(draft.tempF);
+      setWindSpeedMph(draft.windSpeedMph);
+      setWindDirection(draft.windDirection);
+      setSkyCondition(draft.skyCondition);
+      setTargetVegetation(draft.targetVegetation);
+      setTargetVegOther(draft.targetVegOther);
+      setAppMethod(draft.appMethod);
+      setAppType(draft.appType);
+      setStartTime(draft.startTime);
+      setEndTime(draft.endTime);
+      setAttachedMixes(draft.attachedMixes);
+      setPesticides(draft.pesticides.length > 0 ? draft.pesticides : [newPesticideRow(false)]);
+      setTotalGallons(draft.totalGallons);
+      setGallonsPerAcre(draft.gallonsPerAcre);
+      setAcresTreated(draft.acresTreated);
+      setTankMixRecord(draft.tankMixRecord);
+      setEquipmentNotes(draft.equipmentNotes);
+      setTruckId(draft.truckId);
+      setNozzleType(draft.nozzleType);
+      setRei(draft.rei);
+      setSafeReentryDate(draft.safeReentryDate);
+      setAdditionalNotes(draft.additionalNotes);
+      setCertAttested(draft.certAttested);
+      setApplicatorSig(draft.applicatorSig);
+      setLicenseCertNo(draft.licenseCertNo);
+    },
+    [],
+  );
+
+  const draftValue = useMemo<AppRecordDraft>(
+    () => ({
+      v: 1,
+      jobDate,
+      applicatorName,
+      customerName,
+      siteAddress,
+      jobSiteId,
+      locationLat,
+      locationLng,
+      tempF,
+      windSpeedMph,
+      windDirection,
+      skyCondition,
+      targetVegetation,
+      targetVegOther,
+      appMethod,
+      appType,
+      startTime,
+      endTime,
+      attachedMixes,
+      pesticides,
+      totalGallons,
+      gallonsPerAcre,
+      acresTreated,
+      tankMixRecord,
+      equipmentNotes,
+      truckId,
+      nozzleType,
+      rei,
+      safeReentryDate,
+      additionalNotes,
+      certAttested,
+      applicatorSig,
+      licenseCertNo,
+    }),
+    [
+      acresTreated,
+      additionalNotes,
+      appMethod,
+      appType,
+      applicatorName,
+      applicatorSig,
+      attachedMixes,
+      certAttested,
+      customerName,
+      endTime,
+      equipmentNotes,
+      gallonsPerAcre,
+      jobDate,
+      jobSiteId,
+      licenseCertNo,
+      locationLat,
+      locationLng,
+      nozzleType,
+      pesticides,
+      rei,
+      safeReentryDate,
+      siteAddress,
+      skyCondition,
+      startTime,
+      tankMixRecord,
+      targetVegOther,
+      targetVegetation,
+      tempF,
+      totalGallons,
+      truckId,
+      windDirection,
+      windSpeedMph,
+    ],
+  );
+
+  const { ready, restoredFromDraft, saveStatus, clearDraft } = useFormDraft({
+    draftKey,
+    value: draftValue,
+    onRestore: applyDraft,
+    hasMeaningfulContent: hasMeaningfulAppDraft,
+  });
 
   const gallonsPerAcreHint = useMemo(() => {
     const gallons = parseDecimal(totalGallons);
@@ -438,6 +583,8 @@ export function AppRecordForm({
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    clearDraft();
+
     const form = event.currentTarget;
     const targetVegetationInput = form.elements.namedItem("targetVegetation") as HTMLInputElement;
     const pesticidesInput = form.elements.namedItem("pesticides") as HTMLInputElement;
@@ -456,8 +603,66 @@ export function AppRecordForm({
     mixRecordIdsInput.value = JSON.stringify(attachedMixes.map((mix) => mix.id));
   }
 
+  function handleDiscardDraft() {
+    clearDraft();
+    setJobDate(defaultValues?.jobDate ?? "");
+    setApplicatorName(defaultValues?.applicatorName ?? "");
+    setCustomerName(defaultValues?.customerName ?? "");
+    setSiteAddress(defaultValues?.siteAddress ?? "");
+    setJobSiteId(defaultValues?.jobSiteId ?? "");
+    setLocationLat(defaultValues?.locationLat ?? "");
+    setLocationLng(defaultValues?.locationLng ?? "");
+    setTempF(defaultValues?.tempF ?? "");
+    setWindSpeedMph(defaultValues?.windSpeedMph ?? "");
+    setWindDirection(defaultValues?.windDirection ?? "");
+    setSkyCondition(defaultValues?.skyCondition ?? "");
+    setTargetVegetation(defaultValues?.targetVegetation ?? []);
+    setTargetVegOther(defaultValues?.targetVegOther ?? "");
+    setAppMethod(defaultValues?.appMethod ?? "");
+    setAppType(defaultValues?.appType ?? "");
+    setStartTime(defaultValues?.startTime ?? "");
+    setEndTime(defaultValues?.endTime ?? "");
+    setAttachedMixes(defaultValues?.attachedMixes ?? []);
+    setPesticides(
+      defaultValues?.pesticides?.length
+        ? defaultValues.pesticides.map((row) => ({
+            rowId: crypto.randomUUID(),
+            productId: row.isSurfactant
+              ? ""
+              : matchProductId(products, row.productName, row.epaRegNumber),
+            surfactantId: row.isSurfactant
+              ? matchSurfactantId(surfactants, row.productName, row.epaRegNumber)
+              : "",
+            epaRegNumber: row.epaRegNumber ?? "",
+            productName: row.productName,
+            activeIngredient: row.activeIngredient ?? "",
+            isSurfactant: row.isSurfactant,
+            sourceMixIds: [],
+          }))
+        : [newPesticideRow(false)],
+    );
+    setTotalGallons(defaultValues?.totalGallons ?? "");
+    setGallonsPerAcre(defaultValues?.gallonsPerAcre ?? "");
+    setAcresTreated(defaultValues?.acresTreated ?? "");
+    setTankMixRecord(defaultValues?.tankMixRecord ?? "");
+    setEquipmentNotes(defaultValues?.equipmentNotes ?? "");
+    setTruckId(defaultValues?.truckId ?? "");
+    setNozzleType(defaultValues?.nozzleType ?? "");
+    setRei(defaultValues?.rei ?? "");
+    setSafeReentryDate(defaultValues?.safeReentryDate ?? "");
+    setAdditionalNotes(defaultValues?.additionalNotes ?? "");
+    setCertAttested(defaultValues?.certAttested ?? false);
+    setApplicatorSig(defaultValues?.applicatorSig ?? "");
+    setLicenseCertNo(defaultValues?.licenseCertNo ?? "");
+  }
+
+  if (!ready) {
+    return <p className="text-sm text-muted-foreground">Loading form...</p>;
+  }
+
   return (
     <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
+      <FormDraftStatus restored={restoredFromDraft} saveStatus={saveStatus} onDiscard={handleDiscardDraft} />
       <input type="hidden" name="targetVegetation" defaultValue="[]" />
       <input type="hidden" name="pesticides" defaultValue="[]" />
       <input type="hidden" name="mixRecordIds" defaultValue="[]" />
@@ -509,14 +714,20 @@ export function AppRecordForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="siteAddress">Site address (optional)</Label>
-            <Input id="siteAddress" name="siteAddress" defaultValue={defaultValues?.siteAddress ?? ""} />
+            <Input
+              id="siteAddress"
+              name="siteAddress"
+              value={siteAddress}
+              onChange={(event) => setSiteAddress(event.target.value)}
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="jobSiteId">Job / site ID (optional)</Label>
             <Input
               id="jobSiteId"
               name="jobSiteId"
-              defaultValue={defaultValues?.jobSiteId ?? ""}
+              value={jobSiteId}
+              onChange={(event) => setJobSiteId(event.target.value)}
               placeholder="e.g. Widner, Barns"
             />
           </div>
@@ -548,15 +759,27 @@ export function AppRecordForm({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="tempF">Temperature (F)</Label>
-            <DecimalInput id="tempF" name="tempF" defaultValue={defaultValues?.tempF ?? ""} />
+            <DecimalInput id="tempF" name="tempF" value={tempF} onChange={(event) => setTempF(event.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="windSpeedMph">Wind speed (mph)</Label>
-            <DecimalInput id="windSpeedMph" name="windSpeedMph" defaultValue={defaultValues?.windSpeedMph ?? ""} />
+            <DecimalInput
+              id="windSpeedMph"
+              name="windSpeedMph"
+              value={windSpeedMph}
+              onChange={(event) => setWindSpeedMph(event.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="windDirection">Wind direction</Label>
-            <Select id="windDirection" name="windDirection" defaultValue={defaultValues?.windDirection ?? ""}>
+            <Select
+              id="windDirection"
+              name="windDirection"
+              value={windDirection}
+              onChange={(event) =>
+                setWindDirection(event.target.value as AppRecordFieldValues["windDirection"])
+              }
+            >
               <option value="">Select direction</option>
               {WIND_DIRECTIONS.map((direction) => (
                 <option key={direction} value={direction}>
@@ -567,7 +790,14 @@ export function AppRecordForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="skyCondition">Sky condition</Label>
-            <Select id="skyCondition" name="skyCondition" defaultValue={defaultValues?.skyCondition ?? ""}>
+            <Select
+              id="skyCondition"
+              name="skyCondition"
+              value={skyCondition}
+              onChange={(event) =>
+                setSkyCondition(event.target.value as AppRecordFieldValues["skyCondition"])
+              }
+            >
               <option value="">Select condition</option>
               <option value="clear">Clear</option>
               <option value="partly_cloudy">Partly Cloudy</option>
@@ -596,7 +826,8 @@ export function AppRecordForm({
             <Input
               id="targetVegOther"
               name="targetVegOther"
-              defaultValue={defaultValues?.targetVegOther ?? ""}
+              value={targetVegOther}
+              onChange={(event) => setTargetVegOther(event.target.value)}
               placeholder="Describe vegetation"
             />
           </div>
@@ -617,7 +848,8 @@ export function AppRecordForm({
                     type="radio"
                     name="appMethod"
                     value={option.value}
-                    defaultChecked={defaultValues?.appMethod === option.value}
+                    checked={appMethod === option.value}
+                    onChange={() => setAppMethod(option.value)}
                     className="size-4"
                   />
                   {option.label}
@@ -637,7 +869,8 @@ export function AppRecordForm({
                     type="radio"
                     name="appType"
                     value={option.value}
-                    defaultChecked={defaultValues?.appType === option.value}
+                    checked={appType === option.value}
+                    onChange={() => setAppType(option.value)}
                     className="size-4"
                   />
                   {option.label}
@@ -655,11 +888,23 @@ export function AppRecordForm({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="startTime">Start time</Label>
-            <Input id="startTime" name="startTime" type="time" defaultValue={defaultValues?.startTime ?? ""} />
+            <Input
+              id="startTime"
+              name="startTime"
+              type="time"
+              value={startTime}
+              onChange={(event) => setStartTime(event.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="endTime">End time</Label>
-            <Input id="endTime" name="endTime" type="time" defaultValue={defaultValues?.endTime ?? ""} />
+            <Input
+              id="endTime"
+              name="endTime"
+              type="time"
+              value={endTime}
+              onChange={(event) => setEndTime(event.target.value)}
+            />
           </div>
         </div>
       </FormSection>
@@ -851,18 +1096,24 @@ export function AppRecordForm({
           <Textarea
             id="equipmentNotes"
             name="equipmentNotes"
-            defaultValue={defaultValues?.equipmentNotes ?? ""}
+            value={equipmentNotes}
+            onChange={(event) => setEquipmentNotes(event.target.value)}
             placeholder="e.g. DJI T-50 ID N#11347, DJI T-50 ID N#425AT"
           />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="truckId">Truck ID</Label>
-            <Input id="truckId" name="truckId" defaultValue={defaultValues?.truckId ?? ""} />
+            <Input id="truckId" name="truckId" value={truckId} onChange={(event) => setTruckId(event.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nozzleType">Nozzle type</Label>
-            <Input id="nozzleType" name="nozzleType" defaultValue={defaultValues?.nozzleType ?? ""} />
+            <Input
+              id="nozzleType"
+              name="nozzleType"
+              value={nozzleType}
+              onChange={(event) => setNozzleType(event.target.value)}
+            />
           </div>
         </div>
       </FormSection>
@@ -871,7 +1122,13 @@ export function AppRecordForm({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="rei">REI</Label>
-            <Input id="rei" name="rei" defaultValue={defaultValues?.rei ?? ""} placeholder="e.g. 48 hours" />
+            <Input
+              id="rei"
+              name="rei"
+              value={rei}
+              onChange={(event) => setRei(event.target.value)}
+              placeholder="e.g. 48 hours"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="safeReentryDate">Safe re-entry date</Label>
@@ -879,7 +1136,8 @@ export function AppRecordForm({
               id="safeReentryDate"
               name="safeReentryDate"
               type="date"
-              defaultValue={defaultValues?.safeReentryDate ?? ""}
+              value={safeReentryDate}
+              onChange={(event) => setSafeReentryDate(event.target.value)}
             />
           </div>
         </div>
@@ -896,7 +1154,8 @@ export function AppRecordForm({
           <Textarea
             id="additionalNotes"
             name="additionalNotes"
-            defaultValue={defaultValues?.additionalNotes ?? ""}
+            value={additionalNotes}
+            onChange={(event) => setAdditionalNotes(event.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -906,7 +1165,8 @@ export function AppRecordForm({
               id="certAttested"
               name="certAttested"
               value="true"
-              defaultChecked={defaultValues?.certAttested ?? false}
+              checked={certAttested}
+              onChange={(event) => setCertAttested(event.target.checked)}
             />
             <span className="text-sm leading-relaxed">
               I certify this application was made in accordance with the EPA-registered label and
@@ -923,7 +1183,8 @@ export function AppRecordForm({
             <Input
               id="applicatorSig"
               name="applicatorSig"
-              defaultValue={defaultValues?.applicatorSig ?? ""}
+              value={applicatorSig}
+              onChange={(event) => setApplicatorSig(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "applicatorSig"))}
               required
             />
@@ -936,7 +1197,8 @@ export function AppRecordForm({
             <Input
               id="licenseCertNo"
               name="licenseCertNo"
-              defaultValue={defaultValues?.licenseCertNo ?? ""}
+              value={licenseCertNo}
+              onChange={(event) => setLicenseCertNo(event.target.value)}
             />
           </div>
         </div>

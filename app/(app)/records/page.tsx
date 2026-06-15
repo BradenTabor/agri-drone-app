@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { MixRecordsFilterPanel } from "@/components/records/MixRecordsFilterPanel";
 import { MixRecordsListClient } from "@/components/records/MixRecordsListClient";
+import { FormDraftResumeBanner } from "@/components/forms/FormDraftResumeBanner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { buildFilterHref, type MixRecordsFilterValues } from "@/lib/records/buildFilterHref";
@@ -144,6 +145,8 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
           </Link>
         }
       />
+
+      <FormDraftResumeBanner formType="mix-record" href="/records/new" label="mix record" />
 
       <MixRecordsFilterPanel
         filters={filterValues}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AppRecordsListClient } from "@/components/app-records/AppRecordsListClient";
+import { FormDraftResumeBanner } from "@/components/forms/FormDraftResumeBanner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +29,8 @@ export default async function AppRecordsPage() {
           </Link>
         }
       />
+
+      <FormDraftResumeBanner formType="app-record" href="/app-records/new" label="application record" />
 
       <AppRecordsListClient records={records ?? []} />
     </section>

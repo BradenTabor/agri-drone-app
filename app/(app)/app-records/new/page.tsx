@@ -4,6 +4,7 @@ import { createAppRecordAction } from "@/app/(app)/app-records/actions";
 import { AppRecordForm } from "@/components/app-records/AppRecordForm";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildFormDraftKey } from "@/lib/formDrafts/types";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function NewAppRecordPage() {
@@ -48,6 +49,7 @@ export default async function NewAppRecordPage() {
         <CardContent className="p-5">
           <AppRecordForm
             action={createAppRecordAction}
+            draftKey={user ? buildFormDraftKey("app-record", user.id) : null}
             currentAppRecordId={null}
             products={(products ?? []).map((product) => ({
               id: product.id,
