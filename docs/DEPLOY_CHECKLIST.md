@@ -100,6 +100,18 @@ Pay special attention to these common production-only issues:
 - [ ] `force-dynamic` route behavior differences in production:
   - [ ] Verify PDF download route specifically (`renderToStream` cast known wart).
 
+## 4b) Automated vs Manual Test Coverage
+
+| Layer | What it proves | How |
+|-------|----------------|-----|
+| **Automated perimeter** | Public auth pages render; protected routes redirect; PDF APIs return 401 | `npm run test:smoke:perimeter` — runs in CI on every push/PR |
+| **Automated authenticated** | Post-login navigation (Task 2: data-bound assertions) | `npm run test:smoke:authenticated` — blocked until dedicated E2E Supabase project exists |
+| **Manual core flows** | Herbicide record create/save, quotes, PDF export, map, RLS | `docs/MIX_RECORD_QA_CHECKLIST.md` |
+
+See `docs/E2E_CI_HANDOFF.md` for CI setup, fail-closed Supabase guards, and Phase A/B plan.
+
+**Do not treat perimeter smoke as full production certification.**
+
 ## 5) Deploy Result Template (Send Back Here)
 
 Use this template when reporting back:
