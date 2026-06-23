@@ -205,21 +205,24 @@ describe("resolveE2eTestMode + assertSupabaseTargetSafe (global-setup contract)"
   }
 
   it("authenticated intent with creds + blank allowlist throws (no perimeter downgrade)", () => {
-    withEnv({ E2E_EMAIL: "e2e@example.com", E2E_PASSWORD: "secret", CI: undefined }, () => {
-      assert.equal(resolveE2eTestMode(), "authenticated");
-      assert.throws(
-        () =>
-          assertSupabaseTargetSafe({
-            supabaseUrl: PERIMETER_URL,
-            mode: resolveE2eTestMode(),
-            ci: false,
-            allowedRef: "",
-          }),
-        (error: unknown) =>
-          error instanceof Error &&
-          error.message.includes("E2E_ALLOWED_SUPABASE_PROJECT_REF must be set"),
-      );
-    });
+    withEnv(
+      { E2E_TEST_MODE: undefined, E2E_EMAIL: "e2e@example.com", E2E_PASSWORD: "secret", CI: undefined },
+      () => {
+        assert.equal(resolveE2eTestMode(), "authenticated");
+        assert.throws(
+          () =>
+            assertSupabaseTargetSafe({
+              supabaseUrl: PERIMETER_URL,
+              mode: resolveE2eTestMode(),
+              ci: false,
+              allowedRef: "",
+            }),
+          (error: unknown) =>
+            error instanceof Error &&
+            error.message.includes("E2E_ALLOWED_SUPABASE_PROJECT_REF must be set"),
+        );
+      },
+    );
   });
 
   it("no creds + blank allowlist resolves perimeter and passes for a non-prod URL", () => {
