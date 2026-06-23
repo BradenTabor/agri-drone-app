@@ -44,7 +44,10 @@ jobs:
   smoke-authenticated:
     name: Authenticated smoke (dedicated E2E project)
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
     env:
       E2E_TEST_MODE: authenticated
       # Prod denylist in supabase-project-guard.ts runs before allowlist — mis-set URL cannot target prod.
