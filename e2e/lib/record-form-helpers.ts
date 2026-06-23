@@ -18,8 +18,8 @@ export async function login(page: Page, email: string, password: string): Promis
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL("/", { timeout: 10_000 });
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL("/", { timeout: 20_000 });
 }
 
 export async function expectFormDraftResumeBanner(page: Page, label: string): Promise<void> {
@@ -235,21 +235,15 @@ export async function fillAppRecordForm(
   return { customerName, applicatorName };
 }
 
-export async function attachMixRecordViaPicker(page: Page, _customerName: string): Promise<void> {
-  void _customerName;
+export async function attachMixRecordViaPicker(page: Page, mixRecordId: string): Promise<void> {
   await page.getByRole("button", { name: "+ Attach Mix Record" }).click();
   await expect(page.getByRole("heading", { name: "Attach Mix Record" })).toBeVisible();
 
-  const picker = page.getByRole("alertdialog");
-  // Default list is newest-unattached-first; avoid customer-name search — many E2E mixes share
-  // the same seed customer/field labels and identical summary lines.
-  const mixButton = picker
-    .getByRole("button")
-    .filter({ hasNotText: "Done" })
-    .first();
-  await expect(mixButton).toBeVisible({ timeout: 15_000 });
-  await mixButton.click();
-  await picker.getByRole("button", { name: "Done" }).click();
+  const mixOption = page.getByTestId(`mix-picker-option-${mixRecordId}`);
+  await expect(mixOption).toBeVisible({ timeout: 15_000 });
+  await mixOption.click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Done" }).click();
+  await expect(page.getByTestId(`attached-mix-${mixRecordId}`)).toBeVisible();
 }
 
 export async function submitAppRecordForm(page: Page): Promise<string> {

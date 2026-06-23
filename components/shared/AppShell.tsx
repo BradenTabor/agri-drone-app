@@ -30,7 +30,7 @@ export function AppShell({
         <Nav user={user} />
       </div>
       <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 md:px-6">
-        <div className="glass-noise liquid-reactive animate-liquid-rise min-h-full rounded-[30px] border border-white/55 bg-[linear-gradient(140deg,rgba(255,255,255,0.5),rgba(255,255,255,0.3))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_24px_58px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/15 dark:bg-[linear-gradient(155deg,rgba(11,15,20,0.72),rgba(15,23,42,0.58))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_60px_rgba(2,6,23,0.42)] sm:p-5 md:p-6">
+        <div className="glass-noise liquid-reactive animate-liquid-rise min-h-full rounded-[30px] border border-white/45 bg-[linear-gradient(140deg,rgba(255,255,255,0.38),rgba(255,255,255,0.22))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/12 dark:bg-[linear-gradient(155deg,rgba(11,15,20,0.58),rgba(15,23,42,0.45))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_52px_rgba(2,6,23,0.35)] sm:p-5 md:p-6">
           {children}
         </div>
       </main>

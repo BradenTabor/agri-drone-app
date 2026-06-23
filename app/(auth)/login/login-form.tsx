@@ -1,23 +1,58 @@
 "use client";
 
-import { useActionState } from "react";
+import { type FormEvent, useState } from "react";
 
+import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
 import { Button } from "@/components/ui/button";
 import { FormAlert } from "@/components/ui/form-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { loginAction, type LoginState } from "./actions";
-
-const initialState: LoginState = { error: null };
+import { mapLoginError } from "@/lib/auth/login-errors";
+import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const [state, action, isPending] = useActionState(loginAction, initialState);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const password = String(formData.get("password") ?? "");
+
+    if (!email || !password) {
+      setError("Email and password are required.");
+      setIsPending(false);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(mapLoginError(signInError));
+        return;
+      }
+
+      window.location.assign("/");
+    } catch {
+      setError("Sign in is temporarily unavailable. Please try again.");
+    } finally {
+      setIsPending(false);
+    }
+  }
 
   return (
-    <form action={action} className="space-y-4">
+    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">
+        <Label htmlFor="email" className="text-slate-800">
           Email
         </Label>
         <Input
@@ -35,7 +70,7 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">
+        <Label htmlFor="password" className="text-slate-800">
           Password
         </Label>
         <Input
@@ -48,15 +83,17 @@ export function LoginForm() {
         />
       </div>
 
-      {state.error ? (
-        <FormAlert variant="error">
-          {state.error}
-        </FormAlert>
-      ) : null}
+      {error ? <FormAlert variant="error">{error}</FormAlert> : null}
 
-      <Button type="submit" className="w-full min-h-11 text-base sm:text-sm" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full min-h-11 bg-auth-accent text-white hover:bg-auth-accent/90"
+        disabled={isPending}
+      >
         {isPending ? "Signing in..." : "Sign in"}
       </Button>
+
+      <PasskeySignInButton />
     </form>
   );
 }

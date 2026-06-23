@@ -9,9 +9,10 @@ import { createPortal } from "react-dom";
 import {
   coreNavItems,
   isActivePath,
+  mobileQuickActions,
   secondaryNavItems,
   type NavItem,
-} from "@/components/shared/NavLinks";
+} from "@/components/shared/nav/navConfig";
 import { Button } from "@/components/ui/button";
 import { useIsClient } from "@/lib/useIsClient";
 import { cn } from "@/lib/utils";
@@ -151,7 +152,7 @@ function MobileNavMenuContent() {
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
-              className="liquid-reactive animate-mobile-sheet-rise fixed inset-x-0 bottom-0 z-[50] flex max-h-[min(88dvh,720px)] flex-col overflow-hidden rounded-t-[1.75rem] border border-white/75 border-b-0 bg-white/97 shadow-[0_-12px_48px_rgba(15,23,42,0.24)] backdrop-blur-3xl dark:border-white/15 dark:bg-slate-950/97 dark:shadow-[0_-16px_52px_rgba(2,6,23,0.72)]"
+              className="nav-island liquid-reactive glass-noise topo-texture animate-mobile-sheet-rise fixed inset-x-0 bottom-0 z-[50] flex max-h-[min(88dvh,720px)] flex-col overflow-hidden rounded-t-[1.75rem] border border-white/75 border-b-0 bg-white/97 shadow-[0_-12px_48px_rgba(15,23,42,0.24)] backdrop-blur-3xl dark:border-emerald-500/10 dark:bg-slate-950/97 dark:shadow-[0_-16px_52px_rgba(2,6,23,0.72),0_0_0_1px_rgba(52,211,153,0.06)]"
             >
               <div className="glass-noise shrink-0 border-b border-white/55 px-4 pt-3 pb-3.5 dark:border-white/12">
                 <div
@@ -181,6 +182,37 @@ function MobileNavMenuContent() {
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <section aria-label="Quick actions" className="mb-4">
+                  <p className="mb-2 px-1 text-[0.65rem] font-semibold tracking-[0.14em] text-slate-500 uppercase dark:text-slate-400">
+                    Quick actions
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {mobileQuickActions.map((action, index) => {
+                      const ActionIcon = action.icon;
+
+                      return (
+                        <Link
+                          key={action.href}
+                          href={action.href}
+                          onClick={closeMenu}
+                          style={{ "--item-index": index } as CSSProperties}
+                          className="animate-more-nav-item press-physics liquid-refraction flex min-h-[4.5rem] flex-col items-center justify-center gap-1 rounded-2xl border border-emerald-500/20 bg-[linear-gradient(160deg,rgba(16,185,129,0.12),rgba(255,255,255,0.72))] px-1.5 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] active:scale-[0.98] dark:border-emerald-400/20 dark:bg-[linear-gradient(160deg,rgba(16,185,129,0.16),rgba(15,23,42,0.55))]"
+                        >
+                          <span className="inline-flex size-8 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/12 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/18 dark:text-emerald-200">
+                            <ActionIcon className="size-3.5" aria-hidden="true" />
+                          </span>
+                          <span className="text-[11px] font-semibold leading-tight text-slate-800 dark:text-slate-100">
+                            {action.label}
+                          </span>
+                          <span className="hidden text-[0.62rem] leading-tight text-slate-500 sm:block dark:text-slate-400">
+                            {action.subtitle}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+
                 <section aria-label="Main navigation">
                   <p className="mb-2 px-1 text-[0.65rem] font-semibold tracking-[0.14em] text-slate-500 uppercase dark:text-slate-400">
                     Main
@@ -199,13 +231,13 @@ function MobileNavMenuContent() {
                   </div>
                 </section>
 
-                <section aria-label="Workflow navigation" className="mt-4">
+                <section aria-label="Operations navigation" className="mt-4">
                   <div className="mb-2 flex items-center gap-2 px-1">
                     <span className="inline-flex size-5 items-center justify-center rounded-md border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-500/15 dark:text-emerald-200">
                       <Sparkles className="size-3" aria-hidden="true" />
                     </span>
                     <p className="text-[0.65rem] font-semibold tracking-[0.14em] text-slate-500 uppercase dark:text-slate-400">
-                      Workflow
+                      Operations
                     </p>
                   </div>
                   <div className="flex flex-col gap-1.5">

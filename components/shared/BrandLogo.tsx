@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type BrandLogoProps = {
   className?: string;
   imageClassName?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "nav" | "hero";
+  size?: "sm" | "md" | "lg" | "xl" | "navCompact" | "nav" | "hero";
   showText?: boolean;
   variant?: "default" | "auth";
   /** framed = pill/badge container; overlay = logo only, scales freely */
@@ -20,6 +20,7 @@ const sizeConfig = {
   md: { width: 26, height: 39, frame: "size-10", overlay: "h-10 w-auto" },
   lg: { width: 34, height: 51, frame: "size-14", overlay: "h-14 w-auto" },
   xl: { width: 48, height: 72, frame: "size-16", overlay: "h-20 w-auto" },
+  navCompact: { width: 48, height: 72, frame: "size-10", overlay: "h-10 w-auto sm:h-11" },
   nav: { width: 80, height: 120, frame: "size-12", overlay: "h-14 w-auto sm:h-16 md:h-20" },
   hero: { width: 160, height: 240, frame: "size-20", overlay: "h-36 w-auto sm:h-48 md:h-56" },
 } as const;
@@ -75,7 +76,7 @@ export function BrandLogo({
 
       {showText ? (
         <span className="flex min-w-0 flex-col items-start">
-          <span className="max-w-[8.4rem] truncate text-[0.92rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:max-w-none sm:text-sm">
+          <span className="font-heading max-w-[8.4rem] truncate text-[0.88rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:max-w-none sm:text-[0.9rem]">
             {BRAND.appName}
           </span>
           <span className="hidden text-[0.65rem] tracking-[0.12em] text-emerald-700/85 uppercase dark:text-emerald-100/75 lg:block">

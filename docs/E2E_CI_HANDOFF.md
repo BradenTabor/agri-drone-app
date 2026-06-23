@@ -2,6 +2,8 @@
 
 Paste-ready implementation spec for Playwright smoke CI, fail-closed Supabase guards, and authenticated test hardening.
 
+> **Prod/dev risk:** `vwilvdckfronjftrboje` is shared by production and local dev. See [`SUPABASE_ENVIRONMENTS.md`](./SUPABASE_ENVIRONMENTS.md) for the problem statement and why E2E isolation is the pattern to extend.
+
 ## Decision summary
 
 | Choice | Detail |

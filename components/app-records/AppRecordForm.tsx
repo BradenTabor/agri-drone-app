@@ -931,7 +931,7 @@ export function AppRecordForm({
         ) : null}
         <div className="space-y-2">
           {attachedMixes.map((mix) => (
-            <div key={mix.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border p-3">
+            <div key={mix.id} data-testid={`attached-mix-${mix.id}`} className="flex min-h-11 items-start justify-between gap-3 rounded-md border p-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium">{formatMixSummaryLine(mix)}</p>
                 <p className="text-xs text-muted-foreground">{formatMixDetailLine(mix)}</p>

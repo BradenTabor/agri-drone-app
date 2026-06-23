@@ -842,6 +842,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          data_consent_at: string | null
           default_units: string
           deleted_at: string | null
           email: string | null
@@ -854,6 +855,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data_consent_at?: string | null
           default_units?: string
           deleted_at?: string | null
           email?: string | null
@@ -866,6 +868,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data_consent_at?: string | null
           default_units?: string
           deleted_at?: string | null
           email?: string | null

@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+import { supabaseAuthClientOptions } from "@/lib/supabase/auth-client-options";
 import type { Database } from "@/types/database";
 
 export function createClient() {
@@ -12,5 +13,5 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, supabaseAuthClientOptions);
 }

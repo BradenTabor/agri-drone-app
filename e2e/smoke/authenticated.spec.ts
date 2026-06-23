@@ -20,14 +20,16 @@ test.describe("authenticated smoke", () => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(email!);
     await page.getByLabel("Password").fill(password!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/", { timeout: 10_000 });
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page).toHaveURL("/", { timeout: 20_000 });
   });
 
   test("dashboard loads with navigation", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Field-ready dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Operations Command" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "New Mix Record" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Mix Records", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   });
 
   test("mix records list loads", async ({ page }) => {
@@ -54,7 +56,8 @@ test.describe("authenticated smoke", () => {
   });
 
   test("sign out returns to login", async ({ page }) => {
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 });

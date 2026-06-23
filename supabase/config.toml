@@ -295,7 +295,24 @@ max_frequency = "5s"
 # enroll_enabled = true
 # verify_enabled = true
 
-# Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
+[auth.passkey]
+enabled = true
+
+# Production (hosted Supabase linked to Vercel). Origins must match rp_id —
+# localhost cannot be added when rp_id is your Vercel domain.
+[auth.webauthn]
+rp_display_name = "Agri Drone Ops"
+rp_id = "agri-drone-app-sigma.vercel.app"
+rp_origins = ["https://agri-drone-app-sigma.vercel.app"]
+
+# Local passkey dev only: use with `supabase start` (not hosted project).
+# Uncomment and comment out [auth.webauthn] above when testing passkeys on localhost.
+# [auth.webauthn]
+# rp_display_name = "Agri Drone Ops"
+# rp_id = "localhost"
+# rp_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+# Use external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
 [auth.external.apple]

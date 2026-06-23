@@ -5,6 +5,7 @@
  *   Denied so E2E never targets any production database.
  * - vwilvdckfronjftrboje — **agri-drone app** production AND local dev (shared; known risk).
  *   Confirmed via live prod runtime: Vercel `NEXT_PUBLIC_SUPABASE_URL` points here.
+ *   See docs/SUPABASE_ENVIRONMENTS.md for why this matters and the split backlog.
  * - wxftkrdwvzpggjrdntdf — dedicated **E2E** project (allowlist below; authenticated runs only).
  */
 export const PROD_SUPABASE_PROJECT_DENYLIST = ["emqqxfzahmwnehxcpxzp"] as const;

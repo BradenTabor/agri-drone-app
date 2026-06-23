@@ -23,7 +23,7 @@ export function ForgotPasswordForm() {
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">
+        <Label htmlFor="email" className="text-slate-800">
           Email
         </Label>
         <Input
@@ -47,7 +47,11 @@ export function ForgotPasswordForm() {
         </FormAlert>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full min-h-11 bg-auth-accent text-white hover:bg-auth-accent/90"
+        disabled={isPending}
+      >
         {isPending ? "Sending reset link..." : "Send reset link"}
       </Button>
     </form>

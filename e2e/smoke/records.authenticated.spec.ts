@@ -176,7 +176,7 @@ test.describe("authenticated record write flows", () => {
       customerName: mix.customerName,
       applicatorName: mix.signedTypedName,
     });
-    await attachMixRecordViaPicker(page, mix.customerName);
+    await attachMixRecordViaPicker(page, mixRecordId);
     const appRecordId = await submitAppRecordForm(page);
 
     await expect(page).toHaveURL(`/app-records/${appRecordId}`);
@@ -193,7 +193,7 @@ test.describe("authenticated record write flows", () => {
       customerName: mix.customerName,
       applicatorName: mix.signedTypedName,
     });
-    await attachMixRecordViaPicker(page, mix.customerName);
+    await attachMixRecordViaPicker(page, mixRecordId);
     await submitAppRecordForm(page);
 
     await fillAppRecordForm(page, {

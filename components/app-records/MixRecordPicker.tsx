@@ -103,6 +103,7 @@ export function MixRecordPicker({
                   <button
                     key={mix.id}
                     type="button"
+                    data-testid={`mix-picker-option-${mix.id}`}
                     disabled={isAttached}
                     onClick={() => onSelect(mix)}
                     className={`min-h-11 w-full rounded-md border px-3 py-2 text-left transition-colors ${

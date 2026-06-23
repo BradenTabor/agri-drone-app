@@ -1,72 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ChevronDown,
-  ClipboardList,
-  DollarSign,
-  FileStack,
-  Home,
-  type LucideIcon,
-  Map,
-  Package2,
-  Settings2,
-  Sparkles,
-  Sprout,
-  Users,
-} from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
+import {
+  coreNavItems,
+  isActivePath,
+  secondaryNavItems,
+  type NavItem,
+} from "@/components/shared/nav/navConfig";
+import { NavMagneticLink } from "@/components/shared/nav/NavMagneticLink";
 import { cn } from "@/lib/utils";
 import { useIsClient } from "@/lib/useIsClient";
 
-type NavItem = {
-  href: string;
-  label: string;
-  subtitle?: string;
-  icon?: LucideIcon;
-};
-
-const coreNavItems: NavItem[] = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/records", label: "Mix Records", icon: Sprout },
-  { href: "/app-records", label: "App Records", icon: FileStack },
-  { href: "/map", label: "Map", icon: Map },
-];
-
-const secondaryNavItems: NavItem[] = [
-  { href: "/customers", label: "Customers", subtitle: "Grow customer records", icon: Users },
-  { href: "/equipment", label: "Equipment", subtitle: "Manage drone fleet", icon: Settings2 },
-  { href: "/products", label: "Products", subtitle: "Track materials", icon: Package2 },
-  { href: "/pricing", label: "Pricing", subtitle: "Set default rates", icon: DollarSign },
-  { href: "/quotes", label: "Quotes", subtitle: "Prepare estimates", icon: ClipboardList },
-];
-
-function isActivePath(pathname: string, href: string) {
-  if (href === "/") {
-    return pathname === "/";
-  }
-
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export { coreNavItems, secondaryNavItems, isActivePath };
 export type { NavItem };
+
+type IndicatorState = {
+  left: number;
+  width: number;
+  visible: boolean;
+};
 
 type PanelPosition = {
   top: number;
   right: number;
 };
 
-type MoreNavDropdownProps = {
+type OperationsNavDropdownProps = {
   pathname: string;
   onNavigate?: () => void;
   hasActiveSecondary: boolean;
 };
 
-function MoreNavDropdown({ pathname, onNavigate, hasActiveSecondary }: MoreNavDropdownProps) {
+function OperationsNavDropdown({ pathname, onNavigate, hasActiveSecondary }: OperationsNavDropdownProps) {
   const [open, setOpen] = useState(false);
   const isClient = useIsClient();
   const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
@@ -150,7 +120,7 @@ function MoreNavDropdown({ pathname, onNavigate, hasActiveSecondary }: MoreNavDr
             <div
               ref={panelRef}
               role="menu"
-              aria-label="Workflow links"
+              aria-label="Operations menu"
               style={{ top: panelPosition.top, right: panelPosition.right }}
               className="liquid-reactive animate-liquid-rise fixed z-[50] w-[19rem] overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/96 shadow-[inset_0_1px_0_rgba(255,255,255,0.98),0_24px_52px_rgba(15,23,42,0.22),0_0_0_1px_rgba(16,185,129,0.08)] backdrop-blur-3xl dark:border-white/20 dark:bg-slate-950/95 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_24px_52px_rgba(2,6,23,0.65),0_0_0_1px_rgba(52,211,153,0.12)]"
             >
@@ -165,7 +135,7 @@ function MoreNavDropdown({ pathname, onNavigate, hasActiveSecondary }: MoreNavDr
                   </span>
                   <span className="min-w-0">
                     <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-emerald-800/90 uppercase dark:text-emerald-200/90">
-                      Workflow links
+                      Operations
                     </p>
                     <p className="mt-0.5 text-[0.72rem] leading-snug text-slate-600/90 dark:text-slate-300/80">
                       Customers, fleet, materials, and billing
@@ -239,17 +209,15 @@ function MoreNavDropdown({ pathname, onNavigate, hasActiveSecondary }: MoreNavDr
         aria-haspopup="menu"
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "press-physics liquid-refraction inline-flex h-8 items-center gap-1 rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
+          "press-physics liquid-refraction relative z-[1] inline-flex h-8 items-center gap-1 rounded-xl px-3 text-[13px] font-medium tracking-tight transition-colors",
           open && "relative z-[50]",
           open || hasActiveSecondary
-            ? "border border-white/70 bg-white/70 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_6px_16px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:border-white/25 dark:bg-white/14 dark:text-white"
-            : "border border-transparent text-slate-700/90 hover:border-white/50 hover:bg-white/42 hover:text-slate-900 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_6px_14px_rgba(15,23,42,0.1)] dark:text-slate-200/90 dark:hover:bg-white/10 dark:hover:text-white",
-          hasActiveSecondary &&
-            !open &&
-            "border-emerald-500/20 bg-emerald-500/8 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-100",
+            ? "text-slate-900 dark:text-white"
+            : "text-slate-700/90 hover:text-slate-900 dark:text-slate-200/90 dark:hover:text-white",
+          hasActiveSecondary && !open && "text-emerald-900 dark:text-emerald-100",
         )}
       >
-        More
+        Operations
         <ChevronDown
           className={cn("size-3.5 transition-transform duration-200", open && "rotate-180")}
           aria-hidden="true"
@@ -257,6 +225,113 @@ function MoreNavDropdown({ pathname, onNavigate, hasActiveSecondary }: MoreNavDr
       </button>
 
       {dropdownPanel}
+    </div>
+  );
+}
+
+type CondensedNavLinksProps = {
+  pathname: string;
+  onNavigate?: () => void;
+};
+
+function CondensedNavLinks({ pathname, onNavigate }: CondensedNavLinksProps) {
+  const navRef = useRef<HTMLDivElement>(null);
+  const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const [indicator, setIndicator] = useState<IndicatorState>({
+    left: 0,
+    width: 0,
+    visible: false,
+  });
+
+  const setLinkRef = useCallback((href: string, node: HTMLAnchorElement | null) => {
+    if (node) {
+      linkRefs.current.set(href, node);
+      return;
+    }
+
+    linkRefs.current.delete(href);
+  }, []);
+
+  const updateIndicator = useCallback(() => {
+    const nav = navRef.current;
+    const activeItem = coreNavItems.find((item) => isActivePath(pathname, item.href));
+
+    if (!nav || !activeItem) {
+      setIndicator((current) => ({ ...current, visible: false }));
+      return;
+    }
+
+    const link = linkRefs.current.get(activeItem.href);
+
+    if (!link) {
+      return;
+    }
+
+    const navRect = nav.getBoundingClientRect();
+    const linkRect = link.getBoundingClientRect();
+
+    setIndicator({
+      left: linkRect.left - navRect.left,
+      width: linkRect.width,
+      visible: true,
+    });
+  }, [pathname]);
+
+  useLayoutEffect(() => {
+    updateIndicator();
+  }, [updateIndicator]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [updateIndicator]);
+
+  const hasActiveSecondary = secondaryNavItems.some((item) => isActivePath(pathname, item.href));
+
+  return (
+    <div ref={navRef} className="relative inline-flex items-center gap-0.5 rounded-xl px-0.5">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "nav-active-pill relative pointer-events-none absolute top-1/2 z-0 h-8 -translate-y-1/2 rounded-xl border border-white/65 bg-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(15,23,42,0.08)] transition-[left,width,opacity] duration-300 ease-[cubic-bezier(0.2,0.75,0.25,1)] dark:border-white/18 dark:bg-white/14 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_4px_14px_rgba(2,6,23,0.35)]",
+          indicator.visible ? "opacity-100" : "opacity-0",
+        )}
+        style={{
+          left: indicator.left,
+          width: indicator.width,
+        }}
+      />
+
+      {coreNavItems.map((item) => {
+        const active = isActivePath(pathname, item.href);
+
+        return (
+          <NavMagneticLink
+            key={item.href}
+            ref={(node) => setLinkRef(item.href, node)}
+            href={item.href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "press-physics liquid-refraction relative z-[1] inline-flex h-8 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-colors",
+              active
+                ? "text-slate-900 dark:text-white"
+                : "text-slate-700/90 hover:text-slate-900 dark:text-slate-200/90 dark:hover:text-white",
+            )}
+          >
+            {item.label}
+          </NavMagneticLink>
+        );
+      })}
+
+      <OperationsNavDropdown
+        pathname={pathname}
+        onNavigate={onNavigate}
+        hasActiveSecondary={hasActiveSecondary}
+      />
     </div>
   );
 }
@@ -272,39 +347,9 @@ export function NavLinks({ orientation = "horizontal", onNavigate, strategy = "f
   const isVertical = orientation === "vertical";
   const condensedDesktop = !isVertical && strategy === "condensed";
   const allNavItems = [...coreNavItems, ...secondaryNavItems];
-  const hasActiveSecondary = secondaryNavItems.some((item) => isActivePath(pathname, item.href));
 
   if (condensedDesktop) {
-    return (
-      <nav className="flex flex-wrap items-center gap-1">
-        {coreNavItems.map((item) => {
-          const active = isActivePath(pathname, item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "press-physics liquid-refraction inline-flex h-8 items-center rounded-xl px-3 text-[13px] font-medium tracking-tight transition-all",
-                active
-                  ? "border border-white/70 bg-white/70 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_6px_16px_rgba(15,23,42,0.14)] backdrop-blur-2xl"
-                  : "border border-transparent text-slate-700/90 hover:border-white/50 hover:bg-white/42 hover:text-slate-900 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_6px_14px_rgba(15,23,42,0.1)]",
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-
-        <MoreNavDropdown
-          pathname={pathname}
-          onNavigate={onNavigate}
-          hasActiveSecondary={hasActiveSecondary}
-        />
-      </nav>
-    );
+    return <CondensedNavLinks pathname={pathname} onNavigate={onNavigate} />;
   }
 
   return (
