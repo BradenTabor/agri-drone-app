@@ -38,8 +38,9 @@ The blank allowlist is **safe**: fail-closed guard blocks authenticated runs unt
 | `e2e/smoke/public-auth.spec.ts` | 4 | No | No |
 | `e2e/smoke/auth-guard.spec.ts` | 13 | No | No |
 | `e2e/smoke/authenticated.spec.ts` | 6 | Yes | No (navigation only today) |
+| `e2e/smoke/records.authenticated.spec.ts` | 6 | Yes | Yes (skipped until E2E project allowlist) |
 
-**17 passing / 6 skipped** without `E2E_EMAIL`/`E2E_PASSWORD`.
+**17 passing / 12 skipped** without `E2E_EMAIL`/`E2E_PASSWORD` (record write tests also require `E2E_ALLOWED_SUPABASE_PROJECT_REF`).
 
 Port `3002` (override via `E2E_PORT`) runs `next start` against env-loaded Supabase config.
 
@@ -81,6 +82,21 @@ Next.js inlines `NEXT_PUBLIC_*` at **build** time. Perimeter job without Supabas
 **Required:** Perimeter CI job must inject `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at **build and test runtime**. Anon key is public by design — use repository **variables**, not hidden-as-secret hygiene that omits them.
 
 Perimeter target: `vwilvdckfronjftrboje` public config (read-only, no auth, no writes).
+
+**Local authenticated runs:** Same build-time rule applies. Sourcing `.env.e2e.local` only at `next start` does **not** fix a dev-built `.next` bundle — login will hit the wrong Supabase project. Use the one-command script that sources E2E env **before** `next build`:
+
+```bash
+npm run test:smoke:authenticated:local
+```
+
+This script (`scripts/test-smoke-authenticated-local.sh`):
+
+1. Sources `.env.e2e.local` and prints `E2E build Supabase ref: <ref>` so a wrong-project build is visible immediately
+2. Runs `npm run build` with that env baked in
+3. Sets `E2E_FRESH_SERVER=1` so Playwright starts its own `next start` (`reuseExistingServer: false`) — no warm dev server on port 3002
+4. Runs authenticated smoke specs with `E2E_TEST_MODE=authenticated`
+
+Do **not** run `npm run build` (dev env) then `npm run test:smoke:authenticated` and expect E2E creds to work.
 
 ---
 
@@ -154,7 +170,8 @@ export const E2E_ALLOWED_SUPABASE_PROJECT_REF = ""; // Task 2: fill when E2E pro
 
 ```json
 "test:smoke:perimeter": "E2E_TEST_MODE=perimeter playwright test e2e/smoke/public-auth.spec.ts e2e/smoke/auth-guard.spec.ts",
-"test:smoke:authenticated": "E2E_TEST_MODE=authenticated playwright test e2e/smoke/authenticated.spec.ts"
+"test:smoke:authenticated": "E2E_TEST_MODE=authenticated playwright test e2e/smoke/authenticated.spec.ts e2e/smoke/records.authenticated.spec.ts",
+"test:smoke:authenticated:local": "bash scripts/test-smoke-authenticated-local.sh"
 ```
 
 Keep `test:smoke` as all specs (local dev).
@@ -260,6 +277,15 @@ npm run test:smoke:perimeter
 # All smoke (authenticated skips without creds + allowlist)
 npm run test:smoke
 
-# Authenticated (requires allowlist ref + .env.e2e.local creds)
+# Authenticated against E2E project (RECOMMENDED — bakes .env.e2e.local at build time)
+npm run test:smoke:authenticated:local
+
+# Authenticated without rebuild (only valid if .next was already built with E2E env)
 npm run test:smoke:authenticated
+```
+
+**Re-baseline discipline:** Run the local script twice back-to-back before changing draft specs:
+
+```bash
+npm run test:smoke:authenticated:local && npm run test:smoke:authenticated:local
 ```

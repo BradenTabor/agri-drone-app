@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useCallback, useMemo, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AppRecordFormState } from "@/app/(app)/app-records/actions";
 import type { AttachableMixRecord } from "@/lib/app-records/mixAttach";
@@ -377,12 +377,26 @@ export function AppRecordForm({
     ],
   );
 
-  const { ready, restoredFromDraft, saveStatus, clearDraft } = useFormDraft({
+  const { ready, restoredFromDraft, saveStatus, clearDraft, saveNow } = useFormDraft({
     draftKey,
     value: draftValue,
     onRestore: applyDraft,
     hasMeaningfulContent: hasMeaningfulAppDraft,
   });
+
+  const saveNowRef = useRef(saveNow);
+  useEffect(() => {
+    saveNowRef.current = saveNow;
+  });
+
+  useEffect(() => {
+    const hasError =
+      Boolean(state.error) ||
+      (state.fieldErrors != null && Object.keys(state.fieldErrors).length > 0);
+    if (hasError) {
+      saveNowRef.current();
+    }
+  }, [state]);
 
   const gallonsPerAcreHint = useMemo(() => {
     const gallons = parseDecimal(totalGallons);
@@ -943,7 +957,7 @@ export function AppRecordForm({
           </Button>
         </div>
         <div className="space-y-3">
-          {pesticides.map((row) => {
+          {pesticides.map((row, rowIndex) => {
             const selectedProduct = products.find((product) => product.id === row.productId) ?? null;
             const selectedSurfactant =
               surfactants.find((surfactant) => surfactant.id === row.surfactantId) ?? null;
@@ -995,6 +1009,7 @@ export function AppRecordForm({
                   <Label>{row.isSurfactant ? "Surfactant" : "Product"}</Label>
                   {row.isSurfactant ? (
                     <Select
+                      id={`pesticide-surfactant-${rowIndex}`}
                       value={row.surfactantId}
                       onChange={(event) => selectSurfactant(row.rowId, event.target.value)}
                       required
@@ -1008,6 +1023,7 @@ export function AppRecordForm({
                     </Select>
                   ) : (
                     <Select
+                      id={`pesticide-product-${rowIndex}`}
                       value={row.productId}
                       onChange={(event) => selectPesticideProduct(row.rowId, event.target.value)}
                       required

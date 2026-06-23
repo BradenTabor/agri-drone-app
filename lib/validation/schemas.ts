@@ -193,7 +193,7 @@ const windDirectionSchema = z.enum(["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
 const optionalUuid = () =>
   z.preprocess(emptyStringToUndefined, z.string().uuid("Invalid ID.").optional());
 
-const mixRecordProductLineSchema = z
+export const mixRecordProductLineSchema = z
   .object({
     productId: optionalUuid(),
     amountAdded: requiredDecimal({ min: 0, max: 100000, label: "Amount added" }),

@@ -1,7 +1,7 @@
 export const PROD_SUPABASE_PROJECT_DENYLIST = ["emqqxfzahmwnehxcpxzp"] as const;
 
-/** Intentionally empty until Task 2 creates the dedicated E2E Supabase project. */
-export const E2E_ALLOWED_SUPABASE_PROJECT_REF = "";
+/** Dedicated E2E Supabase project (lowercase ref; must match NEXT_PUBLIC_SUPABASE_URL). */
+export const E2E_ALLOWED_SUPABASE_PROJECT_REF = "wxftkrdwvzpggjrdntdf";
 
 const SUPABASE_HOSTED_URL_RE = /^https:\/\/([a-z0-9]+)\.supabase\.co\/?$/i;
 

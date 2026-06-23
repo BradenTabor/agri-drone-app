@@ -1,22 +1,32 @@
 import { expect, test } from "@playwright/test";
 
+import { E2E_ALLOWED_SUPABASE_PROJECT_REF } from "../lib/supabase-project-guard";
+
 const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
 
+const skipAuthenticated =
+  !email ||
+  !password ||
+  !E2E_ALLOWED_SUPABASE_PROJECT_REF.trim();
+
 test.describe("authenticated smoke", () => {
-  test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD to run authenticated tests.");
+  test.skip(
+    skipAuthenticated,
+    "Set E2E_EMAIL, E2E_PASSWORD, and E2E_ALLOWED_SUPABASE_PROJECT_REF to run authenticated tests.",
+  );
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(email!);
     await page.getByLabel("Password").fill(password!);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/", { timeout: 10_000 });
   });
 
   test("dashboard loads with navigation", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Field-ready dashboard" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Mix Records" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Mix Records", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   });
 

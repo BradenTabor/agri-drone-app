@@ -8,6 +8,7 @@ import {
   loadBestFormDraft,
   upsertServerFormDraft,
 } from "@/lib/formDrafts/serverSync";
+import { createDraftSaveGuard } from "@/lib/formDrafts/draftSaveGuard";
 import { clearFormDraft, readFormDraft, writeFormDraft } from "@/lib/formDrafts/storage";
 import type { DraftSaveStatus } from "@/lib/formDrafts/types";
 import { parseFormDraftKey } from "@/lib/formDrafts/types";
@@ -56,7 +57,7 @@ export function useFormDraft<T>({
   const onRestoreRef = useRef(onRestore);
   const hasMeaningfulContentRef = useRef(hasMeaningfulContent);
   const hydrationKeyRef = useRef<string | null | undefined>(undefined);
-  const serverSyncGenerationRef = useRef(0);
+  const saveGuardRef = useRef(createDraftSaveGuard());
 
   const [store] = useState(() => createDraftHydrationStore(!draftKey));
   const [saveStatus, setSaveStatus] = useState<DraftSaveStatus>("idle");
@@ -122,6 +123,50 @@ export function useFormDraft<T>({
     () => (draftKey ? SERVER_SNAPSHOT_PENDING : SERVER_SNAPSHOT_READY),
   );
 
+  const saveNow = useCallback(() => {
+    if (!draftKey || !ready) {
+      return;
+    }
+
+    if (hasMeaningfulContentRef.current && !hasMeaningfulContentRef.current(value)) {
+      clearFormDraft(draftKey);
+      setSaveStatus("idle");
+
+      const parsed = parseFormDraftKey(draftKey);
+      if (parsed) {
+        const generation = saveGuardRef.current.beginSave();
+        void deleteServerFormDraft(parsed.formType, parsed.userId).catch(() => {
+          if (saveGuardRef.current.isGenerationCurrent(generation)) {
+            setSaveStatus("error");
+          }
+        });
+      }
+      return;
+    }
+
+    setSaveStatus("saving");
+    writeFormDraft(draftKey, value);
+
+    const parsed = parseFormDraftKey(draftKey);
+    if (!parsed) {
+      setSaveStatus("saved");
+      return;
+    }
+
+    const generation = saveGuardRef.current.beginSave();
+    void upsertServerFormDraft(parsed.formType, parsed.userId, value)
+      .then(() => {
+        if (saveGuardRef.current.isGenerationCurrent(generation)) {
+          setSaveStatus("saved");
+        }
+      })
+      .catch(() => {
+        if (saveGuardRef.current.isGenerationCurrent(generation)) {
+          setSaveStatus("error");
+        }
+      });
+  }, [draftKey, ready, value]);
+
   useEffect(() => {
     if (!draftKey || !ready) {
       return;
@@ -132,48 +177,18 @@ export function useFormDraft<T>({
       return;
     }
 
+    const saveGuard = saveGuardRef.current;
     const timer = window.setTimeout(() => {
-      if (hasMeaningfulContentRef.current && !hasMeaningfulContentRef.current(value)) {
-        clearFormDraft(draftKey);
-        setSaveStatus("idle");
-
-        const parsed = parseFormDraftKey(draftKey);
-        if (parsed) {
-          const generation = ++serverSyncGenerationRef.current;
-          void deleteServerFormDraft(parsed.formType, parsed.userId).catch(() => {
-            if (generation === serverSyncGenerationRef.current) {
-              setSaveStatus("error");
-            }
-          });
-        }
-        return;
-      }
-
-      setSaveStatus("saving");
-      writeFormDraft(draftKey, value);
-
-      const parsed = parseFormDraftKey(draftKey);
-      if (!parsed) {
-        setSaveStatus("saved");
-        return;
-      }
-
-      const generation = ++serverSyncGenerationRef.current;
-      void upsertServerFormDraft(parsed.formType, parsed.userId, value)
-        .then(() => {
-          if (generation === serverSyncGenerationRef.current) {
-            setSaveStatus("saved");
-          }
-        })
-        .catch(() => {
-          if (generation === serverSyncGenerationRef.current) {
-            setSaveStatus("error");
-          }
-        });
+      saveGuard.clearDebouncedTimerIfMatch(timer);
+      saveNow();
     }, debounceMs);
+    saveGuard.setDebouncedTimer(timer);
 
-    return () => window.clearTimeout(timer);
-  }, [debounceMs, draftKey, ready, value]);
+    return () => {
+      window.clearTimeout(timer);
+      saveGuard.clearDebouncedTimerIfMatch(timer);
+    };
+  }, [debounceMs, draftKey, ready, value, saveNow]);
 
   useEffect(() => {
     if (!draftKey || !ready) {
@@ -195,6 +210,8 @@ export function useFormDraft<T>({
   }, [draftKey, ready, value]);
 
   const clearDraft = useCallback(() => {
+    saveGuardRef.current.invalidateInFlightSaves();
+
     if (draftKey) {
       clearFormDraft(draftKey);
 
@@ -215,5 +232,6 @@ export function useFormDraft<T>({
     restoredFromDraft,
     saveStatus,
     clearDraft,
+    saveNow,
   };
 }

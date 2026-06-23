@@ -302,12 +302,26 @@ export function MixRecordForm({
     ],
   );
 
-  const { ready, restoredFromDraft, saveStatus, clearDraft } = useFormDraft({
+  const { ready, restoredFromDraft, saveStatus, clearDraft, saveNow } = useFormDraft({
     draftKey,
     value: draftValue,
     onRestore: applyDraft,
     hasMeaningfulContent: hasMeaningfulMixDraft,
   });
+
+  const saveNowRef = useRef(saveNow);
+  useEffect(() => {
+    saveNowRef.current = saveNow;
+  });
+
+  useEffect(() => {
+    const hasError =
+      Boolean(state.error) ||
+      (state.fieldErrors != null && Object.keys(state.fieldErrors).length > 0);
+    if (hasError) {
+      saveNowRef.current();
+    }
+  }, [state]);
 
   const validationMessages = useMemo(() => listFieldErrorMessages(state.fieldErrors), [state.fieldErrors]);
   const productLinesError = errorFor(state, "productLines");
@@ -375,8 +389,15 @@ export function MixRecordForm({
     })),
   );
 
-  function handleSubmit() {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     clearDraft();
+
+    const productLinesInput = event.currentTarget.elements.namedItem(
+      "productLinesJson",
+    ) as HTMLInputElement | null;
+    if (productLinesInput) {
+      productLinesInput.value = productLinesPayload;
+    }
   }
 
   function handleDiscardDraft() {
@@ -418,7 +439,7 @@ export function MixRecordForm({
   return (
     <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
       <FormDraftStatus restored={restoredFromDraft} saveStatus={saveStatus} onDiscard={handleDiscardDraft} />
-      <input type="hidden" name="productLinesJson" value={productLinesPayload} />
+      <input type="hidden" name="productLinesJson" defaultValue="[]" />
 
       <FormSection title="Header">
         <div className="grid gap-4 md:grid-cols-2">

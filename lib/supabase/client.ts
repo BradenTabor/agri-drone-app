@@ -12,13 +12,5 @@ export function createClient() {
     );
   }
 
-  // Session refresh is handled server-side in proxy.ts. Disabling browser
-  // auto-refresh avoids duplicate refresh attempts and console noise when
-  // cookies contain a stale refresh token but a still-valid access token.
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }

@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Guard unit tests
-        run: npm run test:unit
+      - name: Lint, typecheck, and unit tests
+        run: npm run check
 
       - name: Build (requires Supabase public env at build time)
         run: npm run build
@@ -42,13 +42,14 @@ jobs:
         run: npm run test:smoke:perimeter
 
   smoke-authenticated:
-    name: Authenticated smoke (fail-closed until E2E project)
+    name: Authenticated smoke (dedicated E2E project)
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     env:
       E2E_TEST_MODE: authenticated
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      # Prod denylist in supabase-project-guard.ts runs before allowlist — mis-set URL cannot target prod.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
       E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
     steps:
@@ -63,8 +64,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Guard unit tests
-        run: npm run test:unit
+      - name: Lint, typecheck, and unit tests
+        run: npm run check
 
       - name: Build (requires Supabase public env at build time)
         run: npm run build
