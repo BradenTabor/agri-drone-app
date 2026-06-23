@@ -235,7 +235,8 @@ export async function fillAppRecordForm(
   return { customerName, applicatorName };
 }
 
-export async function attachMixRecordViaPicker(page: Page, customerName: string): Promise<void> {
+export async function attachMixRecordViaPicker(page: Page, _customerName: string): Promise<void> {
+  void _customerName;
   await page.getByRole("button", { name: "+ Attach Mix Record" }).click();
   await expect(page.getByRole("heading", { name: "Attach Mix Record" })).toBeVisible();
 
