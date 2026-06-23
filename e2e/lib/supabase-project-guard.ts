@@ -1,3 +1,12 @@
+/**
+ * Supabase project ref map (do not label by assumption — verify ref in dashboard / Vercel env):
+ *
+ * - emqqxfzahmwnehxcpxzp — ATTS tree-service **employee portal** production (NOT agri-drone).
+ *   Denied so E2E never targets any production database.
+ * - vwilvdckfronjftrboje — **agri-drone app** production AND local dev (shared; known risk).
+ *   Confirmed via live prod runtime: Vercel `NEXT_PUBLIC_SUPABASE_URL` points here.
+ * - wxftkrdwvzpggjrdntdf — dedicated **E2E** project (allowlist below; authenticated runs only).
+ */
 export const PROD_SUPABASE_PROJECT_DENYLIST = ["emqqxfzahmwnehxcpxzp"] as const;
 
 /** Dedicated E2E Supabase project (lowercase ref; must match NEXT_PUBLIC_SUPABASE_URL). */

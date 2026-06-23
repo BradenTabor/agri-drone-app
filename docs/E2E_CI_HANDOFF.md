@@ -21,13 +21,15 @@ Task 2 anticipates create-and-delete mix-record tests. Shared dev DB risks test 
 
 ## Known Supabase project refs
 
-| Ref | Name | Role |
-|-----|------|------|
-| `emqqxfzahmwnehxcpxzp` | ATTS portal APP 2 | **Production — permanent denylist** |
-| `vwilvdckfronjftrboje` | ATS app Project | Local dev / CLI link — **not** designated E2E |
-| `E2E_ALLOWED_SUPABASE_PROJECT_REF` | *(empty until Task 2)* | **Dedicated E2E allowlist — intentional blank** |
+Three-project map — verify refs in Supabase dashboard / Vercel env before changing guards (do not label by assumption):
 
-The blank allowlist is **safe**: fail-closed guard blocks authenticated runs until the ref is set.
+| Ref | App | Role |
+|-----|-----|------|
+| `emqqxfzahmwnehxcpxzp` | ATTS tree-service **employee portal** | **Production — permanent denylist** (NOT agri-drone; denied because tests must never touch ANY production DB) |
+| `vwilvdckfronjftrboje` | **Agri-drone** (this repo) | **Production and local dev — shared** (Vercel `NEXT_PUBLIC_SUPABASE_URL` on prod; CLI link for dev). Perimeter CI target. **Known risk:** prod and dev share one database. |
+| `wxftkrdwvzpggjrdntdf` | Agri-drone E2E | **Dedicated E2E allowlist** (`E2E_ALLOWED_SUPABASE_PROJECT_REF` in `e2e/lib/supabase-project-guard.ts`) — authenticated runs only |
+
+Authenticated runs must match the E2E allowlist ref exactly; all runs must stay off the denylist ref.
 
 ---
 
@@ -55,7 +57,7 @@ Original Task 1 threw only when URL matched prod. That protects one ref you reme
 **Required behavior:**
 
 1. **Authenticated runs:** `E2E_ALLOWED_SUPABASE_PROJECT_REF` must be set **and** match the live URL ref — otherwise **abort**.
-2. **All runs:** Live ref must **not** be on the permanent prod denylist (`emqqxfzahmwnehxcpxzp`).
+2. **All runs:** Live ref must **not** be on the permanent prod denylist (`emqqxfzahmwnehxcpxzp` — ATTS employee-portal prod, not agri-drone).
 
 With no allowed ref set, authenticated tests cannot run — no accidental-prod-auth window.
 
@@ -81,7 +83,7 @@ Next.js inlines `NEXT_PUBLIC_*` at **build** time. Perimeter job without Supabas
 
 **Required:** Perimeter CI job must inject `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at **build and test runtime**. Anon key is public by design — use repository **variables**, not hidden-as-secret hygiene that omits them.
 
-Perimeter target: `vwilvdckfronjftrboje` public config (read-only, no auth, no writes).
+Perimeter target: `vwilvdckfronjftrboje` (agri-drone prod/dev shared DB) public config — read-only perimeter tests, no auth writes in specs.
 
 **Local authenticated runs:** Same build-time rule applies. Sourcing `.env.e2e.local` only at `next start` does **not** fix a dev-built `.next` bundle — login will hit the wrong Supabase project. Use the one-command script that sources E2E env **before** `next build`:
 
