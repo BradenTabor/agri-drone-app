@@ -45,7 +45,11 @@ export async function login(page: Page, email: string, password: string): Promis
     await page.getByLabel("Password").fill(password);
     await signInButton.click();
 
-    const loginError = page.getByRole("alert");
+    // Scope to the form's own alert. A bare getByRole("alert") also matches
+    // Next.js's always-present, empty <div role="alert" id="__next-route-announcer__">,
+    // which both wins the visibility race spuriously and triggers strict-mode
+    // violations / empty messages when reading textContent.
+    const loginError = page.locator('[data-slot="form-alert"]').first();
     const outcome = await Promise.race([
       page
         .waitForURL("/", { timeout: 20_000 })
