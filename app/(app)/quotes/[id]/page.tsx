@@ -67,6 +67,7 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           <PdfDownloadButton
             pdfUrl={`/api/quote-pdf/${quote.id}`}
             filename={`quote-${(quote.quote_number || quote.id.slice(0, 8)).replace(/[^a-zA-Z0-9-_]/g, "")}.pdf`}
+            shareTitle={`Quote ${quote.quote_number || quote.id.slice(0, 8)}`}
           />
           <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit

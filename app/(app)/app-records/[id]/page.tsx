@@ -99,6 +99,7 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
           <PdfDownloadButton
             pdfUrl={`/api/app-record-pdf/${record.id}`}
             filename={`application-record-${record.job_date}-${record.id.slice(0, 8)}.pdf`}
+            shareTitle={`Application Record — ${record.job_date}`}
           />
           <Link href={`/app-records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit

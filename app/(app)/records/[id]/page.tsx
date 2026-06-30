@@ -102,6 +102,7 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
           <PdfDownloadButton
             pdfUrl={`/api/pdf/${record.id}`}
             filename={`mix-record-${record.record_date}-${record.id.slice(0, 8)}.pdf`}
+            shareTitle={`Mix Record — ${record.record_date}`}
           />
           <Link href={`/records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit

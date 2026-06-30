@@ -4,6 +4,7 @@ import { decimalToDms, dmsToString } from "@/lib/formatting/coordinates";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { brandedDocumentMeta } from "./documentMeta";
 import type { MixRecordPdfData } from "./getMixRecordForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -365,8 +366,19 @@ function Footer() {
 }
 
 export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
+  const meta = brandedDocumentMeta({
+    documentType: "Mix Record",
+    reference: data.record.record_date,
+  });
   return (
-    <Document>
+    <Document
+      title={meta.title}
+      author={meta.author}
+      subject={meta.subject}
+      keywords={meta.keywords}
+      creator={meta.creator}
+      producer={meta.producer}
+    >
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
           {BRAND.name} — Mix Record
