@@ -4,6 +4,7 @@ import { type NextRequest } from "next/server";
 
 import { AppRecordPdf } from "@/lib/pdf/AppRecordPdf";
 import { getAppRecordForPdf } from "@/lib/pdf/getAppRecordForPdf";
+import { appRecordPdfFilename } from "@/lib/pdf/pdfFilename";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -32,7 +33,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
   const document = createElement(AppRecordPdf, { data }) as ReactElement<DocumentProps>;
   const stream = await renderToStream(document);
-  const filename = `application-record-${data.record.job_date}-${recordId.slice(0, 8)}.pdf`;
+  const filename = appRecordPdfFilename(data.record.job_date, recordId);
 
   return new Response(stream as unknown as ReadableStream, {
     headers: {

@@ -4,6 +4,7 @@ import { type NextRequest } from "next/server";
 
 import { getMixRecordForPdf } from "@/lib/pdf/getMixRecordForPdf";
 import { MixRecordPdf } from "@/lib/pdf/MixRecordPdf";
+import { mixRecordPdfFilename } from "@/lib/pdf/pdfFilename";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -32,7 +33,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
   const document = createElement(MixRecordPdf, { data }) as ReactElement<DocumentProps>;
   const stream = await renderToStream(document);
-  const filename = `mix-record-${data.record.record_date}-${recordId.slice(0, 8)}.pdf`;
+  const filename = mixRecordPdfFilename(data.record.record_date, recordId);
 
   return new Response(stream as unknown as ReadableStream, {
     headers: {
