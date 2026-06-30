@@ -39,7 +39,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
       .is("deleted_at", null)
       .eq("active", true)
       .order("name", { ascending: true }),
-    supabase.from("pricing_config").select("minimum_job_fee").eq("id", SINGLETON_ID).maybeSingle(),
+    supabase.from("pricing_config").select("minimum_job_fee,travel_fee_per_mile").eq("id", SINGLETON_ID).maybeSingle(),
   ]);
 
   if (quoteError || !quote) {
@@ -80,6 +80,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               costUnit: product.cost_unit,
             }))}
             minimumJobFee={pricingConfig?.minimum_job_fee ?? null}
+            travelFeePerMile={pricingConfig?.travel_fee_per_mile ?? null}
             defaultValues={{
               quoteNumber: quote.quote_number,
               status: quote.status as "draft" | "sent" | "accepted" | "declined",

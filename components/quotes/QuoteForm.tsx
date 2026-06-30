@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeTotals, lineAmount } from "@/lib/quotes/calculations";
+import { computeTotals, lineAmount, mileageCharge, quoteExtraTaxableCharges } from "@/lib/quotes/calculations";
 
 const initialState: QuoteFormState = { error: null };
 
@@ -26,6 +26,7 @@ type QuoteFormValues = {
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
+  adjuvantName: string | null;
   adjuvantPrice: number | null;
   mileage: number | null;
   taxRate: number | null;
@@ -64,6 +65,13 @@ type QuoteProductOption = {
   costUnit: string | null;
 };
 
+type QuoteSurfactantOption = {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  costUnit: string | null;
+};
+
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
@@ -71,9 +79,11 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
+  surfactants: QuoteSurfactantOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
+  travelFeePerMile?: number | null;
 };
 
 function newLineItem(): LineItemRow {
@@ -107,6 +117,16 @@ function toLineItemRow(item: QuoteDefaultLineItem): LineItemRow {
 function parseNumber(value: string): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+// Quotes store the adjuvant as a name snapshot (no FK), so we re-derive the
+// selected dropdown option from the saved name when editing an existing quote.
+function matchSurfactantId(
+  surfactants: QuoteSurfactantOption[],
+  adjuvantName: string | null | undefined,
+): string {
+  if (!adjuvantName) return "";
+  return surfactants.find((surfactant) => surfactant.name === adjuvantName)?.id ?? "";
 }
 
 function formatMoney(value: number): string {
@@ -146,9 +166,11 @@ export function QuoteForm({
   customers,
   fields,
   products,
+  surfactants,
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
+  travelFeePerMile = null,
 }: QuoteFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [customerId, setCustomerId] = useState(defaultValues?.customerId ?? "");
@@ -163,6 +185,16 @@ export function QuoteForm({
   const [lineItems, setLineItems] = useState<LineItemRow[]>(
     defaultLineItems?.length ? defaultLineItems.map(toLineItemRow) : [newLineItem()],
   );
+  const [adjuvantPrice, setAdjuvantPrice] = useState<string>(
+    defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : "",
+  );
+  const [adjuvantName, setAdjuvantName] = useState<string>(defaultValues?.adjuvantName ?? "");
+  const [adjuvantId, setAdjuvantId] = useState<string>(
+    matchSurfactantId(surfactants, defaultValues?.adjuvantName),
+  );
+  const [mileage, setMileage] = useState<string>(
+    defaultValues?.mileage != null ? String(defaultValues.mileage) : "",
+  );
   const [taxRate, setTaxRate] = useState<string>(
     defaultValues?.taxRate != null ? String(defaultValues.taxRate) : "0",
   );
@@ -176,16 +208,33 @@ export function QuoteForm({
   );
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
+  const adjuvantAmount = Math.max(0, parseNumber(adjuvantPrice));
+  const mileageMiles = parseNumber(mileage);
+  const mileageAmount = mileageCharge(mileageMiles, travelFeePerMile);
+  const mileageHint =
+    travelFeePerMile == null || travelFeePerMile <= 0
+      ? "Set a travel rate ($/mi) in Pricing settings to charge for mileage."
+      : mileageMiles > 0
+        ? `${mileageMiles} mi × ${formatMoney(travelFeePerMile)}/mi = ${formatMoney(mileageAmount)} added to the taxable subtotal.`
+        : `Travel rate ${formatMoney(travelFeePerMile)}/mi (from Pricing settings).`;
+
   const totals = useMemo(
     () =>
       computeTotals(
-        lineItems.map((line) => ({
-          amount: parseNumber(line.amount),
-        })),
+        [
+          ...lineItems.map((line) => ({
+            amount: parseNumber(line.amount),
+          })),
+          ...quoteExtraTaxableCharges({
+            adjuvantPrice: parseNumber(adjuvantPrice),
+            mileage: parseNumber(mileage),
+            ratePerMile: travelFeePerMile,
+          }),
+        ],
         Number(taxRate) || 0,
         Number(otherAmount) || 0,
       ),
-    [lineItems, taxRate, otherAmount],
+    [lineItems, taxRate, otherAmount, adjuvantPrice, mileage, travelFeePerMile],
   );
 
   function setLineItemValue(
@@ -383,26 +432,32 @@ export function QuoteForm({
             <DecimalInput
               id="adjuvantPrice"
               name="adjuvantPrice"
-              defaultValue={
-                defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : ""
-              }
+              value={adjuvantPrice}
+              onChange={(event) => setAdjuvantPrice(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "adjuvantPrice"))}
               placeholder="0.00"
             />
+            {adjuvantAmount > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Adds {formatMoney(adjuvantAmount)} to the taxable subtotal.
+              </p>
+            ) : null}
             {errorFor(state, "adjuvantPrice") ? (
               <p className="text-sm text-destructive">{errorFor(state, "adjuvantPrice")}</p>
             ) : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mileage">Mileage</Label>
+            <Label htmlFor="mileage">Mileage (mi)</Label>
             <DecimalInput
               id="mileage"
               name="mileage"
-              defaultValue={defaultValues?.mileage != null ? String(defaultValues.mileage) : ""}
+              value={mileage}
+              onChange={(event) => setMileage(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "mileage"))}
               placeholder="0"
             />
+            <p className="text-xs text-muted-foreground">{mileageHint}</p>
             {errorFor(state, "mileage") ? (
               <p className="text-sm text-destructive">{errorFor(state, "mileage")}</p>
             ) : null}

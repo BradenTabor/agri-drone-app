@@ -152,6 +152,7 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
               costUnit: product.cost_unit,
             }))}
             minimumJobFee={config.minimum_job_fee}
+            travelFeePerMile={config.travel_fee_per_mile}
             defaultValues={{
               customerId: defaultCustomerId || null,
               customerName: defaultCustomerName,
