@@ -91,6 +91,8 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               validUntil: quote.valid_until,
               acres: quote.acres,
               serviceFor: quote.service_for,
+              adjuvantPrice: quote.adjuvant_price,
+              mileage: quote.mileage,
               taxRate: quote.tax_rate,
               otherLabel: quote.other_label,
               otherAmount: quote.other_amount,

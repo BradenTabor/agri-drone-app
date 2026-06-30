@@ -96,6 +96,10 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
             </span>
           </Detail>
           <Detail label="Acres">{quote.acres ?? "—"}</Detail>
+          <Detail label="Adjuvant price">
+            {quote.adjuvant_price != null ? formatMoney(quote.adjuvant_price) : "—"}
+          </Detail>
+          <Detail label="Mileage">{quote.mileage != null ? `${quote.mileage} mi` : "—"}</Detail>
           <Detail label="Source App Record">{quote.source_app_record_id || "—"}</Detail>
         </CardContent>
       </Card>

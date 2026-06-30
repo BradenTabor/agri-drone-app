@@ -12,6 +12,8 @@ export type QuotePdfData = {
     customer_name: string;
     service_for: string | null;
     acres: number | null;
+    adjuvant_price: number | null;
+    mileage: number | null;
     notes: string | null;
     terms: string | null;
     subtotal: number;
@@ -53,7 +55,7 @@ export async function getQuoteForPdf(
     .from("quotes")
     .select(`
       id, quote_number, status, quote_date, valid_until, customer_name,
-      service_for, acres, notes, terms, subtotal, tax_rate, other_label, other_amount, total,
+      service_for, acres, adjuvant_price, mileage, notes, terms, subtotal, tax_rate, other_label, other_amount, total,
       customer:customers!quotes_customer_id_fkey(name,contact_name,email,phone,address,city,state,zip)
     `)
     .eq("id", quoteId)
@@ -93,6 +95,8 @@ export async function getQuoteForPdf(
       customer_name: typed.customer_name,
       service_for: typed.service_for,
       acres: typed.acres,
+      adjuvant_price: typed.adjuvant_price,
+      mileage: typed.mileage,
       notes: typed.notes,
       terms: typed.terms,
       subtotal: Number(typed.subtotal || 0),

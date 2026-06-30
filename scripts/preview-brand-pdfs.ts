@@ -70,6 +70,8 @@ const mockQuote: QuotePdfData = {
     customer_name: "Sample Farm LLC",
     service_for: "Aerial herbicide application — North 40",
     acres: 50,
+    adjuvant_price: 85,
+    mileage: 60,
     subtotal: 1250,
     tax_rate: 0,
     other_amount: 0,

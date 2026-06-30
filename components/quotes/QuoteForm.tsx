@@ -26,6 +26,8 @@ type QuoteFormValues = {
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
+  adjuvantPrice: number | null;
+  mileage: number | null;
   taxRate: number | null;
   otherLabel: string | null;
   otherAmount: number | null;
@@ -373,6 +375,36 @@ export function QuoteForm({
             />
             {errorFor(state, "serviceFor") ? (
               <p className="text-sm text-destructive">{errorFor(state, "serviceFor")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="adjuvantPrice">Adjuvant price</Label>
+            <DecimalInput
+              id="adjuvantPrice"
+              name="adjuvantPrice"
+              defaultValue={
+                defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : ""
+              }
+              aria-invalid={Boolean(errorFor(state, "adjuvantPrice"))}
+              placeholder="0.00"
+            />
+            {errorFor(state, "adjuvantPrice") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "adjuvantPrice")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mileage">Mileage</Label>
+            <DecimalInput
+              id="mileage"
+              name="mileage"
+              defaultValue={defaultValues?.mileage != null ? String(defaultValues.mileage) : ""}
+              aria-invalid={Boolean(errorFor(state, "mileage"))}
+              placeholder="0"
+            />
+            {errorFor(state, "mileage") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "mileage")}</p>
             ) : null}
           </div>
 

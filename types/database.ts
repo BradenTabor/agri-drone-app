@@ -944,6 +944,7 @@ export type Database = {
       quotes: {
         Row: {
           acres: number | null
+          adjuvant_price: number | null
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -951,6 +952,7 @@ export type Database = {
           deleted_at: string | null
           field_id: string | null
           id: string
+          mileage: number | null
           notes: string | null
           other_amount: number
           other_label: string | null
@@ -968,6 +970,7 @@ export type Database = {
         }
         Insert: {
           acres?: number | null
+          adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -975,6 +978,7 @@ export type Database = {
           deleted_at?: string | null
           field_id?: string | null
           id?: string
+          mileage?: number | null
           notes?: string | null
           other_amount?: number
           other_label?: string | null
@@ -992,6 +996,7 @@ export type Database = {
         }
         Update: {
           acres?: number | null
+          adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -999,6 +1004,7 @@ export type Database = {
           deleted_at?: string | null
           field_id?: string | null
           id?: string
+          mileage?: number | null
           notes?: string | null
           other_amount?: number
           other_label?: string | null

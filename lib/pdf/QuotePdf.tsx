@@ -253,6 +253,12 @@ function BillToSection({ data }: { data: QuotePdfData }) {
         <View style={styles.column}>
           <Text style={styles.sectionTitle}>FOR</Text>
           <Text style={styles.value}>{valueOrDash(data.quote.service_for)}</Text>
+          {data.quote.adjuvant_price != null ? (
+            <Text style={[styles.value, styles.monoRow]}>Adjuvant: {money(data.quote.adjuvant_price)}</Text>
+          ) : null}
+          {data.quote.mileage != null ? (
+            <Text style={[styles.value, styles.monoRow]}>Mileage: {data.quote.mileage} mi</Text>
+          ) : null}
         </View>
       </View>
     </View>

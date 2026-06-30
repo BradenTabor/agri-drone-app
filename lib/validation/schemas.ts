@@ -324,6 +324,8 @@ export const quoteCreateSchema = z.object({
   ),
   acres: optionalDecimal({ min: 0, max: 100000, label: "Acres" }),
   serviceFor: optionalText(200),
+  adjuvantPrice: optionalDecimal({ min: 0, max: 1000000, label: "Adjuvant price" }),
+  mileage: optionalDecimal({ min: 0, max: 100000, label: "Mileage" }),
   taxRate: z.coerce.number().min(0).max(100).default(0),
   otherLabel: optionalText(120),
   otherAmount: z.coerce.number().default(0),
