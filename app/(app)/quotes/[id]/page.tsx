@@ -63,14 +63,13 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           <Link href="/quotes" className={buttonVariants({ variant: "outline" })}>
             Back
           </Link>
-          <Link
+          <a
             href={`/api/quote-pdf/${quote.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             className={buttonVariants({ variant: "outline" })}
           >
             Download PDF
-          </Link>
+          </a>
           <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit
           </Link>

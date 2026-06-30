@@ -100,8 +100,7 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
           </Link>
           <a
             href={`/api/pdf/${record.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             className={buttonVariants({ variant: "outline" })}
           >
             Download PDF
