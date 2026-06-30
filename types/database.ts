@@ -960,6 +960,7 @@ export type Database = {
           source_app_record_id: string | null
           status: string
           subtotal: number
+          surfactant_id: string | null
           tax_rate: number
           terms: string | null
           total: number
@@ -984,6 +985,7 @@ export type Database = {
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          surfactant_id?: string | null
           tax_rate?: number
           terms?: string | null
           total?: number
@@ -1008,6 +1010,7 @@ export type Database = {
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          surfactant_id?: string | null
           tax_rate?: number
           terms?: string | null
           total?: number
@@ -1041,6 +1044,13 @@ export type Database = {
             columns: ["source_app_record_id"]
             isOneToOne: false
             referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_surfactant_id_fkey"
+            columns: ["surfactant_id"]
+            isOneToOne: false
+            referencedRelation: "surfactants"
             referencedColumns: ["id"]
           },
         ]

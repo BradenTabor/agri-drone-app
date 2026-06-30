@@ -315,6 +315,7 @@ export const quoteCreateSchema = z.object({
   status: quoteStatusSchema.default("draft"),
   customerId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
   fieldId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
+  surfactantId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
   customerName: z.string().trim().min(1, "Customer name is required.").max(120),
   sourceAppRecordId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
   quoteDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
