@@ -35,7 +35,7 @@ export default function LoginPage() {
           Forgot your password?{" "}
           <Link
             href="/forgot-password"
-            className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent underline underline-offset-4 sm:min-h-0 sm:inline"
+            className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent-strong underline underline-offset-4 sm:min-h-0 sm:inline"
           >
             Reset it
           </Link>
@@ -45,7 +45,7 @@ export default function LoginPage() {
           Need an account?{" "}
           <Link
             href="/signup"
-            className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent underline underline-offset-4 sm:min-h-0 sm:inline"
+            className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent-strong underline underline-offset-4 sm:min-h-0 sm:inline"
           >
             Create one
           </Link>

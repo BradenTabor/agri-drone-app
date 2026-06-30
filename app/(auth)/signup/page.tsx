@@ -34,7 +34,7 @@ export default function SignupPage() {
         Already have an account?{" "}
         <Link
           href="/login"
-          className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent underline underline-offset-4 sm:min-h-0 sm:inline"
+          className="inline-flex min-h-11 items-center py-1 font-semibold text-auth-accent-strong underline underline-offset-4 sm:min-h-0 sm:inline"
         >
           Sign in
         </Link>

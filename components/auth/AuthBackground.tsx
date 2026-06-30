@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 const HERO_IMAGE = "/auth/hero.jpg";
 const HERO_VIDEO = "/auth/hero.mp4";
@@ -27,6 +27,37 @@ export function AuthBackground() {
     getReducedMotionServerSnapshot,
   );
   const [videoReady, setVideoReady] = useState(false);
+  // Defer the heavy hero video until the browser is idle so its download
+  // never competes with critical resources (fonts, CSS, the LCP text). The
+  // optimized <Image> below is the visible background until then.
+  const [videoEnabled, setVideoEnabled] = useState(false);
+
+  useEffect(() => {
+    // The render output already hides the video under reduced motion, so we
+    // only need to skip scheduling its (deferred) download here.
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    let idleHandle: number | undefined;
+    let timeoutHandle: number | undefined;
+    const enable = () => setVideoEnabled(true);
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleHandle = window.requestIdleCallback(enable, { timeout: 2500 });
+    } else {
+      timeoutHandle = window.setTimeout(enable, 1200);
+    }
+
+    return () => {
+      if (idleHandle !== undefined && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== undefined) {
+        window.clearTimeout(timeoutHandle);
+      }
+    };
+  }, [prefersReducedMotion]);
 
   const handleVideoError = useCallback(() => {
     setVideoReady(false);
@@ -46,7 +77,7 @@ export function AuthBackground() {
         sizes="100vw"
         className="object-cover"
       />
-      {!prefersReducedMotion ? (
+      {videoEnabled && !prefersReducedMotion ? (
         <video
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
           style={{ opacity: videoReady ? 1 : 0 }}
@@ -54,8 +85,7 @@ export function AuthBackground() {
           loop
           muted
           playsInline
-          preload="metadata"
-          poster={HERO_IMAGE}
+          preload="auto"
           onCanPlay={handleVideoCanPlay}
           onError={handleVideoError}
         >

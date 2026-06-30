@@ -37,6 +37,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-auth-accent: var(--auth-accent);
+  --color-auth-accent-strong: var(--auth-accent-strong);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -97,6 +98,10 @@
   --auth-glass-bg: hsl(0 0% 100% / 0.88);
   --auth-glass-border: hsl(0 0% 100% / 0.6);
   --auth-accent: var(--brand-canopy);
+  /* Darker canopy for accent text/fills on light surfaces (tabs, buttons,
+     links) so they clear WCAG AA 4.5:1 against white. The brighter
+     --auth-accent stays for large text/decoration over the dark hero. */
+  --auth-accent-strong: hsl(142 52% 33%);
 }
 
 .dark {

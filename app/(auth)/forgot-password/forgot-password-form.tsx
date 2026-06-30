@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
 
       <Button
         type="submit"
-        className="w-full min-h-11 bg-auth-accent text-white hover:bg-auth-accent/90"
+        className="w-full min-h-11 bg-auth-accent-strong text-white hover:bg-auth-accent-strong/90"
         disabled={isPending}
       >
         {isPending ? "Sending reset link..." : "Send reset link"}
