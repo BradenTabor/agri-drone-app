@@ -97,6 +97,15 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           </Detail>
           <Detail label="Acres">{quote.acres ?? "—"}</Detail>
           <Detail label="Source App Record">{quote.source_app_record_id || "—"}</Detail>
+          {quote.adjuvant_surfactant && (
+            <Detail label="Adjuvant/Surfactant">{quote.adjuvant_surfactant}</Detail>
+          )}
+          {quote.price_per_acre && (
+            <Detail label="Price per acre">{formatMoney(quote.price_per_acre)}/acre</Detail>
+          )}
+          {quote.mileage && (
+            <Detail label="Mileage">{quote.mileage} miles</Detail>
+          )}
         </CardContent>
       </Card>
 

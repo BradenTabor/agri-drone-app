@@ -26,6 +26,9 @@ type QuoteFormValues = {
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
+  adjuvantSurfactant: string | null;
+  pricePerAcre: number | null;
+  mileage: number | null;
   taxRate: number | null;
   otherLabel: string | null;
   otherAmount: number | null;
@@ -374,6 +377,58 @@ export function QuoteForm({
             {errorFor(state, "serviceFor") ? (
               <p className="text-sm text-destructive">{errorFor(state, "serviceFor")}</p>
             ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="adjuvantSurfactant">Adjuvant/Surfactant (optional)</Label>
+            <Input
+              id="adjuvantSurfactant"
+              name="adjuvantSurfactant"
+              defaultValue={defaultValues?.adjuvantSurfactant ?? ""}
+              placeholder="e.g., NIS 0.25% v/v"
+              aria-invalid={Boolean(errorFor(state, "adjuvantSurfactant"))}
+            />
+            {errorFor(state, "adjuvantSurfactant") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "adjuvantSurfactant")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pricePerAcre">Price per acre (optional)</Label>
+            <DecimalInput
+              id="pricePerAcre"
+              name="pricePerAcre"
+              defaultValue={
+                defaultValues?.pricePerAcre !== undefined && defaultValues?.pricePerAcre !== null
+                  ? String(defaultValues.pricePerAcre)
+                  : ""
+              }
+              placeholder="15.00"
+              aria-invalid={Boolean(errorFor(state, "pricePerAcre"))}
+            />
+            {errorFor(state, "pricePerAcre") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "pricePerAcre")}</p>
+            ) : null}
+            <p className="text-xs text-muted-foreground">e.g., $15.00 per acre for spraying</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mileage">Mileage (optional)</Label>
+            <DecimalInput
+              id="mileage"
+              name="mileage"
+              defaultValue={
+                defaultValues?.mileage !== undefined && defaultValues?.mileage !== null
+                  ? String(defaultValues.mileage)
+                  : ""
+              }
+              placeholder="0.0"
+              aria-invalid={Boolean(errorFor(state, "mileage"))}
+            />
+            {errorFor(state, "mileage") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "mileage")}</p>
+            ) : null}
+            <p className="text-xs text-muted-foreground">Miles traveled to job site</p>
           </div>
 
           <div className="space-y-2">

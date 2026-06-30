@@ -251,8 +251,44 @@ function BillToSection({ data }: { data: QuotePdfData }) {
           <Text style={[styles.value, styles.monoRow]}>{valueOrDash(addressLine)}</Text>
         </View>
         <View style={styles.column}>
-          <Text style={styles.sectionTitle}>FOR</Text>
-          <Text style={styles.value}>{valueOrDash(data.quote.service_for)}</Text>
+          <Text style={styles.sectionTitle}>JOB DETAILS</Text>
+          {data.quote.service_for ? (
+            <View style={styles.monoRow}>
+              <Text style={[styles.mutedValue]}>Service: </Text>
+              <Text style={styles.value}>{data.quote.service_for}</Text>
+            </View>
+          ) : null}
+          {data.quote.acres ? (
+            <View style={styles.monoRow}>
+              <Text style={[styles.mutedValue]}>Acres: </Text>
+              <Text style={styles.value}>{data.quote.acres}</Text>
+            </View>
+          ) : null}
+          {data.quote.adjuvant_surfactant ? (
+            <View style={styles.monoRow}>
+              <Text style={[styles.mutedValue]}>Adjuvant/Surfactant: </Text>
+              <Text style={styles.value}>{data.quote.adjuvant_surfactant}</Text>
+            </View>
+          ) : null}
+          {data.quote.price_per_acre ? (
+            <View style={styles.monoRow}>
+              <Text style={[styles.mutedValue]}>Price per acre: </Text>
+              <Text style={styles.value}>{money(data.quote.price_per_acre)}/acre</Text>
+            </View>
+          ) : null}
+          {data.quote.mileage ? (
+            <View style={styles.monoRow}>
+              <Text style={[styles.mutedValue]}>Mileage: </Text>
+              <Text style={styles.value}>{data.quote.mileage} miles</Text>
+            </View>
+          ) : null}
+          {!data.quote.service_for && 
+           !data.quote.acres && 
+           !data.quote.adjuvant_surfactant && 
+           !data.quote.price_per_acre && 
+           !data.quote.mileage ? (
+            <Text style={styles.value}>{EM_DASH}</Text>
+          ) : null}
         </View>
       </View>
     </View>
