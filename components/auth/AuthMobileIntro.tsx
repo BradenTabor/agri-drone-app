@@ -13,7 +13,7 @@ export function AuthMobileIntro() {
       </div>
       <p className="font-heading text-base font-semibold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(15,23,42,0.45)] sm:text-lg">
         Every application,{" "}
-        <span className="text-auth-accent drop-shadow-[0_2px_12px_rgba(15,23,42,0.45)]">on record.</span>
+        <span className="text-auth-accent-on-dark drop-shadow-[0_2px_12px_rgba(15,23,42,0.45)]">on record.</span>
       </p>
       <p className="text-sm leading-snug text-white/88 drop-shadow-[0_1px_8px_rgba(15,23,42,0.35)]">
         Log mix sheets, customers, and equipment from the field.
