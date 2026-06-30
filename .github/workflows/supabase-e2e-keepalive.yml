@@ -9,8 +9,10 @@ name: Supabase E2E Keep-Alive
 
 on:
   schedule:
-    # Every 3 days at 06:00 UTC (well under the 7-day inactivity pause window).
-    - cron: "0 6 */3 * *"
+    # Daily at 06:00 UTC. GitHub-scheduled runs are best-effort and can be delayed
+    # or dropped under load, so a daily cadence keeps a wide safety margin under
+    # Supabase's 7-day inactivity pause window even if several runs are skipped.
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -52,6 +54,13 @@ jobs:
           echo "Response (first 500 bytes):"
           head -c 500 /tmp/keepalive-response.txt || true
           echo
+
+          # Guard against a non-numeric/empty status so the numeric comparison below
+          # can't crash the step and silently mask a paused project.
+          if ! printf '%s' "${status}" | grep -Eq '^[0-9]+$'; then
+            echo "::error::Unexpected curl result (status='${status}') while pinging the E2E Supabase project. Check connectivity and secrets."
+            exit 1
+          fi
 
           if [ "${status}" = "000" ] || [ "${status}" -ge 500 ]; then
             echo "::error::E2E Supabase project appears unreachable or paused (HTTP ${status}). Resume it in the Supabase dashboard."
