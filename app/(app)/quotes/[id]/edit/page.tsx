@@ -23,6 +23,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
     { data: customers },
     { data: fields },
     { data: products },
+    { data: surfactants },
     { data: pricingConfig },
   ] = await Promise.all([
     supabase.from("quotes").select("*").eq("id", id).is("deleted_at", null).single(),
@@ -35,6 +36,12 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
     supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
     supabase
       .from("products")
+      .select("id,name,unit_cost,cost_unit")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    supabase
+      .from("surfactants")
       .select("id,name,unit_cost,cost_unit")
       .is("deleted_at", null)
       .eq("active", true)
@@ -79,6 +86,12 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               unitCost: product.unit_cost,
               costUnit: product.cost_unit,
             }))}
+            surfactants={(surfactants ?? []).map((surfactant) => ({
+              id: surfactant.id,
+              name: surfactant.name,
+              unitCost: surfactant.unit_cost,
+              costUnit: surfactant.cost_unit,
+            }))}
             minimumJobFee={pricingConfig?.minimum_job_fee ?? null}
             travelFeePerMile={pricingConfig?.travel_fee_per_mile ?? null}
             defaultValues={{
@@ -92,6 +105,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               validUntil: quote.valid_until,
               acres: quote.acres,
               serviceFor: quote.service_for,
+              adjuvantName: quote.adjuvant_name,
               adjuvantPrice: quote.adjuvant_price,
               mileage: quote.mileage,
               taxRate: quote.tax_rate,

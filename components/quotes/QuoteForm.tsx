@@ -26,6 +26,7 @@ type QuoteFormValues = {
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
+  adjuvantName: string | null;
   adjuvantPrice: number | null;
   mileage: number | null;
   taxRate: number | null;
@@ -64,6 +65,13 @@ type QuoteProductOption = {
   costUnit: string | null;
 };
 
+type QuoteSurfactantOption = {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  costUnit: string | null;
+};
+
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
@@ -71,6 +79,7 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
+  surfactants: QuoteSurfactantOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
@@ -110,6 +119,16 @@ function parseNumber(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+// Quotes store the adjuvant as a name snapshot (no FK), so we re-derive the
+// selected dropdown option from the saved name when editing an existing quote.
+function matchSurfactantId(
+  surfactants: QuoteSurfactantOption[],
+  adjuvantName: string | null | undefined,
+): string {
+  if (!adjuvantName) return "";
+  return surfactants.find((surfactant) => surfactant.name === adjuvantName)?.id ?? "";
+}
+
 function formatMoney(value: number): string {
   return `$${value.toFixed(2)}`;
 }
@@ -147,6 +166,7 @@ export function QuoteForm({
   customers,
   fields,
   products,
+  surfactants,
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
@@ -167,6 +187,10 @@ export function QuoteForm({
   );
   const [adjuvantPrice, setAdjuvantPrice] = useState<string>(
     defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : "",
+  );
+  const [adjuvantName, setAdjuvantName] = useState<string>(defaultValues?.adjuvantName ?? "");
+  const [adjuvantId, setAdjuvantId] = useState<string>(
+    matchSurfactantId(surfactants, defaultValues?.adjuvantName),
   );
   const [mileage, setMileage] = useState<string>(
     defaultValues?.mileage != null ? String(defaultValues.mileage) : "",
@@ -276,6 +300,16 @@ export function QuoteForm({
         return next;
       }),
     );
+  }
+
+  function handleAdjuvantSelect(nextId: string) {
+    const selected = surfactants.find((item) => item.id === nextId) ?? null;
+    setAdjuvantId(nextId);
+    setAdjuvantName(selected?.name ?? "");
+    // Mirror the product picker: selecting from the library suggests the price.
+    if (selected && selected.unitCost != null) {
+      setAdjuvantPrice(String(selected.unitCost));
+    }
   }
 
   function addLine() {
@@ -400,26 +434,6 @@ export function QuoteForm({
             />
             {errorFor(state, "serviceFor") ? (
               <p className="text-sm text-destructive">{errorFor(state, "serviceFor")}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="adjuvantPrice">Adjuvant price</Label>
-            <DecimalInput
-              id="adjuvantPrice"
-              name="adjuvantPrice"
-              value={adjuvantPrice}
-              onChange={(event) => setAdjuvantPrice(event.target.value)}
-              aria-invalid={Boolean(errorFor(state, "adjuvantPrice"))}
-              placeholder="0.00"
-            />
-            {adjuvantAmount > 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Adds {formatMoney(adjuvantAmount)} to the taxable subtotal.
-              </p>
-            ) : null}
-            {errorFor(state, "adjuvantPrice") ? (
-              <p className="text-sm text-destructive">{errorFor(state, "adjuvantPrice")}</p>
             ) : null}
           </div>
 
@@ -602,6 +616,55 @@ export function QuoteForm({
           {errorFor(state, "lineItems") ? (
             <p className="text-sm text-destructive">{errorFor(state, "lineItems")}</p>
           ) : null}
+
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Adjuvant / Surfactant
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="adjuvantSelect">Surfactant from library</Label>
+                <Select
+                  id="adjuvantSelect"
+                  value={adjuvantId}
+                  onChange={(event) => handleAdjuvantSelect(event.target.value)}
+                >
+                  <option value="">No adjuvant / custom</option>
+                  {surfactants.map((surfactant) => (
+                    <option key={surfactant.id} value={surfactant.id}>
+                      {surfactant.name}
+                    </option>
+                  ))}
+                </Select>
+                <input type="hidden" name="adjuvantName" value={adjuvantName} />
+                <p className="text-xs text-muted-foreground">
+                  Pick from the surfactant library to suggest a price, or leave as custom.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adjuvantPrice">Adjuvant price</Label>
+                <DecimalInput
+                  id="adjuvantPrice"
+                  name="adjuvantPrice"
+                  value={adjuvantPrice}
+                  onChange={(event) => setAdjuvantPrice(event.target.value)}
+                  aria-invalid={Boolean(errorFor(state, "adjuvantPrice"))}
+                  placeholder="0.00"
+                />
+                {adjuvantAmount > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Adds {formatMoney(adjuvantAmount)} to the taxable subtotal.
+                  </p>
+                ) : null}
+                {errorFor(state, "adjuvantPrice") ? (
+                  <p className="text-sm text-destructive">{errorFor(state, "adjuvantPrice")}</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-2 rounded-md border bg-muted/20 p-3">
             <div className="flex items-center justify-between">

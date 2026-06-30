@@ -31,17 +31,24 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
   const { fromRecord, customerId: customerIdParam } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: customers }, { data: fields }, { data: products }, { data: pricingConfig }] = await Promise.all([
-    supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
-    supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
-    supabase
-      .from("products")
-      .select("id,name,unit_cost,cost_unit")
-      .is("deleted_at", null)
-      .eq("active", true)
-      .order("name", { ascending: true }),
-    supabase.from("pricing_config").select("*").eq("id", SINGLETON_ID).maybeSingle(),
-  ]);
+  const [{ data: customers }, { data: fields }, { data: products }, { data: surfactants }, { data: pricingConfig }] =
+    await Promise.all([
+      supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
+      supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
+      supabase
+        .from("products")
+        .select("id,name,unit_cost,cost_unit")
+        .is("deleted_at", null)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("surfactants")
+        .select("id,name,unit_cost,cost_unit")
+        .is("deleted_at", null)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase.from("pricing_config").select("*").eq("id", SINGLETON_ID).maybeSingle(),
+    ]);
 
   const config: PricingConfigForSeed = {
     aerial_rate_per_acre: pricingConfig?.aerial_rate_per_acre ?? null,
@@ -150,6 +157,12 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
               name: product.name,
               unitCost: product.unit_cost,
               costUnit: product.cost_unit,
+            }))}
+            surfactants={(surfactants ?? []).map((surfactant) => ({
+              id: surfactant.id,
+              name: surfactant.name,
+              unitCost: surfactant.unit_cost,
+              costUnit: surfactant.cost_unit,
             }))}
             minimumJobFee={config.minimum_job_fee}
             travelFeePerMile={config.travel_fee_per_mile}

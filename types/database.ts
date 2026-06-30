@@ -944,6 +944,7 @@ export type Database = {
       quotes: {
         Row: {
           acres: number | null
+          adjuvant_name: string | null
           adjuvant_price: number | null
           created_at: string
           created_by: string | null
@@ -970,6 +971,7 @@ export type Database = {
         }
         Insert: {
           acres?: number | null
+          adjuvant_name?: string | null
           adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -996,6 +998,7 @@ export type Database = {
         }
         Update: {
           acres?: number | null
+          adjuvant_name?: string | null
           adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
