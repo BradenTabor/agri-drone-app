@@ -14,11 +14,61 @@ export type AppRecordFormFillResult = {
   applicatorName: string;
 };
 
+// Message surfaced by mapLoginError() for anything that is not a hard
+// credential/confirmation error (rate limits, dropped requests, transient 5xx).
+const TRANSIENT_LOGIN_ERROR = "Unable to sign in right now";
+
 export async function login(page: Page, email: string, password: string): Promise<void> {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  // The shared E2E user is signed in by every authenticated spec, so bursts of
+  // concurrent CI runs occasionally trip Supabase auth rate limits and fail an
+  // otherwise-healthy login. Retry transient failures (and the rare
+  // pre-hydration native form submit that never reaches Supabase) instead of
+  // letting one blip cascade across the whole authenticated suite.
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    await page.goto("/login");
+
+    const signInButton = page.getByRole("button", { name: "Sign in", exact: true });
+    await expect(signInButton).toBeEnabled();
+
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(password);
+    await signInButton.click();
+
+    const loginError = page.getByRole("alert");
+    const outcome = await Promise.race([
+      page
+        .waitForURL("/", { timeout: 20_000 })
+        .then(() => "success" as const)
+        .catch(() => "pending" as const),
+      loginError
+        .waitFor({ state: "visible", timeout: 20_000 })
+        .then(() => "error" as const)
+        .catch(() => "pending" as const),
+    ]);
+
+    if (outcome === "success") {
+      return;
+    }
+
+    if (outcome === "error") {
+      const message = (await loginError.textContent())?.trim() ?? "";
+      const isTransient = message.includes(TRANSIENT_LOGIN_ERROR);
+      // Fail fast on real credential/confirmation errors — retrying cannot help
+      // and would only hide a genuine regression.
+      if (!isTransient || attempt === maxAttempts) {
+        throw new Error(`Login failed: ${message || "unknown sign-in error"}`);
+      }
+    } else if (attempt === maxAttempts) {
+      // "pending": neither a redirect nor a surfaced error within the timeout.
+      break;
+    }
+
+    await page.waitForTimeout(1_000 * attempt);
+  }
+
+  // Surfaces a clear Playwright diff if every attempt was exhausted.
   await expect(page).toHaveURL("/", { timeout: 20_000 });
 }
 
