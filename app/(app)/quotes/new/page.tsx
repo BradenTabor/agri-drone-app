@@ -9,6 +9,7 @@ import {
   seedAerialLine,
   seedFeeLines,
   seedProductLine,
+  seedSurfactantLine,
   type PricingConfigForSeed,
   type SeededLineItem,
 } from "@/lib/quotes/calculations";
@@ -31,17 +32,24 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
   const { fromRecord, customerId: customerIdParam } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: customers }, { data: fields }, { data: products }, { data: pricingConfig }] = await Promise.all([
-    supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
-    supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
-    supabase
-      .from("products")
-      .select("id,name,unit_cost,cost_unit")
-      .is("deleted_at", null)
-      .eq("active", true)
-      .order("name", { ascending: true }),
-    supabase.from("pricing_config").select("*").eq("id", SINGLETON_ID).maybeSingle(),
-  ]);
+  const [{ data: customers }, { data: fields }, { data: products }, { data: surfactants }, { data: pricingConfig }] =
+    await Promise.all([
+      supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
+      supabase.from("fields").select("id,name,acres,customer_id").is("deleted_at", null).order("name", { ascending: true }),
+      supabase
+        .from("products")
+        .select("id,name,unit_cost,cost_unit")
+        .is("deleted_at", null)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("surfactants")
+        .select("id,name,unit_cost,cost_unit")
+        .is("deleted_at", null)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+      supabase.from("pricing_config").select("*").eq("id", SINGLETON_ID).maybeSingle(),
+    ]);
 
   const config: PricingConfigForSeed = {
     aerial_rate_per_acre: pricingConfig?.aerial_rate_per_acre ?? null,
@@ -75,7 +83,7 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
       supabase.from("app_records").select("id,customer_name,acres_treated").eq("id", fromRecord).is("deleted_at", null).single(),
       supabase
         .from("app_record_pesticides")
-        .select("product_name,sort_order")
+        .select("product_name,is_surfactant,sort_order")
         .eq("app_record_id", fromRecord)
         .order("sort_order", { ascending: true }),
     ]);
@@ -102,24 +110,35 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
     }
 
     for (const pesticide of pesticides ?? []) {
-      const matchedProduct = (products ?? []).find(
-        (product) => normalizeName(product.name) === normalizeName(pesticide.product_name),
-      );
-      if (matchedProduct) {
-        seededLineItems.push(seedProductLine(matchedProduct, config, defaultAcres));
+      if (pesticide.is_surfactant) {
+        const matchedSurfactant = (surfactants ?? []).find(
+          (surfactant) => normalizeName(surfactant.name) === normalizeName(pesticide.product_name),
+        );
+        if (matchedSurfactant) {
+          seededLineItems.push(seedSurfactantLine(matchedSurfactant, config, defaultAcres));
+          continue;
+        }
       } else {
-        const basis = defaultAcres != null && defaultAcres > 0 ? "per_acre" : "flat";
-        const quantity = basis === "per_acre" ? (defaultAcres ?? 0) : 1;
-        seededLineItems.push({
-          kind: "product",
-          productId: null,
-          description: pesticide.product_name,
-          basis,
-          quantity,
-          unitPrice: 0,
-          amount: 0,
-        });
+        const matchedProduct = (products ?? []).find(
+          (product) => normalizeName(product.name) === normalizeName(pesticide.product_name),
+        );
+        if (matchedProduct) {
+          seededLineItems.push(seedProductLine(matchedProduct, config, defaultAcres));
+          continue;
+        }
       }
+
+      const basis = defaultAcres != null && defaultAcres > 0 ? "per_acre" : "flat";
+      const quantity = basis === "per_acre" ? (defaultAcres ?? 0) : 1;
+      seededLineItems.push({
+        kind: "product",
+        productId: null,
+        description: pesticide.product_name,
+        basis,
+        quantity,
+        unitPrice: 0,
+        amount: 0,
+      });
     }
 
     seededLineItems = [...seededLineItems, ...seedFeeLines(config)];
@@ -150,6 +169,12 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
               name: product.name,
               unitCost: product.unit_cost,
               costUnit: product.cost_unit,
+            }))}
+            surfactants={(surfactants ?? []).map((surfactant) => ({
+              id: surfactant.id,
+              name: surfactant.name,
+              unitCost: surfactant.unit_cost,
+              costUnit: surfactant.cost_unit,
             }))}
             minimumJobFee={config.minimum_job_fee}
             defaultValues={{

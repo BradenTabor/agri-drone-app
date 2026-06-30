@@ -71,6 +71,28 @@ export function seedProductLine(
   };
 }
 
+export function seedSurfactantLine(
+  surfactant: ProductForSeed,
+  config: PricingConfigForSeed,
+  acres: number | null,
+): SeededLineItem {
+  const baseCost = surfactant.unit_cost ?? 0;
+  const unitPrice = applyMarkup(baseCost, config.product_markup_pct, config.markup_cap);
+  const basis: "per_acre" | "flat" = acres != null && acres > 0 ? "per_acre" : "flat";
+  const quantity = basis === "per_acre" ? (acres ?? 0) : 1;
+  const unitLabel = surfactant.cost_unit ? `/${surfactant.cost_unit}` : "";
+  return {
+    kind: "product",
+    // Surfactants are not in the products table, so no product_id FK is stored.
+    productId: null,
+    description: `${surfactant.name}${unitLabel ? ` (${unitLabel.slice(1)})` : ""}`,
+    basis,
+    quantity,
+    unitPrice,
+    amount: round2(unitPrice * quantity),
+  };
+}
+
 export function seedFeeLines(config: PricingConfigForSeed): SeededLineItem[] {
   const lines: SeededLineItem[] = [];
   if (config.setup_fee != null && config.setup_fee > 0) {

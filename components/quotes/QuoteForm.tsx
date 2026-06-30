@@ -37,6 +37,11 @@ type LineItemRow = {
   rowId: string;
   kind: "aerial" | "product" | "fee" | "custom";
   productId: string | null;
+  // UI-only selection token for the library picker: "", "product:<id>", or
+  // "surfactant:<id>". Surfactants are not persisted to product_id (which is a
+  // FK to the products table), so this keeps the dropdown in sync during a
+  // single editing session.
+  libraryKey: string;
   description: string;
   basis: "per_acre" | "flat";
   quantity: string;
@@ -69,6 +74,7 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
+  surfactants?: QuoteProductOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
@@ -79,6 +85,7 @@ function newLineItem(): LineItemRow {
     rowId: crypto.randomUUID(),
     kind: "custom",
     productId: null,
+    libraryKey: "",
     description: "",
     basis: "flat",
     quantity: "1",
@@ -93,6 +100,7 @@ function toLineItemRow(item: QuoteDefaultLineItem): LineItemRow {
     rowId: crypto.randomUUID(),
     kind: item.kind,
     productId: item.productId,
+    libraryKey: item.productId ? `product:${item.productId}` : "",
     description: item.description,
     basis: item.basis,
     quantity: String(item.quantity),
@@ -144,6 +152,7 @@ export function QuoteForm({
   customers,
   fields,
   products,
+  surfactants = [],
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
@@ -173,6 +182,10 @@ export function QuoteForm({
     [fields, customerId],
   );
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const surfactantsById = useMemo(
+    () => new Map(surfactants.map((surfactant) => [surfactant.id, surfactant])),
+    [surfactants],
+  );
 
   const totals = useMemo(
     () =>
@@ -209,35 +222,43 @@ export function QuoteForm({
     );
   }
 
-  function formatProductDescription(product: QuoteProductOption): string {
-    return product.costUnit ? `${product.name} (${product.costUnit})` : product.name;
+  function formatLibraryDescription(option: QuoteProductOption): string {
+    return option.costUnit ? `${option.name} (${option.costUnit})` : option.name;
   }
 
-  function handleProductSelect(rowId: string, productId: string) {
+  function handleLibrarySelect(rowId: string, libraryKey: string) {
     setLineItems((current) =>
       current.map((line) => {
         if (line.rowId !== rowId) return line;
-        if (!productId) {
+
+        if (!libraryKey) {
           return {
             ...line,
+            libraryKey: "",
             productId: null,
             kind: line.kind === "product" ? "custom" : line.kind,
           };
         }
 
-        const product = productsById.get(productId);
-        if (!product) return line;
+        const separatorIndex = libraryKey.indexOf(":");
+        const type = libraryKey.slice(0, separatorIndex);
+        const id = libraryKey.slice(separatorIndex + 1);
+        const option = type === "surfactant" ? surfactantsById.get(id) : productsById.get(id);
+        if (!option) return line;
 
         const next = {
           ...line,
           kind: "product" as const,
-          productId,
-          description: formatProductDescription(product),
+          // Only products map to the products FK; surfactants are seeded as a
+          // priced line without a product_id.
+          productId: type === "product" ? id : null,
+          libraryKey,
+          description: formatLibraryDescription(option),
         };
 
-        const suggestedUnitPrice = product.unitCost ?? 0;
+        const suggestedUnitPrice = option.unitCost ?? 0;
         const shouldReplaceUnitPrice =
-          line.unitPrice.trim() === "" || Number(line.unitPrice) === 0 || line.productId !== productId;
+          line.unitPrice.trim() === "" || Number(line.unitPrice) === 0 || line.libraryKey !== libraryKey;
 
         if (shouldReplaceUnitPrice) {
           next.unitPrice = String(suggestedUnitPrice);
@@ -471,17 +492,30 @@ export function QuoteForm({
               </div>
 
               <div className="space-y-2">
-                <Label>Product from library</Label>
+                <Label>Product / surfactant from library</Label>
                 <Select
-                  value={line.productId ?? ""}
-                  onChange={(event) => handleProductSelect(line.rowId, event.target.value)}
+                  value={line.libraryKey}
+                  onChange={(event) => handleLibrarySelect(line.rowId, event.target.value)}
                 >
                   <option value="">Custom line</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name}
-                    </option>
-                  ))}
+                  {products.length > 0 ? (
+                    <optgroup label="Products">
+                      {products.map((product) => (
+                        <option key={product.id} value={`product:${product.id}`}>
+                          {product.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
+                  {surfactants.length > 0 ? (
+                    <optgroup label="Surfactants">
+                      {surfactants.map((surfactant) => (
+                        <option key={surfactant.id} value={`surfactant:${surfactant.id}`}>
+                          {surfactant.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
                 </Select>
               </div>
 
