@@ -1,0 +1,61 @@
+name: Supabase E2E Keep-Alive
+
+# Supabase free-tier projects auto-pause after 7 days of inactivity. When the
+# dedicated E2E project pauses, the "Authenticated smoke" job can no longer sign
+# in and every authenticated test fails. This scheduled job sends a lightweight
+# request to the E2E project on a cadence comfortably under the 7-day window so
+# the project stays active. It also fails loudly if the project is unreachable,
+# turning a silent pause into an actionable alert.
+
+on:
+  schedule:
+    # Every 3 days at 06:00 UTC (well under the 7-day inactivity pause window).
+    - cron: "0 6 */3 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-e2e-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Ping dedicated E2E Supabase project
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Query PostgREST to keep the project active
+        run: |
+          set -uo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY secrets are not set."
+            exit 1
+          fi
+
+          base="${SUPABASE_URL%/}"
+          echo "Pinging ${base} ..."
+
+          # A real table read so Postgres registers activity. RLS may legitimately
+          # return an empty array (200) or deny (401/403) for the anon role; any of
+          # those means the project is awake. Only connection failures or 5xx mean
+          # the project is unreachable/paused.
+          status=$(curl -sS --max-time 30 \
+            -o /tmp/keepalive-response.txt \
+            -w "%{http_code}" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${base}/rest/v1/customers?select=id&limit=1") || status="000"
+
+          echo "HTTP status: ${status}"
+          echo "Response (first 500 bytes):"
+          head -c 500 /tmp/keepalive-response.txt || true
+          echo
+
+          if [ "${status}" = "000" ] || [ "${status}" -ge 500 ]; then
+            echo "::error::E2E Supabase project appears unreachable or paused (HTTP ${status}). Resume it in the Supabase dashboard."
+            exit 1
+          fi
+
+          echo "E2E Supabase project responded (HTTP ${status}) — still active."
