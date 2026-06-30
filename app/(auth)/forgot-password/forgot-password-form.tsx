@@ -32,6 +32,7 @@ export function ForgotPasswordForm() {
           type="email"
           autoComplete="email"
           required
+          className="text-base sm:text-sm"
         />
       </div>
 
