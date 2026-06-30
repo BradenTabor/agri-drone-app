@@ -283,11 +283,11 @@ function BillToSection({ data }: { data: QuotePdfData }) {
               <Text style={styles.value}>{data.quote.mileage} miles</Text>
             </View>
           ) : null}
-          {!data.quote.service_for && 
-           !data.quote.acres && 
-           !data.quote.adjuvant_surfactant && 
-           !data.quote.price_per_acre && 
-           !data.quote.mileage ? (
+          {!data.quote.service_for &&
+            !data.quote.acres &&
+            !data.quote.adjuvant_surfactant &&
+            !data.quote.price_per_acre &&
+            !data.quote.mileage ? (
             <Text style={styles.value}>{EM_DASH}</Text>
           ) : null}
         </View>
