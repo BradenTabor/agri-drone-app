@@ -14,9 +14,18 @@ export type AppRecordFormFillResult = {
   applicatorName: string;
 };
 
-// Message surfaced by mapLoginError() for anything that is not a hard
-// credential/confirmation error (rate limits, dropped requests, transient 5xx).
-const TRANSIENT_LOGIN_ERROR = "Unable to sign in right now";
+// Messages the login form surfaces for transient (retryable) failures rather
+// than hard credential/confirmation errors. The two paths come from different
+// places in app/(auth)/login/login-form.tsx:
+//   - mapLoginError() returns "Unable to sign in right now..." when Supabase
+//     replies with a non-credential AuthError (e.g. rate limits, transient 5xx).
+//   - the form's catch block returns "Sign in is temporarily unavailable..."
+//     when the request throws outright (dropped/aborted network requests).
+// Keep this list in sync with those messages so neither blip fails the suite.
+const TRANSIENT_LOGIN_ERRORS = [
+  "Unable to sign in right now",
+  "Sign in is temporarily unavailable",
+];
 
 export async function login(page: Page, email: string, password: string): Promise<void> {
   // The shared E2E user is signed in by every authenticated spec, so bursts of
@@ -54,7 +63,9 @@ export async function login(page: Page, email: string, password: string): Promis
 
     if (outcome === "error") {
       const message = (await loginError.textContent())?.trim() ?? "";
-      const isTransient = message.includes(TRANSIENT_LOGIN_ERROR);
+      const isTransient = TRANSIENT_LOGIN_ERRORS.some((transient) =>
+        message.includes(transient),
+      );
       // Fail fast on real credential/confirmation errors — retrying cannot help
       // and would only hide a genuine regression.
       if (!isTransient || attempt === maxAttempts) {
