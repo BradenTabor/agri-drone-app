@@ -26,7 +26,6 @@ type QuoteFormValues = {
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
-  adjuvantName: string | null;
   adjuvantPrice: number | null;
   mileage: number | null;
   taxRate: number | null;
@@ -65,13 +64,6 @@ type QuoteProductOption = {
   costUnit: string | null;
 };
 
-type QuoteSurfactantOption = {
-  id: string;
-  name: string;
-  unitCost: number | null;
-  costUnit: string | null;
-};
-
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
@@ -79,7 +71,6 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
-  surfactants: QuoteSurfactantOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
@@ -119,16 +110,6 @@ function parseNumber(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-// Quotes store the adjuvant as a name snapshot (no FK), so we re-derive the
-// selected dropdown option from the saved name when editing an existing quote.
-function matchSurfactantId(
-  surfactants: QuoteSurfactantOption[],
-  adjuvantName: string | null | undefined,
-): string {
-  if (!adjuvantName) return "";
-  return surfactants.find((surfactant) => surfactant.name === adjuvantName)?.id ?? "";
-}
-
 function formatMoney(value: number): string {
   return `$${value.toFixed(2)}`;
 }
@@ -166,7 +147,6 @@ export function QuoteForm({
   customers,
   fields,
   products,
-  surfactants,
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
@@ -187,10 +167,6 @@ export function QuoteForm({
   );
   const [adjuvantPrice, setAdjuvantPrice] = useState<string>(
     defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : "",
-  );
-  const [adjuvantName, setAdjuvantName] = useState<string>(defaultValues?.adjuvantName ?? "");
-  const [adjuvantId, setAdjuvantId] = useState<string>(
-    matchSurfactantId(surfactants, defaultValues?.adjuvantName),
   );
   const [mileage, setMileage] = useState<string>(
     defaultValues?.mileage != null ? String(defaultValues.mileage) : "",
