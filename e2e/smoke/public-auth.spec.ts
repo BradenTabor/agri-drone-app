@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { getLoginFormAlert } from "../lib/record-form-helpers";
+
 test.describe("public auth pages", () => {
   test("login page renders sign-in form", async ({ page }) => {
     await page.goto("/login");
@@ -48,7 +50,7 @@ test.describe("public auth pages", () => {
     await page.getByLabel("Password").fill("wrongpassword123");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
-    await expect(page.getByText("Invalid email or password.")).toBeVisible();
+    await expect(getLoginFormAlert(page)).toHaveText("Invalid email or password.");
     await expect(page).toHaveURL(/\/login$/);
   });
 });
