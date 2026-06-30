@@ -364,20 +364,26 @@ function Footer() {
   );
 }
 
+export function MixRecordPageContent({ data }: { data: MixRecordPdfData }) {
+  return (
+    <Page size="A4" style={styles.page}>
+      <Text style={styles.runningHeader} fixed>
+        {BRAND.name} — Mix Record
+      </Text>
+      <HeaderSection data={data} />
+      <MixSection data={data} />
+      <ConditionsSection data={data} />
+      <NotesSection notes={data.record.notes} />
+      <CertificationSection data={data} />
+      <Footer />
+    </Page>
+  );
+}
+
 export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.runningHeader} fixed>
-          {BRAND.name} — Mix Record
-        </Text>
-        <HeaderSection data={data} />
-        <MixSection data={data} />
-        <ConditionsSection data={data} />
-        <NotesSection notes={data.record.notes} />
-        <CertificationSection data={data} />
-        <Footer />
-      </Page>
+      <MixRecordPageContent data={data} />
     </Document>
   );
 }

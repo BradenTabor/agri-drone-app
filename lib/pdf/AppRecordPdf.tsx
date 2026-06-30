@@ -4,6 +4,7 @@ import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
 import type { AppRecordPdfData } from "./getAppRecordForPdf";
+import { MixRecordPageContent } from "./MixRecordPdf";
 import { PDF_THEME } from "./theme";
 
 const EM_DASH = "—";
@@ -103,6 +104,10 @@ const styles = StyleSheet.create({
   },
   mixItem: {
     marginBottom: 4,
+  },
+  mixFollowsNote: {
+    marginTop: 4,
+    fontStyle: "italic",
   },
   footerRow: {
     position: "absolute",
@@ -258,7 +263,13 @@ function ApplicationSection({ data }: { data: AppRecordPdfData }) {
   );
 }
 
-function MixRecordsSection({ linkedMixRecords }: { linkedMixRecords: AppRecordPdfData["linkedMixRecords"] }) {
+function MixRecordsSection({
+  linkedMixRecords,
+  hasFullRecords,
+}: {
+  linkedMixRecords: AppRecordPdfData["linkedMixRecords"];
+  hasFullRecords: boolean;
+}) {
   if (linkedMixRecords.length === 0) return null;
 
   return (
@@ -272,6 +283,11 @@ function MixRecordsSection({ linkedMixRecords }: { linkedMixRecords: AppRecordPd
           </Text>
         </View>
       ))}
+      {hasFullRecords ? (
+        <Text style={[styles.label, styles.mixFollowsNote]}>
+          Full mix records are included on the following pages.
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -366,11 +382,17 @@ export function AppRecordPdf({ data }: { data: AppRecordPdfData }) {
         <JobSection data={data} />
         <GpsWeatherSection data={data} />
         <ApplicationSection data={data} />
-        <MixRecordsSection linkedMixRecords={data.linkedMixRecords} />
+        <MixRecordsSection
+          linkedMixRecords={data.linkedMixRecords}
+          hasFullRecords={data.linkedMixRecordDetails.length > 0}
+        />
         <PesticidesSection pesticides={data.pesticides} />
         <TotalsSection data={data} />
         <Footer />
       </Page>
+      {data.linkedMixRecordDetails.map((mixData) => (
+        <MixRecordPageContent key={mixData.record.id} data={mixData} />
+      ))}
     </Document>
   );
 }

@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 
+import { getMixRecordForPdf, type MixRecordPdfData } from "./getMixRecordForPdf";
+
 export type AppRecordPdfData = {
   record: {
     id: string;
@@ -51,6 +53,7 @@ export type AppRecordPdfData = {
     customer_name: string | null;
     field_name: string | null;
   }>;
+  linkedMixRecordDetails: MixRecordPdfData[];
 };
 
 type ProfileNameRow = {
@@ -58,19 +61,17 @@ type ProfileNameRow = {
   deleted_at?: string | null;
 };
 
+type MixRecordLinkMix = {
+  id: string;
+  record_date: string;
+  customer_name_snapshot: string | null;
+  field_name_snapshot: string | null;
+  deleted_at: string | null;
+};
+
 type MixRecordLinkRow = {
   sort_order: number;
-  mix_records: {
-    record_date: string;
-    customer_name_snapshot: string | null;
-    field_name_snapshot: string | null;
-    deleted_at: string | null;
-  } | {
-    record_date: string;
-    customer_name_snapshot: string | null;
-    field_name_snapshot: string | null;
-    deleted_at: string | null;
-  }[] | null;
+  mix_records: MixRecordLinkMix | MixRecordLinkMix[] | null;
 };
 
 type AppRecordForPdfRow = {
@@ -181,7 +182,7 @@ export async function getAppRecordForPdf(
       ),
       app_record_mix_records(
         sort_order,
-        mix_records(record_date,customer_name_snapshot,field_name_snapshot,deleted_at)
+        mix_records(id,record_date,customer_name_snapshot,field_name_snapshot,deleted_at)
       )
     `,
     )
@@ -220,17 +221,21 @@ export async function getAppRecordForPdf(
     active_ingredient: line.active_ingredient,
   }));
 
-  const linkedMixRecords = (typedRow.app_record_mix_records ?? [])
-    .map((link) => {
-      const mix = asSingle(link.mix_records);
-      if (!mix || mix.deleted_at) return null;
-      return {
-        record_date: mix.record_date,
-        customer_name: mix.customer_name_snapshot,
-        field_name: mix.field_name_snapshot,
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item != null);
+  const activeLinkedMixes = (typedRow.app_record_mix_records ?? [])
+    .map((link) => asSingle(link.mix_records))
+    .filter((mix): mix is MixRecordLinkMix => mix != null && !mix.deleted_at);
+
+  const linkedMixRecords = activeLinkedMixes.map((mix) => ({
+    record_date: mix.record_date,
+    customer_name: mix.customer_name_snapshot,
+    field_name: mix.field_name_snapshot,
+  }));
+
+  // Load each linked mix record's full detail so the application record PDF is
+  // self-contained: the summary list is followed by the complete mix record pages.
+  const linkedMixRecordDetails = (
+    await Promise.all(activeLinkedMixes.map((mix) => getMixRecordForPdf(mix.id, supabase)))
+  ).filter((detail): detail is MixRecordPdfData => detail != null);
 
   return {
     record: {
@@ -272,5 +277,6 @@ export async function getAppRecordForPdf(
     },
     pesticides,
     linkedMixRecords,
+    linkedMixRecordDetails,
   };
 }
