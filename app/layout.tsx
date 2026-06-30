@@ -24,10 +24,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: `${BRAND.appName} | ${BRAND.name}`,
   description: "Mobile-first mix record capture and operations tracking.",
-  icons: {
-    icon: BRAND.logoPath,
-    apple: BRAND.logoPath,
-  },
 };
 
 export default function RootLayout({
