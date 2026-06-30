@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { softDeleteQuoteAction } from "@/app/(app)/quotes/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
+import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -63,13 +64,10 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           <Link href="/quotes" className={buttonVariants({ variant: "outline" })}>
             Back
           </Link>
-          <a
-            href={`/api/quote-pdf/${quote.id}`}
-            download
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Download PDF
-          </a>
+          <PdfDownloadButton
+            pdfUrl={`/api/quote-pdf/${quote.id}`}
+            filename={`quote-${(quote.quote_number || quote.id.slice(0, 8)).replace(/[^a-zA-Z0-9-_]/g, "")}.pdf`}
+          />
           <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit
           </Link>

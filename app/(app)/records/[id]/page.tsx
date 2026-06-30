@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { softDeleteMixRecordAction } from "@/app/(app)/records/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
+import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -98,13 +99,10 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
           <Link href="/records" className={buttonVariants({ variant: "outline" })}>
             Back
           </Link>
-          <a
-            href={`/api/pdf/${record.id}`}
-            download
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Download PDF
-          </a>
+          <PdfDownloadButton
+            pdfUrl={`/api/pdf/${record.id}`}
+            filename={`mix-record-${record.record_date}-${record.id.slice(0, 8)}.pdf`}
+          />
           <Link href={`/records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit
           </Link>
