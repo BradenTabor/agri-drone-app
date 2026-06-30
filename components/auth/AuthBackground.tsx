@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 const HERO_IMAGE = "/auth/hero.jpg";
-const HERO_VIDEO = "/auth/hero.mp4";
+const HERO_VIDEO_WEBM = "/auth/hero.webm";
+const HERO_VIDEO_MP4 = "/auth/hero.mp4";
 
 function subscribeReducedMotion(onStoreChange: () => void) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -89,7 +90,8 @@ export function AuthBackground() {
           onCanPlay={handleVideoCanPlay}
           onError={handleVideoError}
         >
-          <source src={HERO_VIDEO} type="video/mp4" />
+          <source src={HERO_VIDEO_WEBM} type="video/webm" />
+          <source src={HERO_VIDEO_MP4} type="video/mp4" />
         </video>
       ) : null}
 
