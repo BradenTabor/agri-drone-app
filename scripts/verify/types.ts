@@ -85,8 +85,18 @@ export interface VerificationReport {
     blockingFailed: number;
     blockingSkipped: number;
   };
-  /** True when every blocking stage passed (none failed or skipped). */
+  /**
+   * True when every blocking stage was *run* and passed (none failed or
+   * skipped) AND the run covered the full blocking gate. A partial run (some
+   * blocking stages excluded via `--only`/`--skip`) is never production ready.
+   */
   productionReady: boolean;
+  /**
+   * True when at least one blocking stage was excluded from this run (not the
+   * same as a prerequisite skip — those still count toward the gate). A partial
+   * run can pass its selected stages but cannot certify production readiness.
+   */
+  partial: boolean;
   stages: StageResult[];
   /** Ordered remediation steps aggregated from all findings. */
   plan: Finding[];

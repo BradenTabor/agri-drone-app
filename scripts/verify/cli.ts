@@ -109,10 +109,17 @@ function selectStages(options: CliOptions): StageDefinition[] {
   return selected;
 }
 
+/** A run is partial when any *blocking* stage is excluded from the selection. */
+function isPartialRun(selected: StageDefinition[]): boolean {
+  const selectedIds = new Set(selected.map((stage) => stage.id));
+  return STAGES.some((stage) => stage.blocking && !selectedIds.has(stage.id));
+}
+
 async function runPass(
   stages: StageDefinition[],
   iteration: number,
   verbose: boolean,
+  partial: boolean,
 ): Promise<VerificationReport> {
   const startedAt = Date.now();
   const ctx: RunContext = { buildPassed: false, verbose };
@@ -126,7 +133,7 @@ async function runPass(
     results.push(result);
   }
 
-  const report = buildReport(results, startedAt, iteration);
+  const report = buildReport(results, startedAt, iteration, partial);
   writeReport(report);
   return report;
 }
@@ -150,6 +157,7 @@ const delay = (ms: number): Promise<void> =>
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   const stages = selectStages(options);
+  const partial = isPartialRun(stages);
 
   let report: VerificationReport | null = null;
   let previousDeterministicFailures: string[] | null = null;
@@ -158,11 +166,25 @@ async function main(): Promise<void> {
     process.stdout.write(
       `\n[verify] ===== Pass ${iteration}/${options.maxIterations} =====\n`,
     );
-    report = await runPass(stages, iteration, options.verbose);
+    report = await runPass(stages, iteration, options.verbose, partial);
     printSummary(report);
 
     if (report.productionReady) {
       process.stdout.write("\n[verify] Production ready — all blocking stages green.\n");
+      process.exit(0);
+    }
+
+    // A partial run cannot certify production readiness, but if every selected
+    // blocking stage passed it is still a successful gate (exit 0) — looping
+    // would not add coverage the selection excludes.
+    if (
+      partial &&
+      report.summary.blockingFailed === 0 &&
+      report.summary.blockingSkipped === 0
+    ) {
+      process.stdout.write(
+        "\n[verify] Selected gates passed (partial run — not the full production-ready gate).\n",
+      );
       process.exit(0);
     }
 

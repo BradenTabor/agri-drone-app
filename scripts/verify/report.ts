@@ -13,6 +13,7 @@ export function buildReport(
   stages: StageResult[],
   startedAt: number,
   iteration: number,
+  partial: boolean = false,
 ): VerificationReport {
   const finishedAt = Date.now();
   const passed = stages.filter((s) => s.status === "passed").length;
@@ -40,7 +41,8 @@ export function buildReport(
       blockingFailed,
       blockingSkipped,
     },
-    productionReady: blockingFailed === 0 && blockingSkipped === 0,
+    productionReady: blockingFailed === 0 && blockingSkipped === 0 && !partial,
+    partial,
     stages,
     plan,
   };
@@ -53,12 +55,21 @@ function renderMarkdown(report: VerificationReport): string {
     skipped: "SKIP",
   };
 
+  const selectedGreen =
+    report.summary.blockingFailed === 0 && report.summary.blockingSkipped === 0;
+
   const lines: string[] = [];
   lines.push("# Verification Loop Report");
   lines.push("");
-  lines.push(
-    `- **Production ready:** ${report.productionReady ? "YES ✅" : "NO ❌"}`,
-  );
+  if (report.partial) {
+    lines.push(
+      `- **Production ready:** PARTIAL RUN ⚠️ — selected gates ${selectedGreen ? "passed" : "did not pass"}, but the full blocking gate did not run.`,
+    );
+  } else {
+    lines.push(
+      `- **Production ready:** ${report.productionReady ? "YES ✅" : "NO ❌"}`,
+    );
+  }
   lines.push(`- **Iteration:** ${report.iteration}`);
   lines.push(`- **Finished:** ${report.finishedAt}`);
   lines.push(`- **Duration:** ${(report.durationMs / 1000).toFixed(1)}s`);
@@ -156,9 +167,17 @@ export function printSummary(report: VerificationReport): void {
   process.stdout.write(
     `  ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.skipped} skipped\n`,
   );
-  process.stdout.write(
-    `  Production ready: ${report.productionReady ? "YES" : "NO"}\n`,
-  );
+  if (report.partial) {
+    const selectedGreen =
+      report.summary.blockingFailed === 0 && report.summary.blockingSkipped === 0;
+    process.stdout.write(
+      `  Production ready: PARTIAL RUN (selected gates ${selectedGreen ? "passed" : "failed"}; full gate not run)\n`,
+    );
+  } else {
+    process.stdout.write(
+      `  Production ready: ${report.productionReady ? "YES" : "NO"}\n`,
+    );
+  }
   if (report.plan.length > 0) {
     process.stdout.write("\n  Remediation plan:\n");
     report.plan.forEach((finding, index) => {

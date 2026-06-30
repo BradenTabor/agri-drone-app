@@ -55,8 +55,13 @@ Supabase env, browsers not installed, or the build did not pass. Skips of a
 | `1` | Not ready — at least one blocking stage failed or was skipped |
 | `2` | Stalled — deterministic stages failed identically across two loop passes |
 
-`productionReady` is `true` only when no blocking stage failed **and** no
-blocking stage was skipped.
+`productionReady` is `true` only when the run covered the **full** blocking
+gate and no blocking stage failed or was skipped. A **partial run** — one that
+excludes a blocking stage via `--only`/`--skip` (e.g. `npm run verify:static`,
+which runs only `lint,typecheck,unit`) — reports `partial: true` and is never
+`productionReady`, even when every selected stage passes. A partial run still
+exits `0` when its selected blocking stages all pass, so it remains a useful
+fast inner-loop gate; just don't read its green result as full readiness.
 
 ## How an agent drives the loop
 
