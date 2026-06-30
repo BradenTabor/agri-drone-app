@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import {
+  E2E_SUPABASE_UNREACHABLE_SKIP_REASON,
+  isE2eSupabaseReachable,
+} from "../lib/e2e-supabase-reachability";
 import { clearServerFormDraft } from "../lib/form-draft-cleanup";
 import { E2E_ALLOWED_SUPABASE_PROJECT_REF } from "../lib/supabase-project-guard";
 import {
@@ -37,6 +41,10 @@ test.describe("authenticated record write flows", () => {
     !email || !password || !e2eProjectReady,
     "Set E2E_EMAIL, E2E_PASSWORD, and E2E_ALLOWED_SUPABASE_PROJECT_REF (dedicated non-prod project) to run record write E2E tests.",
   );
+
+  test.beforeEach(async () => {
+    test.skip(!(await isE2eSupabaseReachable()), E2E_SUPABASE_UNREACHABLE_SKIP_REASON);
+  });
 
   test.beforeEach(async ({ page }) => {
     await login(page, email!, password!);

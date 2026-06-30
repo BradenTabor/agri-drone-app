@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import {
+  E2E_SUPABASE_UNREACHABLE_SKIP_REASON,
+  isE2eSupabaseReachable,
+} from "../lib/e2e-supabase-reachability";
 import { E2E_ALLOWED_SUPABASE_PROJECT_REF } from "../lib/supabase-project-guard";
 
 const email = process.env.E2E_EMAIL;
@@ -15,6 +19,10 @@ test.describe("authenticated smoke", () => {
     skipAuthenticated,
     "Set E2E_EMAIL, E2E_PASSWORD, and E2E_ALLOWED_SUPABASE_PROJECT_REF to run authenticated tests.",
   );
+
+  test.beforeEach(async () => {
+    test.skip(!(await isE2eSupabaseReachable()), E2E_SUPABASE_UNREACHABLE_SKIP_REASON);
+  });
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
