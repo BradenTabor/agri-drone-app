@@ -4,6 +4,7 @@ import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
 import type { AppRecordPdfData } from "./getAppRecordForPdf";
+import { MixRecordPage } from "./MixRecordPdf";
 import { PDF_THEME } from "./theme";
 
 const EM_DASH = "—";
@@ -371,6 +372,9 @@ export function AppRecordPdf({ data }: { data: AppRecordPdfData }) {
         <TotalsSection data={data} />
         <Footer />
       </Page>
+      {data.linkedMixRecordDocs.map((mixData) => (
+        <MixRecordPage key={mixData.record.id} data={mixData} />
+      ))}
     </Document>
   );
 }
