@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { login } from "../lib/record-form-helpers";
 import { E2E_ALLOWED_SUPABASE_PROJECT_REF } from "../lib/supabase-project-guard";
 
 const email = process.env.E2E_EMAIL;
@@ -17,11 +18,7 @@ test.describe("authenticated smoke", () => {
   );
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email!);
-    await page.getByLabel("Password").fill(password!);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page).toHaveURL("/", { timeout: 20_000 });
+    await login(page, email!, password!);
   });
 
   test("dashboard loads with navigation", async ({ page }) => {
