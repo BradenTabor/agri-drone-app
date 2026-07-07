@@ -127,3 +127,47 @@ export function computeTotals(
 export function lineAmount(quantity: number, unitPrice: number): number {
   return round2((Number(quantity) || 0) * (Number(unitPrice) || 0));
 }
+
+/**
+ * Travel charge for a quote. Mileage is captured in miles, so it needs the
+ * configured per-mile rate ($/mi) to become a dollar amount: miles × rate.
+ * Returns 0 when either input is missing or non-positive.
+ */
+export function mileageCharge(miles: number | null, ratePerMile: number | null): number {
+  if (miles == null || ratePerMile == null) return 0;
+  const distance = Number(miles);
+  const rate = Number(ratePerMile);
+  if (!Number.isFinite(distance) || !Number.isFinite(rate)) return 0;
+  if (distance <= 0 || rate <= 0) return 0;
+  return round2(distance * rate);
+}
+
+export type QuoteExtraChargeInput = {
+  adjuvantPrice: number | null;
+  mileage: number | null;
+  ratePerMile: number | null;
+};
+
+/**
+ * Builds the extra taxable charges folded into a quote's subtotal alongside the
+ * line items: the adjuvant price (a flat dollar amount entered on the quote) and
+ * the mileage charge (miles × travel rate). Returning line-item-shaped entries
+ * lets {@link computeTotals} treat them exactly like line items, so they land in
+ * the taxable subtotal — the same treatment the surfactant charge receives. Only
+ * positive charges are emitted, so blank inputs add nothing.
+ */
+export function quoteExtraTaxableCharges(input: QuoteExtraChargeInput): Array<{ amount: number }> {
+  const charges: Array<{ amount: number }> = [];
+
+  const adjuvant = input.adjuvantPrice == null ? 0 : Number(input.adjuvantPrice);
+  if (Number.isFinite(adjuvant) && adjuvant > 0) {
+    charges.push({ amount: round2(adjuvant) });
+  }
+
+  const mileage = mileageCharge(input.mileage, input.ratePerMile);
+  if (mileage > 0) {
+    charges.push({ amount: mileage });
+  }
+
+  return charges;
+}

@@ -46,7 +46,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
       .is("deleted_at", null)
       .eq("active", true)
       .order("name", { ascending: true }),
-    supabase.from("pricing_config").select("minimum_job_fee").eq("id", SINGLETON_ID).maybeSingle(),
+    supabase.from("pricing_config").select("minimum_job_fee,travel_fee_per_mile").eq("id", SINGLETON_ID).maybeSingle(),
   ]);
 
   if (quoteError || !quote) {
@@ -93,6 +93,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               costUnit: surfactant.cost_unit,
             }))}
             minimumJobFee={pricingConfig?.minimum_job_fee ?? null}
+            travelFeePerMile={pricingConfig?.travel_fee_per_mile ?? null}
             defaultValues={{
               quoteNumber: quote.quote_number,
               status: quote.status as "draft" | "sent" | "accepted" | "declined",
@@ -105,6 +106,9 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               validUntil: quote.valid_until,
               acres: quote.acres,
               serviceFor: quote.service_for,
+              adjuvantName: quote.adjuvant_name,
+              adjuvantPrice: quote.adjuvant_price,
+              mileage: quote.mileage,
               taxRate: quote.tax_rate,
               otherLabel: quote.other_label,
               otherAmount: quote.other_amount,

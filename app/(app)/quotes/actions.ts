@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { computeTotals, surfactantCharge } from "@/lib/quotes/calculations";
+import { computeTotals, quoteExtraTaxableCharges, surfactantCharge } from "@/lib/quotes/calculations";
 import {
   quoteCreateSchema,
   quoteUpdateSchema,
@@ -11,6 +11,21 @@ import {
   type QuoteLineItemInput,
 } from "@/lib/validation/schemas";
 import { createClient } from "@/lib/supabase/server";
+
+const PRICING_CONFIG_SINGLETON_ID = "00000000-0000-0000-0000-000000000001";
+
+// The per-mile travel rate is resolved from pricing settings server-side so the
+// client cannot tamper with the rate applied to a quote's mileage charge.
+async function resolveTravelRatePerMile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<number | null> {
+  const { data } = await supabase
+    .from("pricing_config")
+    .select("travel_fee_per_mile")
+    .eq("id", PRICING_CONFIG_SINGLETON_ID)
+    .maybeSingle();
+  return data?.travel_fee_per_mile ?? null;
+}
 
 type QuoteFieldErrors = Partial<Record<keyof QuoteCreateInput, string[]>>;
 
@@ -41,6 +56,9 @@ function extractQuoteFormData(formData: FormData) {
     validUntil: String(formData.get("validUntil") ?? ""),
     acres: String(formData.get("acres") ?? ""),
     serviceFor: String(formData.get("serviceFor") ?? ""),
+    adjuvantName: String(formData.get("adjuvantName") ?? ""),
+    adjuvantPrice: String(formData.get("adjuvantPrice") ?? ""),
+    mileage: String(formData.get("mileage") ?? ""),
     taxRate: String(formData.get("taxRate") ?? "0"),
     otherLabel: String(formData.get("otherLabel") ?? ""),
     otherAmount: String(formData.get("otherAmount") ?? "0"),
@@ -106,8 +124,17 @@ export async function createQuoteAction(
     parsed.data.surfactantId,
     parsed.data.acres ?? null,
   );
+  const ratePerMile = await resolveTravelRatePerMile(supabase);
+  // Extra quote charges are folded into the taxable subtotal alongside line items.
   const totals = computeTotals(
-    parsed.data.lineItems,
+    [
+      ...parsed.data.lineItems,
+      ...quoteExtraTaxableCharges({
+        adjuvantPrice: parsed.data.adjuvantPrice ?? null,
+        mileage: parsed.data.mileage ?? null,
+        ratePerMile,
+      }),
+    ],
     parsed.data.taxRate,
     parsed.data.otherAmount,
     surfactantAmount,
@@ -126,6 +153,9 @@ export async function createQuoteAction(
       valid_until: parsed.data.validUntil ?? null,
       acres: parsed.data.acres ?? null,
       service_for: parsed.data.serviceFor ?? null,
+      adjuvant_name: parsed.data.adjuvantName ?? null,
+      adjuvant_price: parsed.data.adjuvantPrice ?? null,
+      mileage: parsed.data.mileage ?? null,
       tax_rate: parsed.data.taxRate,
       other_label: parsed.data.otherLabel ?? null,
       other_amount: parsed.data.otherAmount,
@@ -182,8 +212,17 @@ export async function updateQuoteAction(
     parsed.data.surfactantId,
     parsed.data.acres ?? null,
   );
+  const ratePerMile = await resolveTravelRatePerMile(supabase);
+  // Extra quote charges are folded into the taxable subtotal alongside line items.
   const totals = computeTotals(
-    parsed.data.lineItems,
+    [
+      ...parsed.data.lineItems,
+      ...quoteExtraTaxableCharges({
+        adjuvantPrice: parsed.data.adjuvantPrice ?? null,
+        mileage: parsed.data.mileage ?? null,
+        ratePerMile,
+      }),
+    ],
     parsed.data.taxRate,
     parsed.data.otherAmount,
     surfactantAmount,
@@ -202,6 +241,9 @@ export async function updateQuoteAction(
       valid_until: parsed.data.validUntil ?? null,
       acres: parsed.data.acres ?? null,
       service_for: parsed.data.serviceFor ?? null,
+      adjuvant_name: parsed.data.adjuvantName ?? null,
+      adjuvant_price: parsed.data.adjuvantPrice ?? null,
+      mileage: parsed.data.mileage ?? null,
       tax_rate: parsed.data.taxRate,
       other_label: parsed.data.otherLabel ?? null,
       other_amount: parsed.data.otherAmount,
