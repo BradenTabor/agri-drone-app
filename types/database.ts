@@ -944,6 +944,8 @@ export type Database = {
       quotes: {
         Row: {
           acres: number | null
+          adjuvant_name: string | null
+          adjuvant_price: number | null
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -951,6 +953,7 @@ export type Database = {
           deleted_at: string | null
           field_id: string | null
           id: string
+          mileage: number | null
           notes: string | null
           other_amount: number
           other_label: string | null
@@ -960,6 +963,7 @@ export type Database = {
           source_app_record_id: string | null
           status: string
           subtotal: number
+          surfactant_id: string | null
           tax_rate: number
           terms: string | null
           total: number
@@ -968,6 +972,8 @@ export type Database = {
         }
         Insert: {
           acres?: number | null
+          adjuvant_name?: string | null
+          adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -975,6 +981,7 @@ export type Database = {
           deleted_at?: string | null
           field_id?: string | null
           id?: string
+          mileage?: number | null
           notes?: string | null
           other_amount?: number
           other_label?: string | null
@@ -984,6 +991,7 @@ export type Database = {
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          surfactant_id?: string | null
           tax_rate?: number
           terms?: string | null
           total?: number
@@ -992,6 +1000,8 @@ export type Database = {
         }
         Update: {
           acres?: number | null
+          adjuvant_name?: string | null
+          adjuvant_price?: number | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -999,6 +1009,7 @@ export type Database = {
           deleted_at?: string | null
           field_id?: string | null
           id?: string
+          mileage?: number | null
           notes?: string | null
           other_amount?: number
           other_label?: string | null
@@ -1008,6 +1019,7 @@ export type Database = {
           source_app_record_id?: string | null
           status?: string
           subtotal?: number
+          surfactant_id?: string | null
           tax_rate?: number
           terms?: string | null
           total?: number
@@ -1041,6 +1053,13 @@ export type Database = {
             columns: ["source_app_record_id"]
             isOneToOne: false
             referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_surfactant_id_fkey"
+            columns: ["surfactant_id"]
+            isOneToOne: false
+            referencedRelation: "surfactants"
             referencedColumns: ["id"]
           },
         ]

@@ -4,6 +4,7 @@ import { decimalToDms, dmsToString } from "@/lib/formatting/coordinates";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { mixRecordPdfMeta } from "./documentMeta";
 import type { MixRecordPdfData } from "./getMixRecordForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -364,20 +365,32 @@ function Footer() {
   );
 }
 
-export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
+export function MixRecordPage({ data }: { data: MixRecordPdfData }) {
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.runningHeader} fixed>
-          {BRAND.name} — Mix Record
-        </Text>
-        <HeaderSection data={data} />
-        <MixSection data={data} />
-        <ConditionsSection data={data} />
-        <NotesSection notes={data.record.notes} />
-        <CertificationSection data={data} />
-        <Footer />
-      </Page>
+    <Page size="A4" style={styles.page}>
+      <Text style={styles.runningHeader} fixed>
+        {BRAND.name} — Mix Record
+      </Text>
+      <HeaderSection data={data} />
+      <MixSection data={data} />
+      <ConditionsSection data={data} />
+      <NotesSection notes={data.record.notes} />
+      <CertificationSection data={data} />
+      <Footer />
+    </Page>
+  );
+}
+
+export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
+  const meta = mixRecordPdfMeta({
+    customerName: data.record.customer_name_snapshot,
+    fieldName: data.record.field_name_snapshot,
+    recordDate: data.record.record_date,
+  });
+
+  return (
+    <Document {...meta}>
+      <MixRecordPage data={data} />
     </Document>
   );
 }

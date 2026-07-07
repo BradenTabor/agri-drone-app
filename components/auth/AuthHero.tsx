@@ -22,12 +22,12 @@ export function AuthHero() {
       </div>
 
       <div className="max-w-xl space-y-6 pb-6">
-        <p className="font-mono text-[0.65rem] tracking-[0.2em] text-auth-accent uppercase">
+        <p className="font-mono text-[0.65rem] tracking-[0.2em] text-auth-accent-on-dark uppercase">
           {BRAND.tagline}
         </p>
         <h2 className="font-heading text-[clamp(2.25rem,3.6vw,3.35rem)] leading-[1.05] font-semibold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(15,23,42,0.35)]">
           Every application,
-          <span className="block text-auth-accent drop-shadow-[0_2px_14px_rgba(15,23,42,0.5)]">
+          <span className="block text-auth-accent-on-dark drop-shadow-[0_2px_14px_rgba(15,23,42,0.5)]">
             on record.
           </span>
         </h2>

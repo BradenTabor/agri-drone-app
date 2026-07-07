@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeTotals, lineAmount } from "@/lib/quotes/calculations";
+import {
+  computeTotals,
+  lineAmount,
+  mileageCharge,
+  quoteExtraTaxableCharges,
+  surfactantCharge,
+} from "@/lib/quotes/calculations";
 
 const initialState: QuoteFormState = { error: null };
 
@@ -21,11 +27,15 @@ type QuoteFormValues = {
   customerId: string | null;
   customerName: string;
   fieldId: string | null;
+  surfactantId: string | null;
   sourceAppRecordId: string | null;
   quoteDate: string;
   validUntil: string | null;
   acres: number | null;
   serviceFor: string | null;
+  adjuvantName: string | null;
+  adjuvantPrice: number | null;
+  mileage: number | null;
   taxRate: number | null;
   otherLabel: string | null;
   otherAmount: number | null;
@@ -62,6 +72,13 @@ type QuoteProductOption = {
   costUnit: string | null;
 };
 
+type QuoteSurfactantOption = {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  costUnit: string | null;
+};
+
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
@@ -69,9 +86,11 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
+  surfactants?: QuoteSurfactantOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
+  travelFeePerMile?: number | null;
 };
 
 function newLineItem(): LineItemRow {
@@ -105,6 +124,16 @@ function toLineItemRow(item: QuoteDefaultLineItem): LineItemRow {
 function parseNumber(value: string): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+// Quotes store the adjuvant as a name snapshot (no FK), so we re-derive the
+// selected dropdown option from the saved name when editing an existing quote.
+function matchSurfactantId(
+  surfactants: QuoteSurfactantOption[],
+  adjuvantName: string | null | undefined,
+): string {
+  if (!adjuvantName) return "";
+  return surfactants.find((surfactant) => surfactant.name === adjuvantName)?.id ?? "";
 }
 
 function formatMoney(value: number): string {
@@ -144,14 +173,17 @@ export function QuoteForm({
   customers,
   fields,
   products,
+  surfactants = [],
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
+  travelFeePerMile = null,
 }: QuoteFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [customerId, setCustomerId] = useState(defaultValues?.customerId ?? "");
   const [customerName, setCustomerName] = useState(defaultValues?.customerName ?? "");
   const [fieldId, setFieldId] = useState(defaultValues?.fieldId ?? "");
+  const [surfactantId, setSurfactantId] = useState(defaultValues?.surfactantId ?? "");
   const [status, setStatus] = useState<QuoteFormValues["status"]>(defaultValues?.status ?? "draft");
   const [acres, setAcres] = useState(
     defaultValues?.acres !== undefined && defaultValues?.acres !== null
@@ -160,6 +192,16 @@ export function QuoteForm({
   );
   const [lineItems, setLineItems] = useState<LineItemRow[]>(
     defaultLineItems?.length ? defaultLineItems.map(toLineItemRow) : [newLineItem()],
+  );
+  const [adjuvantPrice, setAdjuvantPrice] = useState<string>(
+    defaultValues?.adjuvantPrice != null ? String(defaultValues.adjuvantPrice) : "",
+  );
+  const [adjuvantName, setAdjuvantName] = useState<string>(defaultValues?.adjuvantName ?? "");
+  const [adjuvantId, setAdjuvantId] = useState<string>(
+    matchSurfactantId(surfactants, defaultValues?.adjuvantName),
+  );
+  const [mileage, setMileage] = useState<string>(
+    defaultValues?.mileage != null ? String(defaultValues.mileage) : "",
   );
   const [taxRate, setTaxRate] = useState<string>(
     defaultValues?.taxRate != null ? String(defaultValues.taxRate) : "0",
@@ -173,17 +215,45 @@ export function QuoteForm({
     [fields, customerId],
   );
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const surfactantsById = useMemo(
+    () => new Map(surfactants.map((surfactant) => [surfactant.id, surfactant])),
+    [surfactants],
+  );
+
+  const selectedSurfactant = surfactantId ? surfactantsById.get(surfactantId) : undefined;
+  const surfactantAmount = surfactantCharge(
+    selectedSurfactant ? { unit_cost: selectedSurfactant.unitCost } : null,
+    Number(acres) || null,
+  );
+
+  const adjuvantAmount = Math.max(0, parseNumber(adjuvantPrice));
+  const mileageMiles = parseNumber(mileage);
+  const mileageAmount = mileageCharge(mileageMiles, travelFeePerMile);
+  const mileageHint =
+    travelFeePerMile == null || travelFeePerMile <= 0
+      ? "Set a travel rate ($/mi) in Pricing settings to charge for mileage."
+      : mileageMiles > 0
+        ? `${mileageMiles} mi × ${formatMoney(travelFeePerMile)}/mi = ${formatMoney(mileageAmount)} added to the taxable subtotal.`
+        : `Travel rate ${formatMoney(travelFeePerMile)}/mi (from Pricing settings).`;
 
   const totals = useMemo(
     () =>
       computeTotals(
-        lineItems.map((line) => ({
-          amount: parseNumber(line.amount),
-        })),
+        [
+          ...lineItems.map((line) => ({
+            amount: parseNumber(line.amount),
+          })),
+          ...quoteExtraTaxableCharges({
+            adjuvantPrice: parseNumber(adjuvantPrice),
+            mileage: parseNumber(mileage),
+            ratePerMile: travelFeePerMile,
+          }),
+        ],
         Number(taxRate) || 0,
         Number(otherAmount) || 0,
+        surfactantAmount,
       ),
-    [lineItems, taxRate, otherAmount],
+    [lineItems, taxRate, otherAmount, surfactantAmount, adjuvantPrice, mileage, travelFeePerMile],
   );
 
   function setLineItemValue(
@@ -249,6 +319,16 @@ export function QuoteForm({
         return next;
       }),
     );
+  }
+
+  function handleAdjuvantSelect(nextId: string) {
+    const selected = surfactants.find((item) => item.id === nextId) ?? null;
+    setAdjuvantId(nextId);
+    setAdjuvantName(selected?.name ?? "");
+    // Mirror the product picker: selecting from the library suggests the price.
+    if (selected && selected.unitCost != null) {
+      setAdjuvantPrice(String(selected.unitCost));
+    }
   }
 
   function addLine() {
@@ -348,6 +428,32 @@ export function QuoteForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="surfactantIdSelect">Surfactant</Label>
+            <Select
+              id="surfactantIdSelect"
+              name="surfactantId"
+              value={surfactantId}
+              onChange={(event) => setSurfactantId(event.target.value)}
+              aria-invalid={Boolean(errorFor(state, "surfactantId"))}
+            >
+              <option value="">No surfactant</option>
+              {surfactants.map((surfactant) => (
+                <option key={surfactant.id} value={surfactant.id}>
+                  {surfactant.name}
+                </option>
+              ))}
+            </Select>
+            {selectedSurfactant && surfactantAmount > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Adds {formatMoney(surfactantAmount)} to the subtotal.
+              </p>
+            ) : null}
+            {errorFor(state, "surfactantId") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "surfactantId")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="acres">Acres</Label>
             <DecimalInput
               id="acres"
@@ -373,6 +479,22 @@ export function QuoteForm({
             />
             {errorFor(state, "serviceFor") ? (
               <p className="text-sm text-destructive">{errorFor(state, "serviceFor")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mileage">Mileage (mi)</Label>
+            <DecimalInput
+              id="mileage"
+              name="mileage"
+              value={mileage}
+              onChange={(event) => setMileage(event.target.value)}
+              aria-invalid={Boolean(errorFor(state, "mileage"))}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">{mileageHint}</p>
+            {errorFor(state, "mileage") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "mileage")}</p>
             ) : null}
           </div>
 
@@ -539,6 +661,55 @@ export function QuoteForm({
           {errorFor(state, "lineItems") ? (
             <p className="text-sm text-destructive">{errorFor(state, "lineItems")}</p>
           ) : null}
+
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Adjuvant / Surfactant
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="adjuvantSelect">Surfactant from library</Label>
+                <Select
+                  id="adjuvantSelect"
+                  value={adjuvantId}
+                  onChange={(event) => handleAdjuvantSelect(event.target.value)}
+                >
+                  <option value="">No adjuvant / custom</option>
+                  {surfactants.map((surfactant) => (
+                    <option key={surfactant.id} value={surfactant.id}>
+                      {surfactant.name}
+                    </option>
+                  ))}
+                </Select>
+                <input type="hidden" name="adjuvantName" value={adjuvantName} />
+                <p className="text-xs text-muted-foreground">
+                  Pick from the surfactant library to suggest a price, or leave as custom.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adjuvantPrice">Adjuvant price</Label>
+                <DecimalInput
+                  id="adjuvantPrice"
+                  name="adjuvantPrice"
+                  value={adjuvantPrice}
+                  onChange={(event) => setAdjuvantPrice(event.target.value)}
+                  aria-invalid={Boolean(errorFor(state, "adjuvantPrice"))}
+                  placeholder="0.00"
+                />
+                {adjuvantAmount > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Adds {formatMoney(adjuvantAmount)} to the taxable subtotal.
+                  </p>
+                ) : null}
+                {errorFor(state, "adjuvantPrice") ? (
+                  <p className="text-sm text-destructive">{errorFor(state, "adjuvantPrice")}</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-2 rounded-md border bg-muted/20 p-3">
             <div className="flex items-center justify-between">

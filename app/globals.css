@@ -37,6 +37,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-auth-accent: var(--auth-accent);
+  --color-auth-accent-on-dark: var(--auth-accent-on-dark);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -96,7 +97,13 @@
   --brand-gold: hsl(38 72% 52%);
   --auth-glass-bg: hsl(0 0% 100% / 0.88);
   --auth-glass-border: hsl(0 0% 100% / 0.6);
-  --auth-accent: var(--brand-canopy);
+  /* Accent used on light auth surfaces (links, buttons, tabs). Deepened from
+     brand-canopy so it clears WCAG AA (4.5:1) against white: 5.93:1 at rest,
+     and 4.80:1 for white button text on the /90 hover state. */
+  --auth-accent: hsl(142 54% 29%);
+  /* Accent used over the dark hero imagery; light enough to stay legible
+     against the slate overlay (~12.7:1 vs slate-950). */
+  --auth-accent-on-dark: hsl(142 60% 70%);
 }
 
 .dark {

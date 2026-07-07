@@ -1,7 +1,14 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LOGIN_MAX_ATTEMPTS = 3;
+const LOGIN_REDIRECT_TIMEOUT_MS = 20_000;
+const LOGIN_RETRY_BACKOFF_MS = 750;
+const LOGIN_NON_RETRYABLE_ALERT_RE =
+  /invalid email or password|email is not confirmed|email and password are required/i;
+const LOGIN_RETRYABLE_ALERT_RE =
+  /temporarily unavailable|unable to sign in right now|try again|network|fetch|timed?\s*out|rate.?limit|too many requests|unexpected failure|service.*(?:unavailable|degraded)/i;
 
 export type MixRecordFormFillResult = {
   customerName: string;
@@ -14,12 +21,71 @@ export type AppRecordFormFillResult = {
   applicatorName: string;
 };
 
-export async function login(page: Page, email: string, password: string): Promise<void> {
+type LoginAttemptResult =
+  | { kind: "success" }
+  | { kind: "alert"; message: string };
+
+export function getLoginFormAlert(page: Page): Locator {
+  return page.locator('form > [data-slot="form-alert"][role="alert"]');
+}
+
+export function isRetryableLoginAlertMessage(message: string): boolean {
+  const normalized = message.trim();
+  if (!normalized || LOGIN_NON_RETRYABLE_ALERT_RE.test(normalized)) {
+    return false;
+  }
+
+  return LOGIN_RETRYABLE_ALERT_RE.test(normalized);
+}
+
+async function submitLoginAttempt(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<LoginAttemptResult> {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL("/", { timeout: 20_000 });
+
+  const formAlert = getLoginFormAlert(page);
+  const result = await Promise.race([
+    page
+      .waitForURL((url) => url.pathname === "/", { timeout: LOGIN_REDIRECT_TIMEOUT_MS })
+      .then<LoginAttemptResult>(() => ({ kind: "success" })),
+    formAlert.waitFor({ state: "visible", timeout: LOGIN_REDIRECT_TIMEOUT_MS }).then(async () => ({
+      kind: "alert" as const,
+      message: (await formAlert.textContent())?.trim() ?? "",
+    })),
+  ]);
+
+  return result;
+}
+
+export async function login(page: Page, email: string, password: string): Promise<void> {
+  let lastAlertMessage = "";
+
+  for (let attempt = 1; attempt <= LOGIN_MAX_ATTEMPTS; attempt += 1) {
+    const result = await submitLoginAttempt(page, email, password);
+    if (result.kind === "success") {
+      return;
+    }
+
+    lastAlertMessage = result.message;
+    if (!isRetryableLoginAlertMessage(result.message)) {
+      throw new Error(`Login failed: ${result.message || "unknown login error"}`);
+    }
+
+    if (attempt < LOGIN_MAX_ATTEMPTS) {
+      await page.waitForTimeout(LOGIN_RETRY_BACKOFF_MS * attempt);
+    }
+  }
+
+  throw new Error(
+    `Login failed after ${LOGIN_MAX_ATTEMPTS} attempts: ${
+      lastAlertMessage || "no redirect or form alert"
+    }`,
+  );
 }
 
 export async function expectFormDraftResumeBanner(page: Page, label: string): Promise<void> {

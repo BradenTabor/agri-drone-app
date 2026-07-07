@@ -23,6 +23,7 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
     { data: customers },
     { data: fields },
     { data: products },
+    { data: surfactants },
     { data: pricingConfig },
   ] = await Promise.all([
     supabase.from("quotes").select("*").eq("id", id).is("deleted_at", null).single(),
@@ -39,7 +40,13 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
       .is("deleted_at", null)
       .eq("active", true)
       .order("name", { ascending: true }),
-    supabase.from("pricing_config").select("minimum_job_fee").eq("id", SINGLETON_ID).maybeSingle(),
+    supabase
+      .from("surfactants")
+      .select("id,name,unit_cost,cost_unit")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    supabase.from("pricing_config").select("minimum_job_fee,travel_fee_per_mile").eq("id", SINGLETON_ID).maybeSingle(),
   ]);
 
   if (quoteError || !quote) {
@@ -79,18 +86,29 @@ export default async function EditQuotePage({ params }: EditQuotePageProps) {
               unitCost: product.unit_cost,
               costUnit: product.cost_unit,
             }))}
+            surfactants={(surfactants ?? []).map((surfactant) => ({
+              id: surfactant.id,
+              name: surfactant.name,
+              unitCost: surfactant.unit_cost,
+              costUnit: surfactant.cost_unit,
+            }))}
             minimumJobFee={pricingConfig?.minimum_job_fee ?? null}
+            travelFeePerMile={pricingConfig?.travel_fee_per_mile ?? null}
             defaultValues={{
               quoteNumber: quote.quote_number,
               status: quote.status as "draft" | "sent" | "accepted" | "declined",
               customerId: quote.customer_id,
               customerName: quote.customer_name,
               fieldId: quote.field_id,
+              surfactantId: quote.surfactant_id,
               sourceAppRecordId: quote.source_app_record_id,
               quoteDate: quote.quote_date,
               validUntil: quote.valid_until,
               acres: quote.acres,
               serviceFor: quote.service_for,
+              adjuvantName: quote.adjuvant_name,
+              adjuvantPrice: quote.adjuvant_price,
+              mileage: quote.mileage,
               taxRate: quote.tax_rate,
               otherLabel: quote.other_label,
               otherAmount: quote.other_amount,

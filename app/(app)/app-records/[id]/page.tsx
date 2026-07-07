@@ -6,6 +6,7 @@ import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { appRecordPdfFilename } from "@/lib/pdf/pdfFilename";
 import { createClient } from "@/lib/supabase/server";
 
 type AppRecordDetailPageProps = {
@@ -98,7 +99,11 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
           </Link>
           <PdfDownloadButton
             pdfUrl={`/api/app-record-pdf/${record.id}`}
-            filename={`application-record-${record.job_date}-${record.id.slice(0, 8)}.pdf`}
+            filename={appRecordPdfFilename({
+              customerName: record.customer_name,
+              jobDate: record.job_date,
+              id: record.id,
+            })}
           />
           <Link href={`/app-records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit

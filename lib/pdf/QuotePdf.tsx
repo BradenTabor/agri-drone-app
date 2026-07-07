@@ -3,6 +3,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { quotePdfMeta } from "./documentMeta";
 import type { QuotePdfData } from "./getQuoteForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -253,6 +254,19 @@ function BillToSection({ data }: { data: QuotePdfData }) {
         <View style={styles.column}>
           <Text style={styles.sectionTitle}>FOR</Text>
           <Text style={styles.value}>{valueOrDash(data.quote.service_for)}</Text>
+          {data.quote.adjuvant_name || data.quote.adjuvant_price != null ? (
+            <Text style={[styles.value, styles.monoRow]}>
+              {`Adjuvant: ${[
+                data.quote.adjuvant_name,
+                data.quote.adjuvant_price != null ? money(data.quote.adjuvant_price) : null,
+              ]
+                .filter(Boolean)
+                .join(" ")}`}
+            </Text>
+          ) : null}
+          {data.quote.mileage != null ? (
+            <Text style={[styles.value, styles.monoRow]}>Mileage: {data.quote.mileage} mi</Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -352,8 +366,14 @@ function Footer() {
 }
 
 export function QuotePdf({ data }: { data: QuotePdfData }) {
+  const meta = quotePdfMeta({
+    quoteNumber: data.quote.quote_number,
+    customerName: data.customer?.name ?? data.quote.customer_name,
+    quoteDate: data.quote.quote_date,
+  });
+
   return (
-    <Document>
+    <Document {...meta}>
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
           {BRAND.name} — {DOC_LABEL}

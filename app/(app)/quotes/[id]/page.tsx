@@ -6,6 +6,7 @@ import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { quotePdfFilename } from "@/lib/pdf/pdfFilename";
 import { createClient } from "@/lib/supabase/server";
 
 type QuoteDetailPageProps = {
@@ -66,7 +67,12 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
           </Link>
           <PdfDownloadButton
             pdfUrl={`/api/quote-pdf/${quote.id}`}
-            filename={`quote-${(quote.quote_number || quote.id.slice(0, 8)).replace(/[^a-zA-Z0-9-_]/g, "")}.pdf`}
+            filename={quotePdfFilename({
+              quoteNumber: quote.quote_number,
+              customerName: quote.customer_name,
+              quoteDate: quote.quote_date,
+              id: quote.id,
+            })}
           />
           <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit
@@ -96,6 +102,11 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
             </span>
           </Detail>
           <Detail label="Acres">{quote.acres ?? "—"}</Detail>
+          <Detail label="Adjuvant / Surfactant">{quote.adjuvant_name || "—"}</Detail>
+          <Detail label="Adjuvant price">
+            {quote.adjuvant_price != null ? formatMoney(quote.adjuvant_price) : "—"}
+          </Detail>
+          <Detail label="Mileage">{quote.mileage != null ? `${quote.mileage} mi` : "—"}</Detail>
           <Detail label="Source App Record">{quote.source_app_record_id || "—"}</Detail>
         </CardContent>
       </Card>
