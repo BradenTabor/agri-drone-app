@@ -3,6 +3,7 @@ import { createElement, type ReactElement } from "react";
 import { type NextRequest } from "next/server";
 
 import { getQuoteForPdf } from "@/lib/pdf/getQuoteForPdf";
+import { quotePdfFilename } from "@/lib/pdf/pdfFilename";
 import { QuotePdf } from "@/lib/pdf/QuotePdf";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,8 +25,12 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
   const document = createElement(QuotePdf, { data }) as ReactElement<DocumentProps>;
   const stream = await renderToStream(document);
-  const safeName = (data.quote.quote_number || quoteId.slice(0, 8)).replace(/[^a-zA-Z0-9-_]/g, "");
-  const filename = `quote-${safeName}.pdf`;
+  const filename = quotePdfFilename({
+    quoteNumber: data.quote.quote_number,
+    customerName: data.customer?.name ?? data.quote.customer_name,
+    quoteDate: data.quote.quote_date,
+    id: quoteId,
+  });
 
   return new Response(stream as unknown as ReadableStream, {
     headers: {

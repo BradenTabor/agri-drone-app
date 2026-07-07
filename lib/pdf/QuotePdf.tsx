@@ -3,6 +3,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { quotePdfMeta } from "./documentMeta";
 import type { QuotePdfData } from "./getQuoteForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -352,8 +353,14 @@ function Footer() {
 }
 
 export function QuotePdf({ data }: { data: QuotePdfData }) {
+  const meta = quotePdfMeta({
+    quoteNumber: data.quote.quote_number,
+    customerName: data.customer?.name ?? data.quote.customer_name,
+    quoteDate: data.quote.quote_date,
+  });
+
   return (
-    <Document>
+    <Document {...meta}>
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
           {BRAND.name} — {DOC_LABEL}

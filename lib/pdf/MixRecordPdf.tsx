@@ -4,6 +4,7 @@ import { decimalToDms, dmsToString } from "@/lib/formatting/coordinates";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { mixRecordPdfMeta } from "./documentMeta";
 import type { MixRecordPdfData } from "./getMixRecordForPdf";
 import { PDF_THEME } from "./theme";
 
@@ -381,8 +382,14 @@ export function MixRecordPage({ data }: { data: MixRecordPdfData }) {
 }
 
 export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
+  const meta = mixRecordPdfMeta({
+    customerName: data.record.customer_name_snapshot,
+    fieldName: data.record.field_name_snapshot,
+    recordDate: data.record.record_date,
+  });
+
   return (
-    <Document>
+    <Document {...meta}>
       <MixRecordPage data={data} />
     </Document>
   );

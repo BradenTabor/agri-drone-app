@@ -6,6 +6,7 @@ import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { mixRecordPdfFilename } from "@/lib/pdf/pdfFilename";
 import { createClient } from "@/lib/supabase/server";
 
 type RecordDetailPageProps = {
@@ -101,7 +102,11 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
           </Link>
           <PdfDownloadButton
             pdfUrl={`/api/pdf/${record.id}`}
-            filename={`mix-record-${record.record_date}-${record.id.slice(0, 8)}.pdf`}
+            filename={mixRecordPdfFilename({
+              customerName: record.customer_name_snapshot,
+              recordDate: record.record_date,
+              id: record.id,
+            })}
           />
           <Link href={`/records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit

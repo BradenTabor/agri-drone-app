@@ -3,6 +3,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { BRAND } from "@/lib/brand";
 
 import { BrandPdfHeader, brandPdfMetaStyles } from "./BrandPdfHeader";
+import { appRecordPdfMeta } from "./documentMeta";
 import type { AppRecordPdfData } from "./getAppRecordForPdf";
 import { MixRecordPage } from "./MixRecordPdf";
 import { PDF_THEME } from "./theme";
@@ -357,8 +358,13 @@ function Footer() {
 }
 
 export function AppRecordPdf({ data }: { data: AppRecordPdfData }) {
+  const meta = appRecordPdfMeta({
+    customerName: data.record.customer_name,
+    jobDate: data.record.job_date,
+  });
+
   return (
-    <Document>
+    <Document {...meta}>
       <Page size="A4" style={styles.page}>
         <Text style={styles.runningHeader} fixed>
           {BRAND.name} — Application Record
