@@ -110,6 +110,9 @@ function makeQuoteData(): QuotePdfData {
       customer_name: "Sample Farm LLC",
       service_for: null,
       acres: 50,
+      adjuvant_name: null,
+      adjuvant_price: null,
+      mileage: null,
       notes: null,
       terms: null,
       subtotal: 100,
@@ -189,6 +192,7 @@ function makeAppData(): AppRecordPdfData {
       },
     ],
     linkedMixRecords: [],
+    linkedMixRecordDocs: [],
   };
 }
 
