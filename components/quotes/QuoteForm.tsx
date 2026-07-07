@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeTotals, lineAmount } from "@/lib/quotes/calculations";
+import { computeTotals, lineAmount, surfactantCharge } from "@/lib/quotes/calculations";
 
 const initialState: QuoteFormState = { error: null };
 
@@ -21,6 +21,7 @@ type QuoteFormValues = {
   customerId: string | null;
   customerName: string;
   fieldId: string | null;
+  surfactantId: string | null;
   sourceAppRecordId: string | null;
   quoteDate: string;
   validUntil: string | null;
@@ -62,6 +63,13 @@ type QuoteProductOption = {
   costUnit: string | null;
 };
 
+type QuoteSurfactantOption = {
+  id: string;
+  name: string;
+  unitCost: number | null;
+  costUnit: string | null;
+};
+
 type QuoteFormProps = {
   action: (state: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
   submitLabel?: string;
@@ -69,6 +77,7 @@ type QuoteFormProps = {
   customers: Array<{ id: string; name: string }>;
   fields: Array<{ id: string; name: string; acres: number | null; customer_id: string }>;
   products: QuoteProductOption[];
+  surfactants?: QuoteSurfactantOption[];
   defaultValues?: Partial<QuoteFormValues>;
   defaultLineItems?: QuoteDefaultLineItem[];
   minimumJobFee?: number | null;
@@ -144,6 +153,7 @@ export function QuoteForm({
   customers,
   fields,
   products,
+  surfactants = [],
   defaultValues,
   defaultLineItems,
   minimumJobFee = null,
@@ -152,6 +162,7 @@ export function QuoteForm({
   const [customerId, setCustomerId] = useState(defaultValues?.customerId ?? "");
   const [customerName, setCustomerName] = useState(defaultValues?.customerName ?? "");
   const [fieldId, setFieldId] = useState(defaultValues?.fieldId ?? "");
+  const [surfactantId, setSurfactantId] = useState(defaultValues?.surfactantId ?? "");
   const [status, setStatus] = useState<QuoteFormValues["status"]>(defaultValues?.status ?? "draft");
   const [acres, setAcres] = useState(
     defaultValues?.acres !== undefined && defaultValues?.acres !== null
@@ -173,6 +184,16 @@ export function QuoteForm({
     [fields, customerId],
   );
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const surfactantsById = useMemo(
+    () => new Map(surfactants.map((surfactant) => [surfactant.id, surfactant])),
+    [surfactants],
+  );
+
+  const selectedSurfactant = surfactantId ? surfactantsById.get(surfactantId) : undefined;
+  const surfactantAmount = surfactantCharge(
+    selectedSurfactant ? { unit_cost: selectedSurfactant.unitCost } : null,
+    Number(acres) || null,
+  );
 
   const totals = useMemo(
     () =>
@@ -182,8 +203,9 @@ export function QuoteForm({
         })),
         Number(taxRate) || 0,
         Number(otherAmount) || 0,
+        surfactantAmount,
       ),
-    [lineItems, taxRate, otherAmount],
+    [lineItems, taxRate, otherAmount, surfactantAmount],
   );
 
   function setLineItemValue(
@@ -344,6 +366,32 @@ export function QuoteForm({
             </Select>
             {errorFor(state, "fieldId") ? (
               <p className="text-sm text-destructive">{errorFor(state, "fieldId")}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="surfactantIdSelect">Surfactant</Label>
+            <Select
+              id="surfactantIdSelect"
+              name="surfactantId"
+              value={surfactantId}
+              onChange={(event) => setSurfactantId(event.target.value)}
+              aria-invalid={Boolean(errorFor(state, "surfactantId"))}
+            >
+              <option value="">No surfactant</option>
+              {surfactants.map((surfactant) => (
+                <option key={surfactant.id} value={surfactant.id}>
+                  {surfactant.name}
+                </option>
+              ))}
+            </Select>
+            {selectedSurfactant && surfactantAmount > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Adds {formatMoney(surfactantAmount)} to the subtotal.
+              </p>
+            ) : null}
+            {errorFor(state, "surfactantId") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "surfactantId")}</p>
             ) : null}
           </div>
 

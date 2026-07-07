@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { computeTotals } from "@/lib/quotes/calculations";
+import { computeTotals, surfactantCharge } from "@/lib/quotes/calculations";
 import {
   quoteCreateSchema,
   quoteUpdateSchema,
@@ -34,6 +34,7 @@ function extractQuoteFormData(formData: FormData) {
     status: String(formData.get("status") ?? "draft"),
     customerId: String(formData.get("customerId") ?? ""),
     fieldId: String(formData.get("fieldId") ?? ""),
+    surfactantId: String(formData.get("surfactantId") ?? ""),
     customerName: String(formData.get("customerName") ?? ""),
     sourceAppRecordId: String(formData.get("sourceAppRecordId") ?? ""),
     quoteDate: String(formData.get("quoteDate") ?? ""),
@@ -63,6 +64,23 @@ function normalizeLineItems(lineItems: QuoteLineItemInput[], quoteId: string) {
   }));
 }
 
+// Pricing is resolved from the surfactant library server-side so the client
+// cannot tamper with the amount added to the quote total.
+async function resolveSurfactantAmount(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  surfactantId: string | undefined,
+  acres: number | null,
+): Promise<number> {
+  if (!surfactantId) return 0;
+  const { data: surfactant } = await supabase
+    .from("surfactants")
+    .select("unit_cost")
+    .eq("id", surfactantId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  return surfactantCharge(surfactant, acres);
+}
+
 export async function createQuoteAction(
   _previousState: QuoteFormState,
   formData: FormData,
@@ -83,7 +101,17 @@ export async function createQuoteAction(
     };
   }
 
-  const totals = computeTotals(parsed.data.lineItems, parsed.data.taxRate, parsed.data.otherAmount);
+  const surfactantAmount = await resolveSurfactantAmount(
+    supabase,
+    parsed.data.surfactantId,
+    parsed.data.acres ?? null,
+  );
+  const totals = computeTotals(
+    parsed.data.lineItems,
+    parsed.data.taxRate,
+    parsed.data.otherAmount,
+    surfactantAmount,
+  );
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
     .insert({
@@ -91,6 +119,7 @@ export async function createQuoteAction(
       status: parsed.data.status,
       customer_id: parsed.data.customerId ?? null,
       field_id: parsed.data.fieldId ?? null,
+      surfactant_id: parsed.data.surfactantId ?? null,
       customer_name: parsed.data.customerName,
       source_app_record_id: parsed.data.sourceAppRecordId ?? null,
       quote_date: parsed.data.quoteDate,
@@ -148,7 +177,17 @@ export async function updateQuoteAction(
     };
   }
 
-  const totals = computeTotals(parsed.data.lineItems, parsed.data.taxRate, parsed.data.otherAmount);
+  const surfactantAmount = await resolveSurfactantAmount(
+    supabase,
+    parsed.data.surfactantId,
+    parsed.data.acres ?? null,
+  );
+  const totals = computeTotals(
+    parsed.data.lineItems,
+    parsed.data.taxRate,
+    parsed.data.otherAmount,
+    surfactantAmount,
+  );
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
     .update({
@@ -156,6 +195,7 @@ export async function updateQuoteAction(
       status: parsed.data.status,
       customer_id: parsed.data.customerId ?? null,
       field_id: parsed.data.fieldId ?? null,
+      surfactant_id: parsed.data.surfactantId ?? null,
       customer_name: parsed.data.customerName,
       source_app_record_id: parsed.data.sourceAppRecordId ?? null,
       quote_date: parsed.data.quoteDate,

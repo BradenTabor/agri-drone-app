@@ -25,6 +25,13 @@ export type ProductForSeed = {
   cost_unit: string | null;
 };
 
+export type SurfactantForQuote = {
+  id: string;
+  name: string;
+  unit_cost: number | null;
+  cost_unit: string | null;
+};
+
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export function applyMarkup(baseCost: number, markupPct: number | null, markupCap: number | null): number {
@@ -87,12 +94,31 @@ export function seedFeeLines(config: PricingConfigForSeed): SeededLineItem[] {
   return lines;
 }
 
+/**
+ * Cost contribution of a selected surfactant to a quote. Surfactants are priced
+ * like products (per-acre when acres are known, otherwise flat), so the charge
+ * is unit cost multiplied by acres (defaulting to a single unit). Returns 0 when
+ * no surfactant is selected or it has no usable cost.
+ */
+export function surfactantCharge(
+  surfactant: Pick<SurfactantForQuote, "unit_cost"> | null | undefined,
+  acres: number | null,
+): number {
+  if (!surfactant || surfactant.unit_cost == null) return 0;
+  const unitCost = Number(surfactant.unit_cost);
+  if (!Number.isFinite(unitCost) || unitCost <= 0) return 0;
+  const multiplier = acres != null && acres > 0 ? acres : 1;
+  return round2(unitCost * multiplier);
+}
+
 export function computeTotals(
   lineItems: Array<{ amount: number }>,
   taxRate: number = 0,
   otherAmount: number = 0,
+  surfactantAmount: number = 0,
 ): { subtotal: number; tax: number; total: number } {
-  const subtotal = round2(lineItems.reduce((sum, li) => sum + (Number(li.amount) || 0), 0));
+  const lineSubtotal = lineItems.reduce((sum, li) => sum + (Number(li.amount) || 0), 0);
+  const subtotal = round2(lineSubtotal + (Number(surfactantAmount) || 0));
   const tax = round2(subtotal * ((Number(taxRate) || 0) / 100));
   const total = round2(subtotal + tax + (Number(otherAmount) || 0));
   return { subtotal, tax, total };
