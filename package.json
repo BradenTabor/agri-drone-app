@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run test:unit",
+    "verify:production": "npx tsx scripts/verify-production-ready.ts",
     "test:unit": "find e2e/lib -name '*.test.ts' -print0 | xargs -0 npx tsx --test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
