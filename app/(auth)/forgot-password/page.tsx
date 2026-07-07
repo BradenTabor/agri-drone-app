@@ -17,14 +17,14 @@ export default async function ForgotPasswordPage() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <header className="space-y-4 border-b border-slate-200/80 pb-4 sm:pb-5">
-        <div className="flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
+    <div className="space-y-4 sm:space-y-6">
+      <header className="space-y-3 border-b border-slate-200/80 pb-4 sm:space-y-4 sm:pb-5">
+        <div className="flex flex-col items-center gap-2.5 text-center lg:items-start lg:text-left">
           <BrandLogo
             size="lg"
             display="overlay"
             className="justify-center lg:hidden"
-            imageClassName="h-14 w-auto sm:h-16"
+            imageClassName="h-12 w-auto sm:h-16"
           />
           <div className="space-y-1">
             <h1 className="font-heading text-2xl font-semibold tracking-tight text-slate-900 sm:text-[1.65rem]">
