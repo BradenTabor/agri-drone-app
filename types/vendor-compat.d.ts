@@ -71,6 +71,7 @@ declare module "lucide-react" {
   export const CircleCheckBig: LucideIcon;
   export const CircleDot: LucideIcon;
   export const CircleSlash: LucideIcon;
+  export const CircleUser: LucideIcon;
   export const ClipboardCheck: LucideIcon;
   export const ClipboardList: LucideIcon;
   export const DollarSign: LucideIcon;

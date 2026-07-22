@@ -28,6 +28,7 @@ function baseAppRecordInput(
       },
     ],
     mixRecordIds: [MIX_RECORD_ID_A, MIX_RECORD_ID_B],
+    appFields: [],
     ...overrides,
   };
 }
@@ -64,6 +65,26 @@ describe("normalizeAppRecordPayload", () => {
     normalizeAppRecordPayload(input);
 
     assert.deepEqual(input.mixRecordIds, mixRecordIds);
+  });
+
+  it("copies range mins into legacy scalar columns when scalars are omitted", () => {
+    const payload = normalizeAppRecordPayload(
+      baseAppRecordInput({
+        tempF: undefined,
+        tempFMin: 72,
+        tempFMax: 84,
+        windSpeedMph: undefined,
+        windSpeedMphMin: 3,
+        windSpeedMphMax: 8,
+      }),
+    );
+
+    assert.equal(payload.temp_f, "72");
+    assert.equal(payload.temp_f_min, "72");
+    assert.equal(payload.temp_f_max, "84");
+    assert.equal(payload.wind_speed_mph, "3");
+    assert.equal(payload.wind_speed_mph_min, "3");
+    assert.equal(payload.wind_speed_mph_max, "8");
   });
 });
 

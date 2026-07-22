@@ -15,32 +15,59 @@ export default async function EditAppRecordPage({ params }: EditAppRecordPagePro
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: record, error: recordError }, { data: pesticides, error: pesticidesError }, { data: mixLinks, error: mixLinksError }, { data: products }, { data: surfactants }] =
-    await Promise.all([
-      supabase.from("app_records").select("*").eq("id", id).is("deleted_at", null).single(),
-      supabase
-        .from("app_record_pesticides")
-        .select("id,sort_order,is_surfactant,epa_reg_number,product_name,active_ingredient")
-        .eq("app_record_id", id)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("app_record_mix_records")
-        .select("mix_record_id, sort_order")
-        .eq("app_record_id", id)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("products")
-        .select("id,name,epa_number,active")
-        .is("deleted_at", null)
-        .order("active", { ascending: false })
-        .order("name", { ascending: true }),
-      supabase
-        .from("surfactants")
-        .select("id,name,epa_number,active")
-        .is("deleted_at", null)
-        .order("active", { ascending: false })
-        .order("name", { ascending: true }),
-    ]);
+  const [
+    { data: record, error: recordError },
+    { data: pesticides, error: pesticidesError },
+    { data: mixLinks, error: mixLinksError },
+    { data: appRecordFields, error: appRecordFieldsError },
+    { data: products },
+    { data: surfactants },
+    { data: customers },
+    { data: fields },
+    { data: equipment },
+  ] = await Promise.all([
+    supabase.from("app_records").select("*").eq("id", id).is("deleted_at", null).single(),
+    supabase
+      .from("app_record_pesticides")
+      .select("id,sort_order,is_surfactant,epa_reg_number,product_name,active_ingredient")
+      .eq("app_record_id", id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("app_record_mix_records")
+      .select("mix_record_id, sort_order")
+      .eq("app_record_id", id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("app_record_fields")
+      .select("field_id,field_name_snapshot,location_lat,location_lng")
+      .eq("app_record_id", id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("products")
+      .select("id,name,epa_number,active")
+      .is("deleted_at", null)
+      .order("active", { ascending: false })
+      .order("name", { ascending: true }),
+    supabase
+      .from("surfactants")
+      .select("id,name,epa_number,active")
+      .is("deleted_at", null)
+      .order("active", { ascending: false })
+      .order("name", { ascending: true }),
+    supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
+    supabase
+      .from("fields")
+      .select("id,name,customer_id,default_lat,default_lng")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    // Include inactive gear so an existing equipment_id is not dropped on save.
+    supabase
+      .from("equipment")
+      .select("id,identifier,active")
+      .is("deleted_at", null)
+      .order("active", { ascending: false })
+      .order("identifier", { ascending: true }),
+  ]);
 
   if (recordError || !record) {
     notFound();
@@ -50,6 +77,9 @@ export default async function EditAppRecordPage({ params }: EditAppRecordPagePro
   }
   if (mixLinksError) {
     throw new Error("Unable to load attached mix records.");
+  }
+  if (appRecordFieldsError) {
+    throw new Error("Unable to load record fields.");
   }
 
   const attachedMixes = await loadAttachedMixRecords(
@@ -91,16 +121,40 @@ export default async function EditAppRecordPage({ params }: EditAppRecordPagePro
               epaNumber: surfactant.epa_number,
               active: surfactant.active,
             }))}
+            customers={(customers ?? []).map((customer) => ({
+              id: customer.id,
+              name: customer.name,
+            }))}
+            fields={(fields ?? []).map((field) => ({
+              id: field.id,
+              name: field.name,
+              customerId: field.customer_id,
+              defaultLat: field.default_lat,
+              defaultLng: field.default_lng,
+            }))}
+            equipment={(equipment ?? []).map((item) => ({
+              id: item.id,
+              identifier: item.active === false ? `${item.identifier} (inactive)` : item.identifier,
+            }))}
             defaultValues={{
               jobDate: record.job_date,
               applicatorName: record.applicator_name,
               customerName: record.customer_name,
+              customerId: record.customer_id ?? undefined,
               siteAddress: record.site_address,
               jobSiteId: record.job_site_id,
               locationLat: record.location_lat?.toString() ?? "",
               locationLng: record.location_lng?.toString() ?? "",
-              tempF: record.temp_f?.toString() ?? "",
-              windSpeedMph: record.wind_speed_mph?.toString() ?? "",
+              // Prefer range columns; fall back to legacy scalars so edit
+              // doesn't blank weather that only exists on temp_f / wind_speed_mph.
+              tempFMin:
+                record.temp_f_min?.toString() ?? record.temp_f?.toString() ?? "",
+              tempFMax: record.temp_f_max?.toString() ?? "",
+              windSpeedMphMin:
+                record.wind_speed_mph_min?.toString() ??
+                record.wind_speed_mph?.toString() ??
+                "",
+              windSpeedMphMax: record.wind_speed_mph_max?.toString() ?? "",
               windDirection:
                 record.wind_direction === "N" ||
                 record.wind_direction === "NE" ||
@@ -143,6 +197,7 @@ export default async function EditAppRecordPage({ params }: EditAppRecordPagePro
               acresTreated: record.acres_treated?.toString() ?? "",
               tankMixRecord: record.tank_mix_record,
               equipmentNotes: record.equipment_notes,
+              equipmentId: record.equipment_id ?? "",
               truckId: record.truck_id,
               nozzleType: record.nozzle_type,
               rei: record.rei,
@@ -158,6 +213,14 @@ export default async function EditAppRecordPage({ params }: EditAppRecordPagePro
                 isSurfactant: row.is_surfactant,
               })),
               attachedMixes,
+              appFields: (appRecordFields ?? [])
+                .filter((row): row is typeof row & { field_id: string } => row.field_id != null)
+                .map((row) => ({
+                  fieldId: row.field_id,
+                  fieldName: row.field_name_snapshot ?? "",
+                  locationLat: row.location_lat,
+                  locationLng: row.location_lng,
+                })),
             }}
           />
         </CardContent>

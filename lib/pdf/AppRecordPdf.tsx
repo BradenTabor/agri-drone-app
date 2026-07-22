@@ -154,6 +154,21 @@ function formatAppType(value: string | null): string {
   return value[0]?.toUpperCase() + value.slice(1);
 }
 
+function formatMinMaxRange(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  unit: string,
+  legacy: number | null | undefined,
+): string {
+  if (min != null || max != null) {
+    if (min != null && max != null) return `${min}–${max}${unit}`;
+    if (min != null) return `${min}${unit}`;
+    return `${max}${unit}`;
+  }
+  if (legacy != null) return `${legacy}${unit}`;
+  return EM_DASH;
+}
+
 function FieldRow({
   label,
   value,
@@ -218,19 +233,40 @@ function JobSection({ data }: { data: AppRecordPdfData }) {
 }
 
 function GpsWeatherSection({ data }: { data: AppRecordPdfData }) {
-  const { record } = data;
+  const { record, fields } = data;
+  const tempDisplay = formatMinMaxRange(record.temp_f_min, record.temp_f_max, " °F", record.temp_f);
+  const windDisplay = formatMinMaxRange(
+    record.wind_speed_mph_min,
+    record.wind_speed_mph_max,
+    " mph",
+    record.wind_speed_mph,
+  );
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>GPS & WEATHER</Text>
       <View style={styles.divider} />
+      {fields.length > 0 ? (
+        <View style={styles.fullWidthBlock}>
+          <Text style={styles.label}>Fields</Text>
+          {fields.map((field, index) => (
+            <Text key={`${field.fieldName}-${index}`} style={styles.value}>
+              {field.fieldName || "Field"}
+              {" — "}
+              {field.lat != null && field.lng != null
+                ? `${field.lat}, ${field.lng}`
+                : EM_DASH}
+            </Text>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.row}>
         <FieldRow label="Latitude" value={record.location_lat} />
         <FieldRow label="Longitude" value={record.location_lng} />
-        <FieldRow label="Temp (F)" value={record.temp_f} />
+        <FieldRow label="Temp (F)" value={tempDisplay} />
       </View>
       <View style={styles.row}>
-        <FieldRow label="Wind speed (mph)" value={record.wind_speed_mph} />
+        <FieldRow label="Wind speed (mph)" value={windDisplay} />
         <FieldRow label="Wind direction" value={record.wind_direction} />
         <FieldRow label="Sky condition" value={record.sky_condition} />
       </View>

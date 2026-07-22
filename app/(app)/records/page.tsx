@@ -18,8 +18,6 @@ type RecordRow = {
   total_mix_gal: number;
   expected_acres: number;
   actual_acres: number | null;
-  wind_speed_mph: number;
-  wind_direction: string;
   submitted_at: string;
 };
 
@@ -76,7 +74,7 @@ export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   let query = supabase
     .from("mix_records")
     .select(
-      "id,record_date,time_mixed,customer_name_snapshot,field_name_snapshot,signed_typed_name,total_mix_gal,expected_acres,actual_acres,wind_speed_mph,wind_direction,submitted_at",
+      "id,record_date,time_mixed,customer_name_snapshot,field_name_snapshot,signed_typed_name,total_mix_gal,expected_acres,actual_acres,submitted_at",
     )
     .is("deleted_at", null);
   let countQuery = supabase.from("mix_records").select("id", { count: "exact", head: true }).is("deleted_at", null);

@@ -39,6 +39,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_record_fields: {
+        Row: {
+          app_record_id: string
+          created_at: string
+          field_id: string | null
+          field_name_snapshot: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          sort_order: number
+        }
+        Insert: {
+          app_record_id: string
+          created_at?: string
+          field_id?: string | null
+          field_name_snapshot?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          sort_order?: number
+        }
+        Update: {
+          app_record_id?: string
+          created_at?: string
+          field_id?: string | null
+          field_name_snapshot?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_record_fields_app_record_id_fkey"
+            columns: ["app_record_id"]
+            isOneToOne: false
+            referencedRelation: "app_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_record_fields_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_record_pesticides: {
         Row: {
           active_ingredient: string | null
@@ -132,9 +180,11 @@ export type Database = {
           applicator_sig: string | null
           cert_attested: boolean
           created_at: string
+          customer_id: string | null
           customer_name: string
           deleted_at: string | null
           end_time: string | null
+          equipment_id: string | null
           equipment_notes: string | null
           gallons_per_acre: number | null
           id: string
@@ -157,11 +207,15 @@ export type Database = {
           target_veg_other: string | null
           target_vegetation: Json
           temp_f: number | null
+          temp_f_max: number | null
+          temp_f_min: number | null
           total_gallons: number | null
           truck_id: string | null
           updated_at: string
           wind_direction: string | null
           wind_speed_mph: number | null
+          wind_speed_mph_max: number | null
+          wind_speed_mph_min: number | null
         }
         Insert: {
           acres_treated?: number | null
@@ -172,9 +226,11 @@ export type Database = {
           applicator_sig?: string | null
           cert_attested?: boolean
           created_at?: string
+          customer_id?: string | null
           customer_name: string
           deleted_at?: string | null
           end_time?: string | null
+          equipment_id?: string | null
           equipment_notes?: string | null
           gallons_per_acre?: number | null
           id?: string
@@ -197,11 +253,15 @@ export type Database = {
           target_veg_other?: string | null
           target_vegetation?: Json
           temp_f?: number | null
+          temp_f_max?: number | null
+          temp_f_min?: number | null
           total_gallons?: number | null
           truck_id?: string | null
           updated_at?: string
           wind_direction?: string | null
           wind_speed_mph?: number | null
+          wind_speed_mph_max?: number | null
+          wind_speed_mph_min?: number | null
         }
         Update: {
           acres_treated?: number | null
@@ -212,9 +272,11 @@ export type Database = {
           applicator_sig?: string | null
           cert_attested?: boolean
           created_at?: string
+          customer_id?: string | null
           customer_name?: string
           deleted_at?: string | null
           end_time?: string | null
+          equipment_id?: string | null
           equipment_notes?: string | null
           gallons_per_acre?: number | null
           id?: string
@@ -237,13 +299,31 @@ export type Database = {
           target_veg_other?: string | null
           target_vegetation?: Json
           temp_f?: number | null
+          temp_f_max?: number | null
+          temp_f_min?: number | null
           total_gallons?: number | null
           truck_id?: string | null
           updated_at?: string
           wind_direction?: string | null
           wind_speed_mph?: number | null
+          wind_speed_mph_max?: number | null
+          wind_speed_mph_min?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "app_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_records_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_records_last_modified_by_fkey"
             columns: ["last_modified_by"]
@@ -535,6 +615,45 @@ export type Database = {
           },
         ]
       }
+      mix_record_equipment: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          mix_record_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          mix_record_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          mix_record_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mix_record_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mix_record_equipment_mix_record_id_fkey"
+            columns: ["mix_record_id"]
+            isOneToOne: false
+            referencedRelation: "mix_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mix_records: {
         Row: {
           actual_acres: number | null
@@ -572,8 +691,8 @@ export type Database = {
           total_mix_gal: number
           updated_at: string
           water_gal: number
-          wind_direction: string
-          wind_speed_mph: number
+          wind_direction: string | null
+          wind_speed_mph: number | null
         }
         Insert: {
           actual_acres?: number | null
@@ -611,8 +730,8 @@ export type Database = {
           total_mix_gal: number
           updated_at?: string
           water_gal: number
-          wind_direction: string
-          wind_speed_mph: number
+          wind_direction?: string | null
+          wind_speed_mph?: number | null
         }
         Update: {
           actual_acres?: number | null
@@ -650,8 +769,8 @@ export type Database = {
           total_mix_gal?: number
           updated_at?: string
           water_gal?: number
-          wind_direction?: string
-          wind_speed_mph?: number
+          wind_direction?: string | null
+          wind_speed_mph?: number | null
         }
         Relationships: [
           {
@@ -1108,7 +1227,12 @@ export type Database = {
     }
     Functions: {
       create_app_record_with_children: {
-        Args: { p_mix_record_ids: Json; p_pesticides: Json; p_record: Json }
+        Args: {
+          p_fields: Json
+          p_mix_record_ids: Json
+          p_pesticides: Json
+          p_record: Json
+        }
         Returns: string
       }
       create_mix_record_with_lines: {
@@ -1118,6 +1242,7 @@ export type Database = {
       current_user_role: { Args: never; Returns: string }
       update_app_record_with_children: {
         Args: {
+          p_fields: Json
           p_mix_record_ids: Json
           p_pesticides: Json
           p_record: Json

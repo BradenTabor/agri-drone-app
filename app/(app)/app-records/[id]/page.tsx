@@ -26,11 +26,26 @@ function formatAppType(value: string | null): string {
   return value[0]?.toUpperCase() + value.slice(1);
 }
 
+function formatMinMaxRange(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  unit: string,
+  legacy: number | null | undefined,
+): string {
+  if (min != null || max != null) {
+    if (min != null && max != null) return `${min}–${max}${unit}`;
+    if (min != null) return `${min}${unit}`;
+    return `${max}${unit}`;
+  }
+  if (legacy != null) return `${legacy}${unit}`;
+  return "—";
+}
+
 export default async function AppRecordDetailPage({ params }: AppRecordDetailPageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: record, error: recordError }, { data: pesticides, error: pesticidesError }, { data: mixLinks, error: mixLinksError }] =
+  const [{ data: record, error: recordError }, { data: pesticides, error: pesticidesError }, { data: mixLinks, error: mixLinksError }, { data: appRecordFields, error: appRecordFieldsError }] =
     await Promise.all([
       supabase.from("app_records").select("*").eq("id", id).is("deleted_at", null).single(),
       supabase
@@ -49,6 +64,11 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
         )
         .eq("app_record_id", id)
         .order("sort_order", { ascending: true }),
+      supabase
+        .from("app_record_fields")
+        .select("field_id,field_name_snapshot,location_lat,location_lng")
+        .eq("app_record_id", id)
+        .order("sort_order", { ascending: true }),
     ]);
 
   if (recordError || !record) {
@@ -60,6 +80,26 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
   if (mixLinksError) {
     throw new Error("Unable to load linked mix records.");
   }
+  if (appRecordFieldsError) {
+    throw new Error("Unable to load record fields.");
+  }
+
+  const { data: equipmentRecord } = record.equipment_id
+    ? await supabase
+        .from("equipment")
+        .select("identifier")
+        .eq("id", record.equipment_id)
+        .maybeSingle()
+    : { data: null };
+
+  const equipmentDisplay = equipmentRecord?.identifier || record.truck_id || "—";
+  const tempDisplay = formatMinMaxRange(record.temp_f_min, record.temp_f_max, " °F", record.temp_f);
+  const windDisplay = formatMinMaxRange(
+    record.wind_speed_mph_min,
+    record.wind_speed_mph_max,
+    " mph",
+    record.wind_speed_mph,
+  );
 
   const linkedMixRecords = (mixLinks ?? [])
     .map((link) => {
@@ -95,7 +135,7 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
             href={`/quotes/new?fromRecord=${record.id}`}
             className={buttonVariants({ variant: "outline" })}
           >
-            Generate Quote
+            Generate Invoice
           </Link>
           <PdfDownloadButton
             pdfUrl={`/api/app-record-pdf/${record.id}`}
@@ -151,12 +191,29 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
         <CardContent className="grid gap-4 p-5 text-sm md:grid-cols-3">
           <Detail label="Latitude">{record.location_lat ?? "—"}</Detail>
           <Detail label="Longitude">{record.location_lng ?? "—"}</Detail>
-          <Detail label="Temp (F)">{record.temp_f ?? "—"}</Detail>
-          <Detail label="Wind speed (mph)">{record.wind_speed_mph ?? "—"}</Detail>
+          <Detail label="Temp (F)">{tempDisplay}</Detail>
+          <Detail label="Wind speed (mph)">{windDisplay}</Detail>
           <Detail label="Wind direction">{record.wind_direction ?? "—"}</Detail>
           <Detail label="Sky condition">{record.sky_condition ?? "—"}</Detail>
         </CardContent>
       </Card>
+
+      {(appRecordFields ?? []).length > 0 ? (
+        <Card>
+          <CardHeader className="p-5 pb-0">
+            <CardTitle>Fields</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 p-5 text-sm md:grid-cols-3">
+            {(appRecordFields ?? []).map((field, index) => (
+              <Detail key={field.field_id ?? `field-${index}`} label={field.field_name_snapshot || "Field"}>
+                {field.location_lat != null && field.location_lng != null
+                  ? `${field.location_lat}, ${field.location_lng}`
+                  : "—"}
+              </Detail>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader className="p-5 pb-0">
@@ -231,7 +288,7 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
           <Detail label="Acres treated">{record.acres_treated ?? "—"}</Detail>
           <Detail label="Tank mix record">{record.tank_mix_record || "—"}</Detail>
           <Detail label="Equipment notes">{record.equipment_notes || "—"}</Detail>
-          <Detail label="Truck ID">{record.truck_id || "—"}</Detail>
+          <Detail label="Equipment">{equipmentDisplay}</Detail>
           <Detail label="Nozzle type">{record.nozzle_type || "—"}</Detail>
           <Detail label="REI">{record.rei || "—"}</Detail>
           <Detail label="Safe re-entry date">{record.safe_reentry_date || "—"}</Detail>

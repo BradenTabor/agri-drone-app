@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  normalizeAppFieldsForRpc,
   normalizeAppRecordPayload,
   normalizePesticidesForRpc,
 } from "@/lib/app-records/normalize";
@@ -32,12 +33,17 @@ function extractAppRecordFormData(formData: FormData) {
     jobDate: String(formData.get("jobDate") ?? ""),
     applicatorName: String(formData.get("applicatorName") ?? ""),
     customerName: String(formData.get("customerName") ?? ""),
+    customerId: String(formData.get("customerId") ?? ""),
     siteAddress: String(formData.get("siteAddress") ?? ""),
     jobSiteId: String(formData.get("jobSiteId") ?? ""),
     locationLat: String(formData.get("locationLat") ?? ""),
     locationLng: String(formData.get("locationLng") ?? ""),
     tempF: String(formData.get("tempF") ?? ""),
+    tempFMin: String(formData.get("tempFMin") ?? ""),
+    tempFMax: String(formData.get("tempFMax") ?? ""),
     windSpeedMph: String(formData.get("windSpeedMph") ?? ""),
+    windSpeedMphMin: String(formData.get("windSpeedMphMin") ?? ""),
+    windSpeedMphMax: String(formData.get("windSpeedMphMax") ?? ""),
     windDirection: String(formData.get("windDirection") ?? ""),
     skyCondition: String(formData.get("skyCondition") ?? ""),
     targetVegetation: JSON.parse(String(formData.get("targetVegetation") ?? "[]")),
@@ -51,6 +57,7 @@ function extractAppRecordFormData(formData: FormData) {
     acresTreated: String(formData.get("acresTreated") ?? ""),
     tankMixRecord: String(formData.get("tankMixRecord") ?? ""),
     equipmentNotes: String(formData.get("equipmentNotes") ?? ""),
+    equipmentId: String(formData.get("equipmentId") ?? ""),
     truckId: String(formData.get("truckId") ?? ""),
     nozzleType: String(formData.get("nozzleType") ?? ""),
     rei: String(formData.get("rei") ?? ""),
@@ -61,6 +68,7 @@ function extractAppRecordFormData(formData: FormData) {
     licenseCertNo: String(formData.get("licenseCertNo") ?? ""),
     pesticides: JSON.parse(String(formData.get("pesticides") ?? "[]")),
     mixRecordIds: JSON.parse(String(formData.get("mixRecordIds") ?? "[]")),
+    appFields: JSON.parse(String(formData.get("appFields") ?? "[]")),
   };
 }
 
@@ -98,6 +106,7 @@ export async function createAppRecordAction(
     p_record: normalizeAppRecordPayload(d),
     p_pesticides: normalizePesticidesForRpc(d.pesticides),
     p_mix_record_ids: d.mixRecordIds,
+    p_fields: normalizeAppFieldsForRpc(d.appFields),
   });
 
   const specificError = rpcErrorMessage(error);
@@ -133,6 +142,7 @@ export async function updateAppRecordAction(
     p_record: normalizeAppRecordPayload(d),
     p_pesticides: normalizePesticidesForRpc(d.pesticides),
     p_mix_record_ids: d.mixRecordIds,
+    p_fields: normalizeAppFieldsForRpc(d.appFields),
   });
 
   const specificError = rpcErrorMessage(error);

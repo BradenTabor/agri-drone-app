@@ -275,39 +275,6 @@ function MixSection({ data }: { data: MixRecordPdfData }) {
   );
 }
 
-function ConditionsSection({ data }: { data: MixRecordPdfData }) {
-  const { record } = data;
-
-  return (
-    <View style={styles.section} wrap={false}>
-      <Text style={styles.sectionTitle}>CONDITIONS</Text>
-      <View style={styles.divider} />
-
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <Text style={styles.label}>Wind</Text>
-          <Text style={styles.value}>
-            {record.wind_speed_mph} mph {record.wind_direction}
-          </Text>
-        </View>
-        <View style={styles.column}>
-          <Text style={styles.label}>Temperature</Text>
-          <Text style={styles.value}>
-            {record.temp_f !== null ? `${record.temp_f}°F` : EM_DASH}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.fullWidthBlock}>
-        <Text style={styles.label}>Humidity</Text>
-        <Text style={styles.value}>
-          {record.humidity_pct !== null ? `${record.humidity_pct}%` : EM_DASH}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 function NotesSection({ notes }: { notes: string | null }) {
   return (
     <View style={styles.section}>
@@ -373,7 +340,6 @@ export function MixRecordPage({ data }: { data: MixRecordPdfData }) {
       </Text>
       <HeaderSection data={data} />
       <MixSection data={data} />
-      <ConditionsSection data={data} />
       <NotesSection notes={data.record.notes} />
       <CertificationSection data={data} />
       <Footer />

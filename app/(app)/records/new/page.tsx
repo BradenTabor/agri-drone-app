@@ -18,7 +18,7 @@ export default async function NewMixRecordPage() {
       supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
       supabase
         .from("fields")
-        .select("id,name,customer_id")
+        .select("id,name,customer_id,default_lat,default_lng")
         .is("deleted_at", null)
         .order("name", { ascending: true }),
       supabase
@@ -41,7 +41,7 @@ export default async function NewMixRecordPage() {
         .order("name", { ascending: true }),
       supabase
         .from("profiles")
-        .select("id,full_name,email")
+        .select("id,full_name,email,license_cert_no")
         .is("deleted_at", null)
         .order("full_name", { ascending: true }),
       user
@@ -59,7 +59,7 @@ export default async function NewMixRecordPage() {
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          Capture a complete mix record with products, conditions, and signature.
+          Capture a complete mix record with products, equipment, and signature.
         </p>
       </header>
 
@@ -73,13 +73,14 @@ export default async function NewMixRecordPage() {
           defaultValues={{
             applicatorId: user?.id ?? null,
             licenseCertNo: selfProfile?.license_cert_no ?? null,
-            windDirection: "N",
           }}
           customers={(customers ?? []).map((customer) => ({ id: customer.id, name: customer.name }))}
           fields={(fields ?? []).map((field) => ({
             id: field.id,
             name: field.name,
             customerId: field.customer_id,
+            defaultLat: field.default_lat,
+            defaultLng: field.default_lng,
           }))}
           equipment={(equipment ?? []).map((item) => ({ id: item.id, identifier: item.identifier }))}
           products={(products ?? []).map((product) => ({
@@ -98,6 +99,8 @@ export default async function NewMixRecordPage() {
           applicators={(profiles ?? []).map((profile) => ({
             id: profile.id,
             label: profile.full_name || profile.email || profile.id,
+            fullName: profile.full_name,
+            licenseCertNo: profile.license_cert_no,
           }))}
         />
         </CardContent>

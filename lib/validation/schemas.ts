@@ -102,6 +102,14 @@ export const equipmentUpdateSchema = equipmentCreateSchema;
 export type EquipmentCreateInput = z.infer<typeof equipmentCreateSchema>;
 export type EquipmentUpdateInput = z.infer<typeof equipmentUpdateSchema>;
 
+export const profileUpdateSchema = z.object({
+  fullName: optionalText(120),
+  licenseCertNo: optionalText(80),
+  phone: optionalText(40),
+});
+
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+
 const costUnitSchema = z.enum(["gal", "oz", "fl_oz", "lb"], {
   message: "Cost unit must be gal, oz, fl_oz, or lb.",
 });
@@ -225,7 +233,7 @@ export const mixRecordCreateSchema = z
     applicatorId: optionalUuid(),
     applicatorNameOverride: optionalText(120),
     licenseCertNo: optionalText(80),
-    equipmentId: optionalUuid(),
+    equipmentIds: z.array(z.string().uuid("Invalid equipment ID.")).default([]),
     customerId: z.string().uuid("Customer is required."),
     fieldId: z.string().uuid("Field is required."),
     mixLat: requiredDecimal({ min: -90, max: 90, label: "Latitude" }),
@@ -239,10 +247,6 @@ export const mixRecordCreateSchema = z
     totalMixGal: requiredDecimal({ min: 0, max: 1000000, label: "Total mix" }),
     expectedAcres: requiredDecimal({ min: 0, max: 100000, label: "Expected acres" }),
     actualAcres: optionalDecimal({ min: 0, max: 100000, label: "Actual acres" }),
-    windSpeedMph: requiredDecimal({ min: 0, max: 200, label: "Wind speed" }),
-    windDirection: windDirectionSchema,
-    tempF: optionalDecimal({ min: -100, max: 200, label: "Temperature" }),
-    humidityPct: optionalDecimal({ min: 0, max: 100, label: "Humidity" }),
     notes: optionalText(4000),
     signedTypedName: z
       .string()
@@ -369,11 +373,19 @@ const appRecordPesticideSchema = z.object({
   sortOrder: z.coerce.number().int().min(0).default(0),
 });
 
+const appRecordFieldSchema = z.object({
+  fieldId: z.string().uuid(),
+  fieldName: z.string().max(120).default(""),
+  locationLat: z.number().nullable().default(null),
+  locationLng: z.number().nullable().default(null),
+});
+
 export const appRecordCreateSchema = z
   .object({
     jobDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
     applicatorName: z.string().trim().min(1, "Applicator name is required.").max(120),
     customerName: z.string().trim().min(1, "Customer name is required.").max(120),
+    customerId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
     siteAddress: optionalText(255),
     jobSiteId: optionalText(120),
 
@@ -381,7 +393,11 @@ export const appRecordCreateSchema = z
     locationLng: optionalDecimal({ min: -180, max: 180, label: "Longitude" }),
 
     tempF: optionalDecimal({ min: -60, max: 140, label: "Temperature" }),
+    tempFMin: optionalDecimal({ min: -60, max: 140, label: "Min temperature" }),
+    tempFMax: optionalDecimal({ min: -60, max: 140, label: "Max temperature" }),
     windSpeedMph: optionalDecimal({ min: 0, max: 200, label: "Wind speed" }),
+    windSpeedMphMin: optionalDecimal({ min: 0, max: 200, label: "Min wind speed" }),
+    windSpeedMphMax: optionalDecimal({ min: 0, max: 200, label: "Max wind speed" }),
     windDirection: z.preprocess(emptyStringToUndefined, windDirectionSchema.optional()),
     skyCondition: z.preprocess(emptyStringToUndefined, skyConditionSchema.optional()),
 
@@ -410,6 +426,7 @@ export const appRecordCreateSchema = z
     tankMixRecord: optionalText(120),
 
     equipmentNotes: optionalText(500),
+    equipmentId: z.preprocess(emptyStringToUndefined, z.string().uuid().optional()),
     truckId: optionalText(80),
     nozzleType: optionalText(80),
 
@@ -426,6 +443,7 @@ export const appRecordCreateSchema = z
 
     pesticides: z.array(appRecordPesticideSchema).min(1, "Add at least one product."),
     mixRecordIds: z.array(z.string().uuid()).default([]),
+    appFields: z.array(appRecordFieldSchema).default([]),
   })
   .superRefine((data, ctx) => {
     if (!data.certAttested) {
@@ -449,6 +467,30 @@ export const appRecordCreateSchema = z
         code: z.ZodIssueCode.custom,
         path: ["appMethod"],
         message: "Select an application method.",
+      });
+    }
+
+    if (
+      data.tempFMin != null &&
+      data.tempFMax != null &&
+      data.tempFMin > data.tempFMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["tempFMax"],
+        message: "Max must be ≥ min.",
+      });
+    }
+
+    if (
+      data.windSpeedMphMin != null &&
+      data.windSpeedMphMax != null &&
+      data.windSpeedMphMin > data.windSpeedMphMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["windSpeedMphMax"],
+        message: "Max must be ≥ min.",
       });
     }
   });

@@ -4,13 +4,15 @@ import type {
 } from "@/lib/validation/schemas";
 
 export function normalizeMixRecordPayload(input: MixRecordCreateInput) {
+  const equipmentIds = [...new Set(input.equipmentIds)];
   return {
     record_date: input.recordDate,
     time_mixed: input.timeMixed,
     applicator_id: input.applicatorId ?? null,
     applicator_name_override: input.applicatorNameOverride ?? null,
     license_cert_no: input.licenseCertNo ?? null,
-    equipment_id: input.equipmentId ?? null,
+    equipment_id: equipmentIds[0] ?? null,
+    equipment_ids: equipmentIds,
     customer_id: input.customerId,
     field_id: input.fieldId,
     mix_lat: input.mixLat,
@@ -24,10 +26,6 @@ export function normalizeMixRecordPayload(input: MixRecordCreateInput) {
     total_mix_gal: input.totalMixGal,
     expected_acres: input.expectedAcres,
     actual_acres: input.actualAcres ?? null,
-    wind_speed_mph: input.windSpeedMph,
-    wind_direction: input.windDirection,
-    temp_f: input.tempF ?? null,
-    humidity_pct: input.humidityPct ?? null,
     notes: input.notes ?? null,
     signed_typed_name: input.signedTypedName,
     signature_attested: input.signatureAttested,

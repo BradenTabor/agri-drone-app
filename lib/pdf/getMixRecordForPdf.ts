@@ -24,10 +24,6 @@ export type MixRecordPdfData = {
     total_mix_gal: number;
     expected_acres: number;
     actual_acres: number | null;
-    wind_speed_mph: number;
-    wind_direction: string;
-    temp_f: number | null;
-    humidity_pct: number | null;
     notes: string | null;
     signed_typed_name: string;
     signature_attested: boolean;
@@ -68,6 +64,11 @@ type MixRecordProductJoinRow = {
   products: ProductLookupRow | ProductLookupRow[] | null;
 };
 
+type MixRecordEquipmentJoinRow = {
+  sort_order: number;
+  equipment: { identifier: string } | { identifier: string }[] | null;
+};
+
 type MixRecordForPdfRow = {
   id: string;
   record_date: string;
@@ -87,16 +88,13 @@ type MixRecordForPdfRow = {
   total_mix_gal: number;
   expected_acres: number;
   actual_acres: number | null;
-  wind_speed_mph: number;
-  wind_direction: string;
-  temp_f: number | null;
-  humidity_pct: number | null;
   notes: string | null;
   signed_typed_name: string;
   signature_attested: boolean;
   submitted_at: string;
   last_modified_at: string | null;
   equipment: { identifier: string } | { identifier: string }[] | null;
+  mix_record_equipment: MixRecordEquipmentJoinRow[] | null;
   applicator_profile: ProfileNameRow | ProfileNameRow[] | null;
   submitted_by_profile: ProfileNameRow | ProfileNameRow[] | null;
   last_modified_by_profile: ProfileNameRow | ProfileNameRow[] | null;
@@ -134,16 +132,16 @@ export async function getMixRecordForPdf(
       total_mix_gal,
       expected_acres,
       actual_acres,
-      wind_speed_mph,
-      wind_direction,
-      temp_f,
-      humidity_pct,
       notes,
       signed_typed_name,
       signature_attested,
       submitted_at,
       last_modified_at,
       equipment:equipment!mix_records_equipment_id_fkey(identifier),
+      mix_record_equipment!mix_record_equipment_mix_record_id_fkey(
+        sort_order,
+        equipment(identifier)
+      ),
       applicator_profile:profiles!mix_records_applicator_id_fkey(full_name,deleted_at),
       submitted_by_profile:profiles!mix_records_submitted_by_fkey(full_name,deleted_at),
       last_modified_by_profile:profiles!mix_records_last_modified_by_fkey(full_name,deleted_at),
@@ -162,6 +160,7 @@ export async function getMixRecordForPdf(
     .is("deleted_at", null)
     .is("mix_record_products.deleted_at", null)
     .order("sort_order", { referencedTable: "mix_record_products", ascending: true })
+    .order("sort_order", { referencedTable: "mix_record_equipment", ascending: true })
     .single();
 
   if (recordError) {
@@ -188,7 +187,14 @@ export async function getMixRecordForPdf(
   // NOTE: keep MixRecordForPdfRow in sync with the select string above.
   // Supabase's generated types don't infer embedded relation shapes.
   const typedRow = row as unknown as MixRecordForPdfRow;
-  const equipment = asSingle(typedRow.equipment);
+  const legacyEquipment = asSingle(typedRow.equipment);
+  const linkedEquipmentLabels = (typedRow.mix_record_equipment ?? [])
+    .map((link) => asSingle(link.equipment)?.identifier)
+    .filter((label): label is string => Boolean(label));
+  const equipmentIdentifier =
+    linkedEquipmentLabels.length > 0
+      ? linkedEquipmentLabels.join(", ")
+      : (legacyEquipment?.identifier ?? null);
   const applicatorProfile = asSingle(typedRow.applicator_profile);
   const submittedByProfile = asSingle(typedRow.submitted_by_profile);
   const lastModifiedByProfile = asSingle(typedRow.last_modified_by_profile);
@@ -229,7 +235,7 @@ export async function getMixRecordForPdf(
       applicator_name_override: typedRow.applicator_name_override,
       applicator_display_name: typedRow.applicator_name_override ?? applicatorProfileName,
       license_cert_no: typedRow.license_cert_no,
-      equipment_identifier: equipment?.identifier ?? null,
+      equipment_identifier: equipmentIdentifier,
       mix_lat: typedRow.mix_lat,
       mix_lng: typedRow.mix_lng,
       tank_size_gal: typedRow.tank_size_gal,
@@ -241,10 +247,6 @@ export async function getMixRecordForPdf(
       total_mix_gal: typedRow.total_mix_gal,
       expected_acres: typedRow.expected_acres,
       actual_acres: typedRow.actual_acres,
-      wind_speed_mph: typedRow.wind_speed_mph,
-      wind_direction: typedRow.wind_direction,
-      temp_f: typedRow.temp_f,
-      humidity_pct: typedRow.humidity_pct,
       notes: typedRow.notes,
       signed_typed_name: typedRow.signed_typed_name,
       signature_attested: typedRow.signature_attested,

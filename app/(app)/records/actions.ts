@@ -89,7 +89,9 @@ function extractMixRecordFormData(formData: FormData) {
     applicatorId: String(formData.get("applicatorId") ?? ""),
     applicatorNameOverride: String(formData.get("applicatorNameOverride") ?? ""),
     licenseCertNo: String(formData.get("licenseCertNo") ?? ""),
-    equipmentId: String(formData.get("equipmentId") ?? ""),
+    equipmentIds: [
+      ...new Set(formData.getAll("equipmentIds").map(String).filter(Boolean)),
+    ],
     customerId: String(formData.get("customerId") ?? ""),
     fieldId: String(formData.get("fieldId") ?? ""),
     mixLat: String(formData.get("mixLat") ?? ""),
@@ -103,10 +105,6 @@ function extractMixRecordFormData(formData: FormData) {
     totalMixGal: String(formData.get("totalMixGal") ?? ""),
     expectedAcres: String(formData.get("expectedAcres") ?? ""),
     actualAcres: String(formData.get("actualAcres") ?? ""),
-    windSpeedMph: String(formData.get("windSpeedMph") ?? ""),
-    windDirection: String(formData.get("windDirection") ?? ""),
-    tempF: String(formData.get("tempF") ?? ""),
-    humidityPct: String(formData.get("humidityPct") ?? ""),
     notes: String(formData.get("notes") ?? ""),
     signedTypedName: String(formData.get("signedTypedName") ?? ""),
     signatureAttested: checkboxValue(formData, "signatureAttested"),
@@ -120,6 +118,9 @@ function formatMixRecordRpcError(message: string): string {
   }
   if (message.includes("Invalid customer_id") || message.includes("Invalid field_id")) {
     return "Customer or field is no longer valid. Refresh the page and try again.";
+  }
+  if (message.includes("selected equipment items no longer exist")) {
+    return "One or more selected equipment items are no longer available. Refresh and try again.";
   }
   return "Unable to save mix record. Please try again.";
 }

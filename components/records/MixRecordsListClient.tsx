@@ -20,8 +20,6 @@ export type MixRecordListItem = {
   total_mix_gal: number;
   expected_acres: number;
   actual_acres: number | null;
-  wind_speed_mph: number;
-  wind_direction: string;
 };
 
 type MixRecordsListClientProps = {
@@ -125,9 +123,6 @@ export function MixRecordsListClient({
               <span>
                 {record.expected_acres} ac expected
                 {record.actual_acres != null ? ` · ${record.actual_acres} ac actual` : ""}
-              </span>
-              <span>
-                Wind {record.wind_speed_mph} mph {record.wind_direction}
               </span>
             </div>
             <div className="flex gap-2 pt-1">

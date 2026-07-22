@@ -82,10 +82,6 @@ function makeMixData(): MixRecordPdfData {
       total_mix_gal: 10,
       expected_acres: 50,
       actual_acres: null,
-      wind_speed_mph: 6,
-      wind_direction: "SW",
-      temp_f: 72,
-      humidity_pct: 55,
       notes: null,
       signed_typed_name: "Austin Tabor",
       signature_attested: true,
@@ -156,7 +152,11 @@ function makeAppData(): AppRecordPdfData {
       location_lat: null,
       location_lng: null,
       temp_f: null,
+      temp_f_min: null,
+      temp_f_max: null,
       wind_speed_mph: null,
+      wind_speed_mph_min: null,
+      wind_speed_mph_max: null,
       wind_direction: null,
       sky_condition: null,
       target_vegetation: ["brush"],
@@ -170,6 +170,7 @@ function makeAppData(): AppRecordPdfData {
       acres_treated: null,
       tank_mix_record: null,
       equipment_notes: null,
+      equipment_id: null,
       truck_id: null,
       nozzle_type: null,
       rei: null,
@@ -193,6 +194,7 @@ function makeAppData(): AppRecordPdfData {
     ],
     linkedMixRecords: [],
     linkedMixRecordDocs: [],
+    fields: [],
   };
 }
 

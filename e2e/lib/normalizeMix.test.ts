@@ -25,10 +25,9 @@ function baseMixRecordInput(
     waterGal: 475,
     totalMixGal: 500,
     expectedAcres: 200,
-    windSpeedMph: 5,
-    windDirection: "N",
     signedTypedName: "Jane Applicator",
     signatureAttested: true,
+    equipmentIds: [],
     productLines: [
       {
         amountAdded: 25,
@@ -53,6 +52,19 @@ describe("normalizeMixRecordPayload", () => {
     assert.equal(payload.surfactant_name, null);
   });
 
+  it("maps equipmentIds into equipment_ids and primary equipment_id", () => {
+    const equipmentA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const equipmentB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const payload = normalizeMixRecordPayload(
+      baseMixRecordInput({
+        equipmentIds: [equipmentA, equipmentB],
+      }),
+    );
+
+    assert.equal(payload.equipment_id, equipmentA);
+    assert.deepEqual(payload.equipment_ids, [equipmentA, equipmentB]);
+  });
+
   it("passes required numerics through unchanged", () => {
     const input = baseMixRecordInput({
       tankSizeGal: 500,
@@ -60,7 +72,6 @@ describe("normalizeMixRecordPayload", () => {
       waterGal: 475,
       totalMixGal: 500,
       expectedAcres: 200,
-      windSpeedMph: 5,
       mixLat: 30.2672,
       mixLng: -97.7431,
     });
@@ -72,7 +83,6 @@ describe("normalizeMixRecordPayload", () => {
     assert.equal(payload.water_gal, 475);
     assert.equal(payload.total_mix_gal, 500);
     assert.equal(payload.expected_acres, 200);
-    assert.equal(payload.wind_speed_mph, 5);
     assert.equal(payload.mix_lat, 30.2672);
     assert.equal(payload.mix_lng, -97.7431);
   });

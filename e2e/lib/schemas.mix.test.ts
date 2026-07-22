@@ -23,8 +23,6 @@ function validMixPayload() {
     waterGal: 900,
     totalMixGal: 1000,
     expectedAcres: 66.67,
-    windSpeedMph: 5,
-    windDirection: "N" as const,
     signedTypedName: "John Doe",
     signatureAttested: true,
     productLines: [
@@ -127,6 +125,36 @@ describe("mixRecordCreateSchema", () => {
     const issue = issueAt(result.error, ["signatureAttested"]);
     assert.ok(issue);
     assert.equal(issue.message, "Attestation is required before submitting.");
+  });
+
+  it("defaults equipmentIds to [] when absent", () => {
+    const result = mixRecordCreateSchema.safeParse(validMixPayload());
+    assert.equal(result.success, true);
+    if (!result.success) return;
+    assert.deepEqual(result.data.equipmentIds, []);
+  });
+
+  it("accepts multiple equipmentIds", () => {
+    const equipmentA = "550e8400-e29b-41d4-a716-446655440010";
+    const equipmentB = "550e8400-e29b-41d4-a716-446655440011";
+    const result = mixRecordCreateSchema.safeParse({
+      ...validMixPayload(),
+      equipmentIds: [equipmentA, equipmentB],
+    });
+    assert.equal(result.success, true);
+    if (!result.success) return;
+    assert.deepEqual(result.data.equipmentIds, [equipmentA, equipmentB]);
+  });
+
+  it('rejects equipmentIds ["nope"]', () => {
+    const result = mixRecordCreateSchema.safeParse({
+      ...validMixPayload(),
+      equipmentIds: ["nope"],
+    });
+    assert.equal(result.success, false);
+    if (result.success) return;
+    const issue = issueAt(result.error, ["equipmentIds", 0]);
+    assert.ok(issue);
   });
 
   it('rejects customerId "not-a-uuid"', () => {

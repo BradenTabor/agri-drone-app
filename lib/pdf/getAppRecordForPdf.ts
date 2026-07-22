@@ -15,7 +15,11 @@ export type AppRecordPdfData = {
     location_lat: number | null;
     location_lng: number | null;
     temp_f: number | null;
+    temp_f_min: number | null;
+    temp_f_max: number | null;
     wind_speed_mph: number | null;
+    wind_speed_mph_min: number | null;
+    wind_speed_mph_max: number | null;
     wind_direction: string | null;
     sky_condition: string | null;
     target_vegetation: string[];
@@ -29,6 +33,7 @@ export type AppRecordPdfData = {
     acres_treated: number | null;
     tank_mix_record: string | null;
     equipment_notes: string | null;
+    equipment_id: string | null;
     truck_id: string | null;
     nozzle_type: string | null;
     rei: string | null;
@@ -59,6 +64,11 @@ export type AppRecordPdfData = {
    * no (non-deleted) mix records are linked.
    */
   linkedMixRecordDocs: MixRecordPdfData[];
+  fields: Array<{
+    fieldName: string;
+    lat: number | null;
+    lng: number | null;
+  }>;
 };
 
 type ProfileNameRow = {
@@ -89,7 +99,11 @@ type AppRecordForPdfRow = {
   location_lat: number | null;
   location_lng: number | null;
   temp_f: number | null;
+  temp_f_min: number | null;
+  temp_f_max: number | null;
   wind_speed_mph: number | null;
+  wind_speed_mph_min: number | null;
+  wind_speed_mph_max: number | null;
   wind_direction: string | null;
   sky_condition: string | null;
   target_vegetation: unknown;
@@ -103,6 +117,7 @@ type AppRecordForPdfRow = {
   acres_treated: number | null;
   tank_mix_record: string | null;
   equipment_notes: string | null;
+  equipment_id: string | null;
   truck_id: string | null;
   nozzle_type: string | null;
   rei: string | null;
@@ -152,7 +167,11 @@ export async function getAppRecordForPdf(
       location_lat,
       location_lng,
       temp_f,
+      temp_f_min,
+      temp_f_max,
       wind_speed_mph,
+      wind_speed_mph_min,
+      wind_speed_mph_max,
       wind_direction,
       sky_condition,
       target_vegetation,
@@ -166,6 +185,7 @@ export async function getAppRecordForPdf(
       acres_treated,
       tank_mix_record,
       equipment_notes,
+      equipment_id,
       truck_id,
       nozzle_type,
       rei,
@@ -244,6 +264,22 @@ export async function getAppRecordForPdf(
     await Promise.all(linkedMixRecordRows.map((mix) => getMixRecordForPdf(mix.id, supabase)))
   ).filter((doc): doc is MixRecordPdfData => doc != null);
 
+  const { data: fieldRows, error: fieldsError } = await supabase
+    .from("app_record_fields")
+    .select("field_name_snapshot,location_lat,location_lng")
+    .eq("app_record_id", appRecordId)
+    .order("sort_order", { ascending: true });
+
+  if (fieldsError) {
+    throw new Error(`Unable to load application record fields for PDF: ${fieldsError.message}`);
+  }
+
+  const fields = (fieldRows ?? []).map((field) => ({
+    fieldName: field.field_name_snapshot ?? "",
+    lat: field.location_lat,
+    lng: field.location_lng,
+  }));
+
   return {
     record: {
       id: typedRow.id,
@@ -255,7 +291,11 @@ export async function getAppRecordForPdf(
       location_lat: typedRow.location_lat,
       location_lng: typedRow.location_lng,
       temp_f: typedRow.temp_f,
+      temp_f_min: typedRow.temp_f_min,
+      temp_f_max: typedRow.temp_f_max,
       wind_speed_mph: typedRow.wind_speed_mph,
+      wind_speed_mph_min: typedRow.wind_speed_mph_min,
+      wind_speed_mph_max: typedRow.wind_speed_mph_max,
       wind_direction: typedRow.wind_direction,
       sky_condition: typedRow.sky_condition,
       target_vegetation: parseTargetVegetation(typedRow.target_vegetation),
@@ -269,6 +309,7 @@ export async function getAppRecordForPdf(
       acres_treated: typedRow.acres_treated,
       tank_mix_record: typedRow.tank_mix_record,
       equipment_notes: typedRow.equipment_notes,
+      equipment_id: typedRow.equipment_id,
       truck_id: typedRow.truck_id,
       nozzle_type: typedRow.nozzle_type,
       rei: typedRow.rei,
@@ -285,5 +326,6 @@ export async function getAppRecordForPdf(
     pesticides,
     linkedMixRecords,
     linkedMixRecordDocs,
+    fields,
   };
 }

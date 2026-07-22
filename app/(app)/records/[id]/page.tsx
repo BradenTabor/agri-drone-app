@@ -17,7 +17,7 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: record, error: recordError }, { data: productLines, error: productLinesError }, { data: photos, error: photosError }] =
+  const [{ data: record, error: recordError }, { data: productLines, error: productLinesError }, { data: photos, error: photosError }, { data: equipmentLinks, error: equipmentLinksError }] =
     await Promise.all([
       supabase.from("mix_records").select("*").eq("id", id).is("deleted_at", null).single(),
       supabase
@@ -32,6 +32,11 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
         .eq("mix_record_id", id)
         .is("deleted_at", null)
         .order("uploaded_at", { ascending: false }),
+      supabase
+        .from("mix_record_equipment")
+        .select("equipment_id,sort_order,equipment(identifier)")
+        .eq("mix_record_id", id)
+        .order("sort_order", { ascending: true }),
     ]);
 
   if (recordError || !record) {
@@ -44,6 +49,9 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
   if (photosError) {
     throw new Error("Unable to load record photos.");
   }
+  if (equipmentLinksError) {
+    throw new Error("Unable to load equipment.");
+  }
 
   const { data: applicatorProfile, error: applicatorProfileError } = record.applicator_id
     ? await supabase
@@ -55,15 +63,26 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
   if (applicatorProfileError) {
     throw new Error("Unable to load applicator profile.");
   }
-  const { data: equipmentRecord, error: equipmentError } = record.equipment_id
-    ? await supabase
-        .from("equipment")
-        .select("identifier")
-        .eq("id", record.equipment_id)
-        .maybeSingle()
-    : { data: null, error: null };
-  if (equipmentError) {
-    throw new Error("Unable to load equipment record.");
+
+  const linkedEquipmentLabels = (equipmentLinks ?? []).flatMap((link) => {
+    const equipmentRow = Array.isArray(link.equipment) ? link.equipment[0] : link.equipment;
+    const label = equipmentRow?.identifier ?? link.equipment_id;
+    return label ? [label] : [];
+  });
+
+  let equipmentDisplay =
+    linkedEquipmentLabels.length > 0 ? linkedEquipmentLabels.join(", ") : "—";
+
+  if (equipmentDisplay === "—" && record.equipment_id) {
+    const { data: equipmentRecord, error: equipmentError } = await supabase
+      .from("equipment")
+      .select("identifier")
+      .eq("id", record.equipment_id)
+      .maybeSingle();
+    if (equipmentError) {
+      throw new Error("Unable to load equipment record.");
+    }
+    equipmentDisplay = equipmentRecord?.identifier || record.equipment_id || "—";
   }
 
   const profileApplicatorLabel =
@@ -72,7 +91,6 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
     record.applicator_name_override ||
     profileApplicatorLabel ||
     "—";
-  const equipmentDisplay = equipmentRecord?.identifier || record.equipment_id || "—";
 
   const photoEntries = await Promise.all(
     (photos ?? []).map(async (photo) => {
@@ -188,15 +206,9 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
 
       <Card>
         <CardHeader className="p-5 pb-0">
-          <CardTitle>Conditions & Sign-off</CardTitle>
+          <CardTitle>Sign-off</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 p-5 text-sm md:grid-cols-3">
-          <Detail label="Wind">
-            {record.wind_speed_mph} mph {record.wind_direction}
-          </Detail>
-          <Detail label="Temp / Humidity">
-            {record.temp_f ?? "—"} F / {record.humidity_pct ?? "—"}%
-          </Detail>
           <Detail label="Photos">{photoEntries.length}</Detail>
           <Detail label="Typed signature">{record.signed_typed_name}</Detail>
           <Detail label="Attested">{record.signature_attested ? "Yes" : "No"}</Detail>

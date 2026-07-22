@@ -19,6 +19,7 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
     { data: record, error: recordError },
     { data: lines, error: linesError },
     { data: photos, error: photosError },
+    { data: equipmentLinks, error: equipmentLinksError },
     { data: customers },
     { data: fields },
     { data: equipment },
@@ -39,10 +40,15 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
       .eq("mix_record_id", id)
       .is("deleted_at", null)
       .order("uploaded_at", { ascending: false }),
+    supabase
+      .from("mix_record_equipment")
+      .select("equipment_id,sort_order")
+      .eq("mix_record_id", id)
+      .order("sort_order", { ascending: true }),
     supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
     supabase
       .from("fields")
-      .select("id,name,customer_id")
+      .select("id,name,customer_id,default_lat,default_lng")
       .is("deleted_at", null)
       .order("name", { ascending: true }),
     supabase
@@ -64,7 +70,7 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
       .order("name", { ascending: true }),
     supabase
       .from("profiles")
-      .select("id,full_name,email")
+      .select("id,full_name,email,license_cert_no")
       .is("deleted_at", null)
       .order("full_name", { ascending: true }),
   ]);
@@ -79,6 +85,17 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
   if (photosError) {
     throw new Error("Unable to load mix record photos.");
   }
+  if (equipmentLinksError) {
+    throw new Error("Unable to load mix record equipment.");
+  }
+
+  const linkedEquipmentIds = (equipmentLinks ?? []).map((link) => link.equipment_id);
+  const equipmentIds =
+    linkedEquipmentIds.length > 0
+      ? linkedEquipmentIds
+      : record.equipment_id
+        ? [record.equipment_id]
+        : [];
 
   const photoEntries = await Promise.all(
     (photos ?? []).map(async (photo) => {
@@ -118,7 +135,7 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
             applicatorId: record.applicator_id,
             applicatorNameOverride: record.applicator_name_override,
             licenseCertNo: record.license_cert_no,
-            equipmentId: record.equipment_id ?? "",
+            equipmentIds,
             customerId: record.customer_id,
             fieldId: record.field_id,
             mixLat: record.mix_lat?.toString() ?? "",
@@ -132,18 +149,6 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
             totalMixGal: record.total_mix_gal?.toString() ?? "",
             expectedAcres: record.expected_acres?.toString() ?? "",
             actualAcres: record.actual_acres?.toString() ?? "",
-            windSpeedMph: record.wind_speed_mph?.toString() ?? "",
-            windDirection: record.wind_direction as
-              | "N"
-              | "NE"
-              | "E"
-              | "SE"
-              | "S"
-              | "SW"
-              | "W"
-              | "NW",
-            tempF: record.temp_f?.toString() ?? "",
-            humidityPct: record.humidity_pct?.toString() ?? "",
             notes: record.notes,
             signedTypedName: record.signed_typed_name,
             signatureAttested: record.signature_attested,
@@ -162,6 +167,8 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
             id: field.id,
             name: field.name,
             customerId: field.customer_id,
+            defaultLat: field.default_lat,
+            defaultLng: field.default_lng,
           }))}
           equipment={(equipment ?? []).map((item) => ({ id: item.id, identifier: item.identifier }))}
           products={(products ?? []).map((product) => ({
@@ -180,6 +187,8 @@ export default async function EditMixRecordPage({ params }: EditMixRecordPagePro
           applicators={(profiles ?? []).map((profile) => ({
             id: profile.id,
             label: profile.full_name || profile.email || profile.id,
+            fullName: profile.full_name,
+            licenseCertNo: profile.license_cert_no,
           }))}
         />
         </CardContent>

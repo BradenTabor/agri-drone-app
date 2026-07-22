@@ -1,5 +1,3 @@
-import type { WIND_DIRECTIONS } from "@/lib/constants";
-
 export type MixRecordProductLineDraft = {
   rowId: string;
   productId: string;
@@ -16,7 +14,9 @@ export type MixRecordDraft = {
   applicatorId: string;
   applicatorNameOverride: string;
   licenseCertNo: string;
-  equipmentId: string;
+  equipmentIds: string[];
+  /** @deprecated Legacy single-equipment drafts; migrated to equipmentIds on read. */
+  equipmentId?: string;
   customerId: string;
   fieldId: string;
   mixLat: string;
@@ -32,10 +32,6 @@ export type MixRecordDraft = {
   totalMixGal: string;
   expectedAcres: string;
   actualAcres: string;
-  windSpeedMph: string;
-  windDirection: (typeof WIND_DIRECTIONS)[number];
-  tempF: string;
-  humidityPct: string;
   notes: string;
   signedTypedName: string;
   signatureAttested: boolean;

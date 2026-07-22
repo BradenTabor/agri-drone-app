@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, CircleUser, LogOut } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
@@ -123,6 +124,16 @@ export function NavUserMenu({ email, signOutAction }: NavUserMenuProps) {
               </div>
 
               <div className="space-y-1 p-2">
+                <Link
+                  href="/profile"
+                  role="menuitem"
+                  className="press-physics inline-flex h-10 w-full items-center justify-start gap-2.5 rounded-xl px-2.5 text-sm text-slate-700 hover:bg-white/70 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
+                  onClick={() => setOpen(false)}
+                >
+                  <CircleUser className="size-4 shrink-0" aria-hidden="true" />
+                  Profile
+                </Link>
+
                 <PasskeyEnrollMenuItem onComplete={() => setOpen(false)} />
 
                 <Button

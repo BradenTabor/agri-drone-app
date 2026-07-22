@@ -9,8 +9,10 @@ import { MixRecordPicker } from "@/components/app-records/MixRecordPicker";
 import { FormDraftStatus } from "@/components/forms/FormDraftStatus";
 import { useFormDraft } from "@/lib/formDrafts/useFormDraft";
 import {
+  coerceAppRecordDraft,
   hasMeaningfulAppDraft,
   type AppRecordDraft,
+  type AppRecordFieldDraft,
   type AppRecordPesticideDraft,
 } from "@/lib/formDrafts/appRecordDraft";
 import { DmsDecimalInput } from "@/components/fields/DmsDecimalInput";
@@ -34,6 +36,20 @@ import { WIND_DIRECTIONS } from "@/lib/constants";
 
 const initialState: AppRecordFormState = { error: null };
 
+const NOZZLE_TYPE_SUGGESTIONS = [
+  "Flat fan",
+  "Air induction (AI)",
+  "Hollow cone",
+  "Full cone",
+  "Twin flat fan",
+  "Turbo TeeJet",
+  "TeeJet XR",
+  "Drift guard",
+  "Streamer bar",
+  "Boom",
+  "Broadcast",
+] as const;
+
 type AppRecordFieldValues = {
   jobDate: string;
   applicatorName: string;
@@ -42,8 +58,10 @@ type AppRecordFieldValues = {
   jobSiteId: string | null;
   locationLat: string;
   locationLng: string;
-  tempF: string;
-  windSpeedMph: string;
+  tempFMin: string;
+  tempFMax: string;
+  windSpeedMphMin: string;
+  windSpeedMphMax: string;
   windDirection: (typeof WIND_DIRECTIONS)[number] | "";
   skyCondition: "clear" | "partly_cloudy" | "cloudy" | "rain" | "";
   targetVegOther: string | null;
@@ -56,6 +74,7 @@ type AppRecordFieldValues = {
   acresTreated: string;
   tankMixRecord: string | null;
   equipmentNotes: string | null;
+  equipmentId: string;
   truckId: string | null;
   nozzleType: string | null;
   rei: string | null;
@@ -84,6 +103,14 @@ type PesticideRow = AppRecordPesticideDraft;
 
 type AttachedMix = AttachableMixRecord;
 
+type AppFieldOption = {
+  id: string;
+  name: string;
+  customerId: string;
+  defaultLat: number | null;
+  defaultLng: number | null;
+};
+
 type AppRecordFormProps = {
   action: (state: AppRecordFormState, formData: FormData) => Promise<AppRecordFormState>;
   submitLabel?: string;
@@ -92,9 +119,14 @@ type AppRecordFormProps = {
   currentAppRecordId?: string | null;
   products: ProductOption[];
   surfactants: SurfactantOption[];
+  customers: Array<{ id: string; name: string }>;
+  fields: AppFieldOption[];
+  equipment: Array<{ id: string; identifier: string }>;
   defaultValues?: Partial<AppRecordFieldValues> & {
+    customerId?: string;
     targetVegetation?: string[];
     attachedMixes?: AttachedMix[];
+    appFields?: AppRecordFieldDraft[];
     pesticides?: Array<{
       epaRegNumber: string | null;
       productName: string;
@@ -205,18 +237,28 @@ export function AppRecordForm({
   currentAppRecordId = null,
   products,
   surfactants,
+  customers,
+  fields,
+  equipment,
   defaultValues,
 }: AppRecordFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [jobDate, setJobDate] = useState(defaultValues?.jobDate ?? "");
   const [applicatorName, setApplicatorName] = useState(defaultValues?.applicatorName ?? "");
   const [customerName, setCustomerName] = useState(defaultValues?.customerName ?? "");
+  const [selectedCustomerId, setSelectedCustomerId] = useState(defaultValues?.customerId ?? "");
+  const [customerMode, setCustomerMode] = useState<"linked" | "other">(
+    defaultValues?.customerId ? "linked" : defaultValues?.customerName ? "other" : "linked",
+  );
+  const [appFields, setAppFields] = useState<AppRecordFieldDraft[]>(defaultValues?.appFields ?? []);
   const [siteAddress, setSiteAddress] = useState(defaultValues?.siteAddress ?? "");
   const [jobSiteId, setJobSiteId] = useState(defaultValues?.jobSiteId ?? "");
   const [locationLat, setLocationLat] = useState(defaultValues?.locationLat ?? "");
   const [locationLng, setLocationLng] = useState(defaultValues?.locationLng ?? "");
-  const [tempF, setTempF] = useState(defaultValues?.tempF ?? "");
-  const [windSpeedMph, setWindSpeedMph] = useState(defaultValues?.windSpeedMph ?? "");
+  const [tempFMin, setTempFMin] = useState(defaultValues?.tempFMin ?? "");
+  const [tempFMax, setTempFMax] = useState(defaultValues?.tempFMax ?? "");
+  const [windSpeedMphMin, setWindSpeedMphMin] = useState(defaultValues?.windSpeedMphMin ?? "");
+  const [windSpeedMphMax, setWindSpeedMphMax] = useState(defaultValues?.windSpeedMphMax ?? "");
   const [windDirection, setWindDirection] = useState<AppRecordFieldValues["windDirection"]>(
     defaultValues?.windDirection ?? "",
   );
@@ -254,6 +296,7 @@ export function AppRecordForm({
   const [acresTreated, setAcresTreated] = useState(defaultValues?.acresTreated ?? "");
   const [tankMixRecord, setTankMixRecord] = useState(defaultValues?.tankMixRecord ?? "");
   const [equipmentNotes, setEquipmentNotes] = useState(defaultValues?.equipmentNotes ?? "");
+  const [equipmentId, setEquipmentId] = useState(defaultValues?.equipmentId ?? "");
   const [truckId, setTruckId] = useState(defaultValues?.truckId ?? "");
   const [nozzleType, setNozzleType] = useState(defaultValues?.nozzleType ?? "");
   const [rei, setRei] = useState(defaultValues?.rei ?? "");
@@ -263,21 +306,31 @@ export function AppRecordForm({
   const [applicatorSig, setApplicatorSig] = useState(defaultValues?.applicatorSig ?? "");
   const [licenseCertNo, setLicenseCertNo] = useState(defaultValues?.licenseCertNo ?? "");
 
+  const selectedEquipmentIdentifier =
+    equipment.find((item) => item.id === equipmentId)?.identifier ?? "";
+  const resolvedTruckId = selectedEquipmentIdentifier || truckId;
+
   const applyDraft = useCallback(
-    (draft: AppRecordDraft) => {
-      if (draft.v !== 1) {
+    (raw: AppRecordDraft) => {
+      const draft = coerceAppRecordDraft(raw);
+      if (!draft) {
         return;
       }
 
       setJobDate(draft.jobDate);
       setApplicatorName(draft.applicatorName);
       setCustomerName(draft.customerName);
+      setSelectedCustomerId(draft.customerId);
+      setCustomerMode(draft.customerId ? "linked" : draft.customerName ? "other" : "linked");
+      setAppFields(draft.appFields);
       setSiteAddress(draft.siteAddress);
       setJobSiteId(draft.jobSiteId);
       setLocationLat(draft.locationLat);
       setLocationLng(draft.locationLng);
-      setTempF(draft.tempF);
-      setWindSpeedMph(draft.windSpeedMph);
+      setTempFMin(draft.tempFMin);
+      setTempFMax(draft.tempFMax);
+      setWindSpeedMphMin(draft.windSpeedMphMin);
+      setWindSpeedMphMax(draft.windSpeedMphMax);
       setWindDirection(draft.windDirection);
       setSkyCondition(draft.skyCondition);
       setTargetVegetation(draft.targetVegetation);
@@ -293,6 +346,7 @@ export function AppRecordForm({
       setAcresTreated(draft.acresTreated);
       setTankMixRecord(draft.tankMixRecord);
       setEquipmentNotes(draft.equipmentNotes);
+      setEquipmentId(draft.equipmentId);
       setTruckId(draft.truckId);
       setNozzleType(draft.nozzleType);
       setRei(draft.rei);
@@ -307,16 +361,19 @@ export function AppRecordForm({
 
   const draftValue = useMemo<AppRecordDraft>(
     () => ({
-      v: 1,
+      v: 2,
       jobDate,
       applicatorName,
       customerName,
+      customerId: selectedCustomerId,
       siteAddress,
       jobSiteId,
       locationLat,
       locationLng,
-      tempF,
-      windSpeedMph,
+      tempFMin,
+      tempFMax,
+      windSpeedMphMin,
+      windSpeedMphMax,
       windDirection,
       skyCondition,
       targetVegetation,
@@ -327,12 +384,14 @@ export function AppRecordForm({
       endTime,
       attachedMixes,
       pesticides,
+      appFields,
       totalGallons,
       gallonsPerAcre,
       acresTreated,
       tankMixRecord,
       equipmentNotes,
-      truckId,
+      equipmentId,
+      truckId: resolvedTruckId,
       nozzleType,
       rei,
       safeReentryDate,
@@ -344,6 +403,7 @@ export function AppRecordForm({
     [
       acresTreated,
       additionalNotes,
+      appFields,
       appMethod,
       appType,
       applicatorName,
@@ -352,6 +412,7 @@ export function AppRecordForm({
       certAttested,
       customerName,
       endTime,
+      equipmentId,
       equipmentNotes,
       gallonsPerAcre,
       jobDate,
@@ -363,17 +424,20 @@ export function AppRecordForm({
       pesticides,
       rei,
       safeReentryDate,
+      selectedCustomerId,
       siteAddress,
       skyCondition,
       startTime,
       tankMixRecord,
       targetVegOther,
       targetVegetation,
-      tempF,
+      tempFMax,
+      tempFMin,
       totalGallons,
-      truckId,
+      resolvedTruckId,
       windDirection,
-      windSpeedMph,
+      windSpeedMphMax,
+      windSpeedMphMin,
     ],
   );
 
@@ -404,6 +468,51 @@ export function AppRecordForm({
     if (gallons === null || acres === null || acres <= 0) return null;
     return (gallons / acres).toFixed(2);
   }, [acresTreated, totalGallons]);
+
+  const visibleCustomerFields = useMemo(
+    () => fields.filter((field) => field.customerId === selectedCustomerId),
+    [fields, selectedCustomerId],
+  );
+
+  function syncLocationFromAppFields(nextFields: AppRecordFieldDraft[]) {
+    const first = nextFields[0];
+    if (first?.locationLat != null && first.locationLng != null) {
+      setLocationLat(String(first.locationLat));
+      setLocationLng(String(first.locationLng));
+    }
+  }
+
+  function handleCustomerSelectChange(value: string) {
+    if (value === "__other__") {
+      setCustomerMode("other");
+      setSelectedCustomerId("");
+      setAppFields([]);
+      return;
+    }
+
+    const matched = customers.find((customer) => customer.id === value) ?? null;
+    setCustomerMode("linked");
+    setSelectedCustomerId(value);
+    setCustomerName(matched?.name ?? "");
+    setAppFields([]);
+  }
+
+  function toggleAppField(field: AppFieldOption) {
+    const exists = appFields.some((item) => item.fieldId === field.id);
+    const next = exists
+      ? appFields.filter((item) => item.fieldId !== field.id)
+      : [
+          ...appFields,
+          {
+            fieldId: field.id,
+            fieldName: field.name,
+            locationLat: field.defaultLat,
+            locationLng: field.defaultLng,
+          },
+        ];
+    setAppFields(next);
+    syncLocationFromAppFields(next);
+  }
 
   function toggleTargetVegetation(value: string) {
     setTargetVegetation((current) =>
@@ -561,7 +670,18 @@ export function AppRecordForm({
 
     if (isFirstAttach) {
       if (!jobDate.trim()) setJobDate(mix.recordDate);
-      if (!customerName.trim() && mix.customerName) setCustomerName(mix.customerName);
+      if (!customerName.trim() && mix.customerName) {
+        setCustomerName(mix.customerName);
+        if (!selectedCustomerId) {
+          const matched = customers.find((customer) => customer.name === mix.customerName) ?? null;
+          if (matched) {
+            setCustomerMode("linked");
+            setSelectedCustomerId(matched.id);
+          } else {
+            setCustomerMode("other");
+          }
+        }
+      }
       if (!applicatorName.trim() && mix.applicatorName) setApplicatorName(mix.applicatorName);
     }
   }
@@ -622,12 +742,19 @@ export function AppRecordForm({
     setJobDate(defaultValues?.jobDate ?? "");
     setApplicatorName(defaultValues?.applicatorName ?? "");
     setCustomerName(defaultValues?.customerName ?? "");
+    setSelectedCustomerId(defaultValues?.customerId ?? "");
+    setCustomerMode(
+      defaultValues?.customerId ? "linked" : defaultValues?.customerName ? "other" : "linked",
+    );
+    setAppFields(defaultValues?.appFields ?? []);
     setSiteAddress(defaultValues?.siteAddress ?? "");
     setJobSiteId(defaultValues?.jobSiteId ?? "");
     setLocationLat(defaultValues?.locationLat ?? "");
     setLocationLng(defaultValues?.locationLng ?? "");
-    setTempF(defaultValues?.tempF ?? "");
-    setWindSpeedMph(defaultValues?.windSpeedMph ?? "");
+    setTempFMin(defaultValues?.tempFMin ?? "");
+    setTempFMax(defaultValues?.tempFMax ?? "");
+    setWindSpeedMphMin(defaultValues?.windSpeedMphMin ?? "");
+    setWindSpeedMphMax(defaultValues?.windSpeedMphMax ?? "");
     setWindDirection(defaultValues?.windDirection ?? "");
     setSkyCondition(defaultValues?.skyCondition ?? "");
     setTargetVegetation(defaultValues?.targetVegetation ?? []);
@@ -660,6 +787,7 @@ export function AppRecordForm({
     setAcresTreated(defaultValues?.acresTreated ?? "");
     setTankMixRecord(defaultValues?.tankMixRecord ?? "");
     setEquipmentNotes(defaultValues?.equipmentNotes ?? "");
+    setEquipmentId(defaultValues?.equipmentId ?? "");
     setTruckId(defaultValues?.truckId ?? "");
     setNozzleType(defaultValues?.nozzleType ?? "");
     setRei(defaultValues?.rei ?? "");
@@ -680,6 +808,9 @@ export function AppRecordForm({
       <input type="hidden" name="targetVegetation" defaultValue="[]" />
       <input type="hidden" name="pesticides" defaultValue="[]" />
       <input type="hidden" name="mixRecordIds" defaultValue="[]" />
+      <input type="hidden" name="customerId" value={selectedCustomerId} />
+      <input type="hidden" name="customerName" value={customerName} />
+      <input type="hidden" name="appFields" value={JSON.stringify(appFields)} />
 
       <FormSection title="Job Information">
         <div className="grid gap-4 md:grid-cols-2">
@@ -713,19 +844,38 @@ export function AppRecordForm({
             ) : null}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="customerName">Customer name</Label>
-            <Input
-              id="customerName"
-              name="customerName"
-              value={customerName}
-              onChange={(event) => setCustomerName(event.target.value)}
+            <Label htmlFor="customerIdSelect">Customer</Label>
+            <Select
+              id="customerIdSelect"
+              value={customerMode === "other" ? "__other__" : selectedCustomerId}
+              onChange={(event) => handleCustomerSelectChange(event.target.value)}
               aria-invalid={Boolean(errorFor(state, "customerName"))}
-              required
-            />
+              required={customerMode === "linked"}
+            >
+              <option value="">Select customer</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+              <option value="__other__">Other (not listed)</option>
+            </Select>
             {errorFor(state, "customerName") ? (
               <p className="text-sm text-destructive">{errorFor(state, "customerName")}</p>
             ) : null}
           </div>
+          {customerMode === "other" ? (
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Customer name</Label>
+              <Input
+                id="customerName"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                aria-invalid={Boolean(errorFor(state, "customerName"))}
+                required
+              />
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="siteAddress">Site address (optional)</Label>
             <Input
@@ -746,9 +896,48 @@ export function AppRecordForm({
             />
           </div>
         </div>
+        {customerMode === "linked" && selectedCustomerId ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Fields</p>
+            {visibleCustomerFields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                This customer has no fields yet. Add fields on the customer page.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleCustomerFields.map((field) => (
+                  <Label
+                    key={field.id}
+                    className="flex min-h-11 items-center gap-3 rounded-md border px-3 py-2"
+                  >
+                    <Checkbox
+                      checked={appFields.some((item) => item.fieldId === field.id)}
+                      onChange={() => toggleAppField(field)}
+                    />
+                    {field.name}
+                  </Label>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </FormSection>
 
       <FormSection title="GPS Coordinates">
+        {appFields.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Selected fields</p>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {appFields.map((field) => (
+                <li key={field.fieldId}>
+                  {field.locationLat != null && field.locationLng != null
+                    ? `${field.fieldName} — ${field.locationLat}, ${field.locationLng}`
+                    : `${field.fieldName} — no saved GPS`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2">
           <DmsDecimalInput
             name="locationLat"
@@ -770,19 +959,50 @@ export function AppRecordForm({
       </FormSection>
 
       <FormSection title="Weather Conditions">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="tempF">Temperature (F)</Label>
-            <DecimalInput id="tempF" name="tempF" value={tempF} onChange={(event) => setTempF(event.target.value)} />
+            <Label htmlFor="tempFMin">Temp min (F)</Label>
+            <DecimalInput
+              id="tempFMin"
+              name="tempFMin"
+              value={tempFMin}
+              onChange={(event) => setTempFMin(event.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="windSpeedMph">Wind speed (mph)</Label>
+            <Label htmlFor="tempFMax">Temp max (F)</Label>
             <DecimalInput
-              id="windSpeedMph"
-              name="windSpeedMph"
-              value={windSpeedMph}
-              onChange={(event) => setWindSpeedMph(event.target.value)}
+              id="tempFMax"
+              name="tempFMax"
+              value={tempFMax}
+              onChange={(event) => setTempFMax(event.target.value)}
+              aria-invalid={Boolean(errorFor(state, "tempFMax"))}
             />
+            {errorFor(state, "tempFMax") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "tempFMax")}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="windSpeedMphMin">Wind min (mph)</Label>
+            <DecimalInput
+              id="windSpeedMphMin"
+              name="windSpeedMphMin"
+              value={windSpeedMphMin}
+              onChange={(event) => setWindSpeedMphMin(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="windSpeedMphMax">Wind max (mph)</Label>
+            <DecimalInput
+              id="windSpeedMphMax"
+              name="windSpeedMphMax"
+              value={windSpeedMphMax}
+              onChange={(event) => setWindSpeedMphMax(event.target.value)}
+              aria-invalid={Boolean(errorFor(state, "windSpeedMphMax"))}
+            />
+            {errorFor(state, "windSpeedMphMax") ? (
+              <p className="text-sm text-destructive">{errorFor(state, "windSpeedMphMax")}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="windDirection">Wind direction</Label>
@@ -1119,17 +1339,37 @@ export function AppRecordForm({
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="truckId">Truck ID</Label>
-            <Input id="truckId" name="truckId" value={truckId} onChange={(event) => setTruckId(event.target.value)} />
+            <Label htmlFor="equipmentId">Equipment</Label>
+            <Select
+              id="equipmentId"
+              name="equipmentId"
+              value={equipmentId}
+              onChange={(event) => setEquipmentId(event.target.value)}
+            >
+              <option value="">No equipment selected</option>
+              {equipment.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.identifier}
+                </option>
+              ))}
+            </Select>
+            <input type="hidden" name="truckId" value={resolvedTruckId} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nozzleType">Nozzle type</Label>
             <Input
               id="nozzleType"
               name="nozzleType"
+              list="nozzle-suggestions"
               value={nozzleType}
               onChange={(event) => setNozzleType(event.target.value)}
+              autoComplete="off"
             />
+            <datalist id="nozzle-suggestions">
+              {NOZZLE_TYPE_SUGGESTIONS.map((suggestion) => (
+                <option key={suggestion} value={suggestion} />
+              ))}
+            </datalist>
           </div>
         </div>
       </FormSection>

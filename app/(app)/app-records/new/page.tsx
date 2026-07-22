@@ -13,7 +13,14 @@ export default async function NewAppRecordPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: selfProfile }, { data: products }, { data: surfactants }] = await Promise.all([
+  const [
+    { data: selfProfile },
+    { data: products },
+    { data: surfactants },
+    { data: customers },
+    { data: fields },
+    { data: equipment },
+  ] = await Promise.all([
     user
       ? supabase.from("profiles").select("full_name,license_cert_no").eq("id", user.id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -29,6 +36,18 @@ export default async function NewAppRecordPage() {
       .is("deleted_at", null)
       .eq("active", true)
       .order("name", { ascending: true }),
+    supabase.from("customers").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
+    supabase
+      .from("fields")
+      .select("id,name,customer_id,default_lat,default_lng")
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    supabase
+      .from("equipment")
+      .select("id,identifier")
+      .is("deleted_at", null)
+      .eq("active", true)
+      .order("identifier", { ascending: true }),
   ]);
 
   return (
@@ -62,6 +81,21 @@ export default async function NewAppRecordPage() {
               name: surfactant.name,
               epaNumber: surfactant.epa_number,
               active: surfactant.active,
+            }))}
+            customers={(customers ?? []).map((customer) => ({
+              id: customer.id,
+              name: customer.name,
+            }))}
+            fields={(fields ?? []).map((field) => ({
+              id: field.id,
+              name: field.name,
+              customerId: field.customer_id,
+              defaultLat: field.default_lat,
+              defaultLng: field.default_lng,
+            }))}
+            equipment={(equipment ?? []).map((item) => ({
+              id: item.id,
+              identifier: item.identifier,
             }))}
             defaultValues={{
               applicatorName: selfProfile?.full_name ?? "",

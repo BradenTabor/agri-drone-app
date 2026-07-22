@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  coerceAppRecordDraft,
   hasMeaningfulAppDraft,
   type AppRecordDraft,
 } from "@/lib/formDrafts/appRecordDraft";
@@ -19,7 +20,7 @@ function emptyMixRecordDraft(): MixRecordDraft {
     applicatorId: "",
     applicatorNameOverride: "",
     licenseCertNo: "",
-    equipmentId: "",
+    equipmentIds: [],
     customerId: "",
     fieldId: "",
     mixLat: "",
@@ -35,10 +36,6 @@ function emptyMixRecordDraft(): MixRecordDraft {
     totalMixGal: "",
     expectedAcres: "",
     actualAcres: "",
-    windSpeedMph: "",
-    windDirection: "N",
-    tempF: "",
-    humidityPct: "",
     notes: "",
     signedTypedName: "",
     signatureAttested: false,
@@ -47,16 +44,19 @@ function emptyMixRecordDraft(): MixRecordDraft {
 
 function emptyAppRecordDraft(): AppRecordDraft {
   return {
-    v: 1,
+    v: 2,
     jobDate: "",
     applicatorName: "",
     customerName: "",
+    customerId: "",
     siteAddress: "",
     jobSiteId: "",
     locationLat: "",
     locationLng: "",
-    tempF: "",
-    windSpeedMph: "",
+    tempFMin: "",
+    tempFMax: "",
+    windSpeedMphMin: "",
+    windSpeedMphMax: "",
     windDirection: "",
     skyCondition: "",
     targetVegetation: [],
@@ -67,11 +67,13 @@ function emptyAppRecordDraft(): AppRecordDraft {
     endTime: "",
     attachedMixes: [],
     pesticides: [],
+    appFields: [],
     totalGallons: "",
     gallonsPerAcre: "",
     acresTreated: "",
     tankMixRecord: "",
     equipmentNotes: "",
+    equipmentId: "",
     truckId: "",
     nozzleType: "",
     rei: "",
@@ -140,5 +142,57 @@ describe("hasMeaningfulAppDraft", () => {
       },
     ];
     assert.equal(hasMeaningfulAppDraft(draft), true);
+  });
+});
+
+describe("coerceAppRecordDraft", () => {
+  it("migrates legacy v1 scalar weather into min fields and defaults appFields", () => {
+    const coerced = coerceAppRecordDraft({
+      v: 1,
+      jobDate: "2026-07-01",
+      applicatorName: "Pat",
+      customerName: "Acme",
+      customerId: "",
+      siteAddress: "",
+      jobSiteId: "",
+      locationLat: "",
+      locationLng: "",
+      tempF: "78",
+      windSpeedMph: "5",
+      windDirection: "N",
+      skyCondition: "clear",
+      targetVegetation: ["brush"],
+      targetVegOther: "",
+      appMethod: "drone",
+      appType: "spraying",
+      startTime: "",
+      endTime: "",
+      attachedMixes: [],
+      pesticides: [],
+      totalGallons: "",
+      gallonsPerAcre: "",
+      acresTreated: "",
+      tankMixRecord: "",
+      equipmentNotes: "",
+      truckId: "",
+      nozzleType: "",
+      rei: "",
+      safeReentryDate: "",
+      additionalNotes: "",
+      certAttested: false,
+      applicatorSig: "",
+      licenseCertNo: "",
+    });
+
+    assert.ok(coerced);
+    assert.equal(coerced.v, 2);
+    assert.equal(coerced.tempFMin, "78");
+    assert.equal(coerced.windSpeedMphMin, "5");
+    assert.deepEqual(coerced.appFields, []);
+    assert.equal(coerced.equipmentId, "");
+  });
+
+  it("returns null for unsupported draft versions", () => {
+    assert.equal(coerceAppRecordDraft({ v: 99 }), null);
   });
 });

@@ -188,6 +188,7 @@ export async function fillPartialAppRecordDraft(page: Page): Promise<void> {
   await expect(page.getByRole("heading", { name: "New Application Record" })).toBeVisible();
   await expect(page.getByLabel("Job date")).toBeVisible({ timeout: 15_000 });
 
+  await page.locator("#customerIdSelect").selectOption("__other__");
   await page.locator("#customerName").fill("E2E Draft Customer");
   await page.locator("#jobDate").fill("2026-06-19");
 }
@@ -255,8 +256,6 @@ export async function fillMixRecordForm(
 
   await page.locator("#totalMixGal").fill("300");
   await page.locator("#expectedAcres").fill("20");
-  await page.locator("#windSpeedMph").fill("5");
-  await page.locator("#windDirection").selectOption("N");
 
   const signedTypedName = options?.signedTypedName ?? "E2E Applicator";
 
@@ -288,6 +287,7 @@ export async function fillAppRecordForm(
 
   await page.locator("#jobDate").fill(new Date().toISOString().slice(0, 10));
   await page.locator("#applicatorName").fill(applicatorName);
+  await page.locator("#customerIdSelect").selectOption("__other__");
   await page.locator("#customerName").fill(customerName);
 
   await page.getByRole("checkbox", { name: "Broadleaf" }).check();

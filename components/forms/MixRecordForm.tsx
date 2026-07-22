@@ -24,7 +24,6 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateExpectedAcres, calculateTotalMixGallonsHint } from "@/lib/calculations/mix";
-import { WIND_DIRECTIONS } from "@/lib/constants";
 import {
   firstFieldErrorKey,
   listFieldErrorMessages,
@@ -40,7 +39,7 @@ type MixRecordFieldValues = {
   applicatorId: string | null;
   applicatorNameOverride: string | null;
   licenseCertNo: string | null;
-  equipmentId: string;
+  equipmentIds: string[];
   customerId: string;
   fieldId: string;
   mixLat: string;
@@ -54,10 +53,6 @@ type MixRecordFieldValues = {
   totalMixGal: string;
   expectedAcres: string;
   actualAcres: string;
-  windSpeedMph: string;
-  windDirection: (typeof WIND_DIRECTIONS)[number];
-  tempF: string;
-  humidityPct: string;
   notes: string | null;
   signedTypedName: string;
   signatureAttested: boolean;
@@ -78,7 +73,13 @@ type MixRecordFormProps = {
     previewUrl: string | null;
   }>;
   customers: Array<{ id: string; name: string }>;
-  fields: Array<{ id: string; name: string; customerId: string }>;
+  fields: Array<{
+    id: string;
+    name: string;
+    customerId: string;
+    defaultLat: number | null;
+    defaultLng: number | null;
+  }>;
   equipment: Array<{ id: string; identifier: string }>;
   products: Array<{
     id: string;
@@ -93,7 +94,12 @@ type MixRecordFormProps = {
     defaultUnit: "oz" | "fl_oz" | "gal" | "%" | null;
     active: boolean;
   }>;
-  applicators: Array<{ id: string; label: string }>;
+  applicators: Array<{
+    id: string;
+    label: string;
+    fullName: string | null;
+    licenseCertNo: string | null;
+  }>;
 };
 
 function parseDecimal(value: string): number | null {
@@ -176,16 +182,10 @@ export function MixRecordForm({
     matchSurfactantId(surfactants, defaultValues?.surfactantName),
   );
   const [surfactantName, setSurfactantName] = useState(defaultValues?.surfactantName ?? "");
-  const [equipmentId, setEquipmentId] = useState(defaultValues?.equipmentId ?? "");
+  const [equipmentIds, setEquipmentIds] = useState<string[]>(defaultValues?.equipmentIds ?? []);
   const [totalMixGal, setTotalMixGal] = useState(defaultValues?.totalMixGal ?? "");
   const [expectedAcres, setExpectedAcres] = useState(defaultValues?.expectedAcres ?? "");
   const [actualAcres, setActualAcres] = useState(defaultValues?.actualAcres ?? "");
-  const [windSpeedMph, setWindSpeedMph] = useState(defaultValues?.windSpeedMph ?? "");
-  const [windDirection, setWindDirection] = useState<MixRecordFieldValues["windDirection"]>(
-    defaultValues?.windDirection ?? "N",
-  );
-  const [tempF, setTempF] = useState(defaultValues?.tempF ?? "");
-  const [humidityPct, setHumidityPct] = useState(defaultValues?.humidityPct ?? "");
   const [notes, setNotes] = useState(defaultValues?.notes ?? "");
   const [signedTypedName, setSignedTypedName] = useState(defaultValues?.signedTypedName ?? "");
   const [signatureAttested, setSignatureAttested] = useState(defaultValues?.signatureAttested ?? false);
@@ -201,7 +201,13 @@ export function MixRecordForm({
       setApplicatorId(draft.applicatorId);
       setApplicatorNameOverride(draft.applicatorNameOverride);
       setLicenseCertNo(draft.licenseCertNo);
-      setEquipmentId(draft.equipmentId);
+      setEquipmentIds(
+        draft.equipmentIds?.length
+          ? draft.equipmentIds
+          : draft.equipmentId
+            ? [draft.equipmentId]
+            : [],
+      );
       setSelectedCustomerId(draft.customerId);
       setSelectedFieldId(draft.fieldId);
       setMixLat(draft.mixLat);
@@ -217,10 +223,6 @@ export function MixRecordForm({
       setTotalMixGal(draft.totalMixGal);
       setExpectedAcres(draft.expectedAcres);
       setActualAcres(draft.actualAcres);
-      setWindSpeedMph(draft.windSpeedMph);
-      setWindDirection(draft.windDirection);
-      setTempF(draft.tempF);
-      setHumidityPct(draft.humidityPct);
       setNotes(draft.notes);
       setSignedTypedName(draft.signedTypedName);
       setSignatureAttested(draft.signatureAttested);
@@ -246,7 +248,7 @@ export function MixRecordForm({
       applicatorId,
       applicatorNameOverride,
       licenseCertNo,
-      equipmentId,
+      equipmentIds,
       customerId: selectedCustomerId,
       fieldId: effectiveFieldId,
       mixLat,
@@ -262,10 +264,6 @@ export function MixRecordForm({
       totalMixGal,
       expectedAcres,
       actualAcres,
-      windSpeedMph,
-      windDirection,
-      tempF,
-      humidityPct,
       notes,
       signedTypedName,
       signatureAttested,
@@ -274,9 +272,8 @@ export function MixRecordForm({
       actualAcres,
       applicatorId,
       applicatorNameOverride,
-      equipmentId,
+      equipmentIds,
       expectedAcres,
-      humidityPct,
       licenseCertNo,
       lines,
       mixLat,
@@ -293,12 +290,9 @@ export function MixRecordForm({
       surfactantUnit,
       tankSizeGal,
       targetGpa,
-      tempF,
       timeMixed,
       totalMixGal,
       waterGal,
-      windDirection,
-      windSpeedMph,
     ],
   );
 
@@ -407,7 +401,7 @@ export function MixRecordForm({
     setApplicatorId(defaultValues?.applicatorId ?? "");
     setApplicatorNameOverride(defaultValues?.applicatorNameOverride ?? "");
     setLicenseCertNo(defaultValues?.licenseCertNo ?? "");
-    setEquipmentId(defaultValues?.equipmentId ?? "");
+    setEquipmentIds(defaultValues?.equipmentIds ?? []);
     setSelectedCustomerId(defaultValues?.customerId ?? "");
     setSelectedFieldId(defaultValues?.fieldId ?? "");
     setMixLat(defaultValues?.mixLat ?? "");
@@ -423,10 +417,6 @@ export function MixRecordForm({
     setTotalMixGal(defaultValues?.totalMixGal ?? "");
     setExpectedAcres(defaultValues?.expectedAcres ?? "");
     setActualAcres(defaultValues?.actualAcres ?? "");
-    setWindSpeedMph(defaultValues?.windSpeedMph ?? "");
-    setWindDirection(defaultValues?.windDirection ?? "N");
-    setTempF(defaultValues?.tempF ?? "");
-    setHumidityPct(defaultValues?.humidityPct ?? "");
     setNotes(defaultValues?.notes ?? "");
     setSignedTypedName(defaultValues?.signedTypedName ?? "");
     setSignatureAttested(defaultValues?.signatureAttested ?? false);
@@ -481,7 +471,16 @@ export function MixRecordForm({
               id="applicatorId"
               name="applicatorId"
               value={applicatorId}
-              onChange={(event) => setApplicatorId(event.target.value)}
+              onChange={(event) => {
+                const nextApplicatorId = event.target.value;
+                const selectedApplicator =
+                  applicators.find((applicator) => applicator.id === nextApplicatorId) ?? null;
+                setApplicatorId(nextApplicatorId);
+                if (selectedApplicator) {
+                  setApplicatorNameOverride(selectedApplicator.fullName ?? "");
+                  setLicenseCertNo(selectedApplicator.licenseCertNo ?? "");
+                }
+              }}
             >
               <option value="">Unassigned</option>
               {applicators.map((applicator) => (
@@ -504,21 +503,73 @@ export function MixRecordForm({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="equipmentId">Equipment</Label>
-            <Select
-              id="equipmentId"
-              name="equipmentId"
-              value={equipmentId}
-              onChange={(event) => setEquipmentId(event.target.value)}
+          <div className="space-y-2 md:col-span-2">
+            <Label id="equipmentIds-label">Equipment</Label>
+            {/* Hidden inputs own form submission so soft-deleted / inactive
+                selections still persist even when no checkbox is rendered. */}
+            {equipmentIds.map((id) => (
+              <input key={`equipment-hidden-${id}`} type="hidden" name="equipmentIds" value={id} />
+            ))}
+            <div
+              role="group"
+              aria-labelledby="equipmentIds-label"
+              className="max-h-48 space-y-2 overflow-y-auto rounded-md border border-input bg-background p-3"
             >
-              <option value="">No equipment selected</option>
-              {equipment.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.identifier}
-                </option>
-              ))}
-            </Select>
+              {equipment.length === 0 && equipmentIds.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No equipment available.</p>
+              ) : (
+                <>
+                  {equipment.map((item) => {
+                    const checked = equipmentIds.includes(item.id);
+                    return (
+                      <label
+                        key={item.id}
+                        className="flex cursor-pointer items-start gap-3 text-sm"
+                      >
+                        <Checkbox
+                          value={item.id}
+                          checked={checked}
+                          onChange={(event) => {
+                            const nextChecked = event.target.checked;
+                            setEquipmentIds((current) => {
+                              if (nextChecked) {
+                                return current.includes(item.id)
+                                  ? current
+                                  : [...current, item.id];
+                              }
+                              return current.filter((id) => id !== item.id);
+                            });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>{item.identifier}</span>
+                      </label>
+                    );
+                  })}
+                  {equipmentIds
+                    .filter((id) => !equipment.some((item) => item.id === id))
+                    .map((id) => (
+                      <label
+                        key={`orphan-${id}`}
+                        className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground"
+                      >
+                        <Checkbox
+                          value={id}
+                          checked
+                          onChange={() => {
+                            setEquipmentIds((current) => current.filter((itemId) => itemId !== id));
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>Previously selected equipment (unavailable)</span>
+                      </label>
+                    ))}
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Select one or more pieces of equipment used for this mix.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -595,7 +646,15 @@ export function MixRecordForm({
               id="fieldId"
               name="fieldId"
               value={effectiveFieldId}
-              onChange={(event) => setSelectedFieldId(event.target.value)}
+              onChange={(event) => {
+                const nextFieldId = event.target.value;
+                const selectedField = fields.find((field) => field.id === nextFieldId) ?? null;
+                setSelectedFieldId(nextFieldId);
+                if (selectedField?.defaultLat != null && selectedField.defaultLng != null) {
+                  setMixLat(String(selectedField.defaultLat));
+                  setMixLng(String(selectedField.defaultLng));
+                }
+              }}
               aria-invalid={Boolean(errorFor(state, "fieldId"))}
               required
               disabled={!selectedCustomerId || visibleFields.length === 0}
@@ -900,52 +959,6 @@ export function MixRecordForm({
               name="actualAcres"
               value={actualAcres}
               onChange={(event) => setActualAcres(event.target.value)}
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="Conditions">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-2">
-            <Label htmlFor="windSpeedMph">Wind speed (mph)</Label>
-            <DecimalInput
-              id="windSpeedMph"
-              name="windSpeedMph"
-              value={windSpeedMph}
-              onChange={(event) => setWindSpeedMph(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="windDirection">Wind direction</Label>
-            <Select
-              id="windDirection"
-              name="windDirection"
-              value={windDirection}
-              onChange={(event) =>
-                setWindDirection(event.target.value as MixRecordFieldValues["windDirection"])
-              }
-              required
-            >
-              {WIND_DIRECTIONS.map((direction) => (
-                <option key={direction} value={direction}>
-                  {direction}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tempF">Temp (F)</Label>
-            <DecimalInput id="tempF" name="tempF" value={tempF} onChange={(event) => setTempF(event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="humidityPct">Humidity (%)</Label>
-            <DecimalInput
-              id="humidityPct"
-              name="humidityPct"
-              value={humidityPct}
-              onChange={(event) => setHumidityPct(event.target.value)}
             />
           </div>
         </div>
