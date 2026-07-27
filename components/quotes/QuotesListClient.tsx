@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { softDeleteQuoteAction } from "@/app/(app)/quotes/actions";
+import { BulkPdfExportBar } from "@/components/shared/BulkPdfExportBar";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
 import { ListSearchToolbar } from "@/components/shared/ListSearchToolbar";
 import {
@@ -146,6 +147,14 @@ export function QuotesListClient({ quotes }: QuotesListClientProps) {
         </Card>
       ) : (
         <>
+          <BulkPdfExportBar
+            selectionNoun="quotes"
+            items={paginatedQuotes.map((quote) => ({
+              kind: "quote" as const,
+              documentId: quote.id,
+              label: `${quote.quote_number || "Quote"} · ${quote.customer_name}`,
+            }))}
+          />
           <RecordsListTable
             rows={paginatedQuotes}
             columns={columns}

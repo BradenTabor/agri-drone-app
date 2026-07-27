@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { softDeleteQuoteAction } from "@/app/(app)/quotes/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
-import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
+import { PdfExportPanel } from "@/components/shared/PdfExportPanel";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { quotePdfFilename } from "@/lib/pdf/pdfFilename";
@@ -54,38 +54,43 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
 
   return (
     <section className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {quote.quote_number || "Quote"}
-          </h1>
-          <p className="text-sm text-muted-foreground">{quote.customer_name}</p>
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
+              {quote.quote_number || "Quote"}
+            </h1>
+            <p className="text-sm text-muted-foreground">{quote.customer_name}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/quotes" className={buttonVariants({ variant: "outline" })}>
+              Back
+            </Link>
+            <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
+              Edit
+            </Link>
+            <form action={softDeleteQuoteAction.bind(null, quote.id)}>
+              <ConfirmSubmitButton
+                variant="destructive"
+                confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
+              >
+                Delete
+              </ConfirmSubmitButton>
+            </form>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/quotes" className={buttonVariants({ variant: "outline" })}>
-            Back
-          </Link>
-          <PdfDownloadButton
-            pdfUrl={`/api/quote-pdf/${quote.id}`}
-            filename={quotePdfFilename({
-              quoteNumber: quote.quote_number,
-              customerName: quote.customer_name,
-              quoteDate: quote.quote_date,
-              id: quote.id,
-            })}
-          />
-          <Link href={`/quotes/${quote.id}/edit`} className={buttonVariants({ variant: "outline" })}>
-            Edit
-          </Link>
-          <form action={softDeleteQuoteAction.bind(null, quote.id)}>
-            <ConfirmSubmitButton
-              variant="destructive"
-              confirmMessage={`Delete quote ${quote.quote_number || quote.id}?`}
-            >
-              Delete
-            </ConfirmSubmitButton>
-          </form>
-        </div>
+        <PdfExportPanel
+          pdfUrl={`/api/quote-pdf/${quote.id}`}
+          filename={quotePdfFilename({
+            quoteNumber: quote.quote_number,
+            customerName: quote.customer_name,
+            quoteDate: quote.quote_date,
+            id: quote.id,
+          })}
+          documentKind="quote"
+          documentId={quote.id}
+          documentLabel="Quote"
+        />
       </header>
 
       <Card>

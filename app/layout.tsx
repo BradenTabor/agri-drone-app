@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Geist_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+import { AppToaster } from "@/components/shared/AppToaster";
 import { BRAND } from "@/lib/brand";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -36,7 +37,10 @@ export default function RootLayout({
       lang="en"
       className={`${ibmPlexSans.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <AppToaster />
+      </body>
     </html>
   );
 }

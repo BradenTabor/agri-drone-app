@@ -2,6 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 
+/** Cap embedded photos so PDFs stay shareable on cellular. */
+export const MAX_PDF_PHOTOS = 6;
+
+export type MixRecordPdfPhoto = {
+  dataUrl: string;
+  contentType: string;
+};
+
 export type MixRecordPdfData = {
   record: {
     id: string;
@@ -41,6 +49,13 @@ export type MixRecordPdfData = {
     rate_unit: string | null;
   }>;
   photoCount: number;
+  /** Capped photo payloads for the optional appendix page (size-gated, not resized). */
+  photos: MixRecordPdfPhoto[];
+};
+
+export type GetMixRecordForPdfOptions = {
+  /** When false, skip photo downloads (used for bulk ZIP exports). Default true. */
+  includePhotos?: boolean;
 };
 
 type ProfileNameRow = {
@@ -106,10 +121,58 @@ function asSingle<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
+async function loadPhotosForPdf(
+  mixRecordId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{ photoCount: number; photos: MixRecordPdfPhoto[] }> {
+  const { data: photoRows, error: photoError } = await supabase
+    .from("mix_record_photos")
+    .select("id, storage_path")
+    .eq("mix_record_id", mixRecordId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (photoError) {
+    // Photos are optional appendix content — don't fail the whole PDF.
+    console.error("Unable to load mix record photos:", photoError.message);
+    return { photoCount: 0, photos: [] };
+  }
+
+  const rows = photoRows ?? [];
+  const photoCount = rows.length;
+  const photos: MixRecordPdfPhoto[] = [];
+
+  for (const row of rows.slice(0, MAX_PDF_PHOTOS)) {
+    const { data: file, error: downloadError } = await supabase.storage
+      .from("mix-record-photos")
+      .download(row.storage_path);
+
+    if (downloadError || !file) {
+      continue;
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    // Skip huge originals that would blow up share latency on cellular.
+    if (buffer.byteLength > 2_500_000) {
+      continue;
+    }
+
+    const contentType = file.type || "image/jpeg";
+    photos.push({
+      contentType,
+      dataUrl: `data:${contentType};base64,${buffer.toString("base64")}`,
+    });
+  }
+
+  return { photoCount, photos };
+}
+
 export async function getMixRecordForPdf(
   mixRecordId: string,
   supabase: SupabaseClient<Database>,
+  options: GetMixRecordForPdfOptions = {},
 ): Promise<MixRecordPdfData | null> {
+  const includePhotos = options.includePhotos !== false;
   const { data: row, error: recordError } = await supabase
     .from("mix_records")
     .select(
@@ -174,15 +237,9 @@ export async function getMixRecordForPdf(
     return null;
   }
 
-  const { count: photoCount, error: photoCountError } = await supabase
-    .from("mix_record_photos")
-    .select("id", { count: "exact", head: true })
-    .eq("mix_record_id", mixRecordId)
-    .is("deleted_at", null);
-
-  if (photoCountError) {
-    throw new Error(`Unable to load mix record photo count: ${photoCountError.message}`);
-  }
+  const { photoCount, photos } = includePhotos
+    ? await loadPhotosForPdf(mixRecordId, supabase)
+    : { photoCount: 0, photos: [] };
 
   // NOTE: keep MixRecordForPdfRow in sync with the select string above.
   // Supabase's generated types don't infer embedded relation shapes.
@@ -211,18 +268,18 @@ export async function getMixRecordForPdf(
   const productLines = (typedRow.mix_record_products ?? [])
     .filter((line) => line.deleted_at === null)
     .map((line) => {
-    const product = asSingle(line.products);
-    const productName = product && !product.deleted_at ? product.name : null;
-    const epaNumber = product && !product.deleted_at ? product.epa_number : null;
+      const product = asSingle(line.products);
+      const productName = product && !product.deleted_at ? product.name : null;
+      const epaNumber = product && !product.deleted_at ? product.epa_number : null;
 
-    return {
-      product_name: productName,
-      epa_number: epaNumber,
-      amount_added: line.amount_added,
-      amount_unit: line.amount_unit,
-      rate_per_acre: line.rate_per_acre,
-      rate_unit: line.rate_unit,
-    };
+      return {
+        product_name: productName,
+        epa_number: epaNumber,
+        amount_added: line.amount_added,
+        amount_unit: line.amount_unit,
+        rate_per_acre: line.rate_per_acre,
+        rate_unit: line.rate_unit,
+      };
     });
 
   return {
@@ -256,6 +313,7 @@ export async function getMixRecordForPdf(
       last_modified_by_name: lastModifiedByName,
     },
     productLines,
-    photoCount: photoCount ?? 0,
+    photoCount,
+    photos,
   };
 }

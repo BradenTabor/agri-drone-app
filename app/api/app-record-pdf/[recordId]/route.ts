@@ -1,10 +1,7 @@
-import { type DocumentProps, renderToStream } from "@react-pdf/renderer";
-import { createElement, type ReactElement } from "react";
 import { type NextRequest } from "next/server";
 
-import { AppRecordPdf } from "@/lib/pdf/AppRecordPdf";
-import { getAppRecordForPdf } from "@/lib/pdf/getAppRecordForPdf";
-import { appRecordPdfFilename } from "@/lib/pdf/pdfFilename";
+import { buildPdfDocument, renderBuiltPdfToStream } from "@/lib/pdf/buildPdfDocument";
+import { pdfResponseHeaders } from "@/lib/pdf/pdfHttp";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -14,7 +11,7 @@ type RouteContext = {
   params: Promise<{ recordId: string }>;
 };
 
-export async function GET(_request: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   const { recordId } = await params;
   const supabase = await createClient();
 
@@ -26,24 +23,16 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const data = await getAppRecordForPdf(recordId, supabase);
-  if (!data) {
+  const built = await buildPdfDocument("app_record", recordId, supabase);
+  if (!built) {
     return new Response("Not found", { status: 404 });
   }
 
-  const document = createElement(AppRecordPdf, { data }) as ReactElement<DocumentProps>;
-  const stream = await renderToStream(document);
-  const filename = appRecordPdfFilename({
-    customerName: data.record.customer_name,
-    jobDate: data.record.job_date,
-    id: recordId,
-  });
+  const disposition =
+    request.nextUrl.searchParams.get("disposition") === "inline" ? "inline" : "attachment";
+  const stream = await renderBuiltPdfToStream(built);
 
   return new Response(stream as unknown as ReadableStream, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
-    },
+    headers: pdfResponseHeaders(built.filename, disposition),
   });
 }

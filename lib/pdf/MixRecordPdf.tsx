@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import { decimalToDms, dmsToString } from "@/lib/formatting/coordinates";
 import { BRAND } from "@/lib/brand";
@@ -109,6 +109,32 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: PDF_THEME.typography.smallPt,
     color: PDF_THEME.colors.muted,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  photoCell: {
+    width: "48%",
+    marginBottom: 10,
+  },
+  photoImage: {
+    width: "100%",
+    height: 180,
+    objectFit: "cover",
+    borderWidth: 1,
+    borderColor: PDF_THEME.colors.divider,
+  },
+  photoCaption: {
+    fontSize: PDF_THEME.typography.smallPt,
+    color: PDF_THEME.colors.muted,
+    marginTop: 3,
+  },
+  photoNote: {
+    fontSize: PDF_THEME.typography.smallPt,
+    color: PDF_THEME.colors.muted,
+    marginBottom: 8,
   },
 });
 
@@ -332,6 +358,35 @@ function Footer() {
   );
 }
 
+function PhotoAppendixPage({ data }: { data: MixRecordPdfData }) {
+  const embedded = data.photos.length;
+  const omitted = Math.max(0, data.photoCount - embedded);
+
+  return (
+    <Page size="A4" style={styles.page}>
+      <Text style={styles.runningHeader} fixed>
+        {BRAND.name} — Mix Record Photos
+      </Text>
+      <Text style={styles.sectionTitle}>PHOTO APPENDIX</Text>
+      <View style={styles.divider} />
+      <Text style={styles.photoNote}>
+        Showing {embedded} of {data.photoCount} photo{data.photoCount === 1 ? "" : "s"}
+        {omitted > 0 ? ` (${omitted} omitted for file size)` : ""}.
+      </Text>
+      <View style={styles.photoGrid}>
+        {data.photos.map((photo, index) => (
+          <View key={`photo-${index}`} style={styles.photoCell} wrap={false}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image has no alt prop */}
+            <Image src={photo.dataUrl} style={styles.photoImage} />
+            <Text style={styles.photoCaption}>Photo {index + 1}</Text>
+          </View>
+        ))}
+      </View>
+      <Footer />
+    </Page>
+  );
+}
+
 export function MixRecordPage({ data }: { data: MixRecordPdfData }) {
   return (
     <Page size="A4" style={styles.page}>
@@ -357,6 +412,7 @@ export function MixRecordPdf({ data }: { data: MixRecordPdfData }) {
   return (
     <Document {...meta}>
       <MixRecordPage data={data} />
+      {data.photos.length > 0 ? <PhotoAppendixPage data={data} /> : null}
     </Document>
   );
 }

@@ -8,6 +8,7 @@ import {
   RecordsPagination,
   type RecordsTableColumn,
 } from "@/components/shared/RecordsListTable";
+import { BulkPdfExportBar } from "@/components/shared/BulkPdfExportBar";
 import { buttonVariants } from "@/components/ui/button";
 
 export type MixRecordListItem = {
@@ -95,6 +96,14 @@ export function MixRecordsListClient({
 }: MixRecordsListClientProps) {
   return (
     <div className="space-y-3">
+      <BulkPdfExportBar
+        selectionNoun="mix records"
+        items={records.map((record) => ({
+          kind: "mix_record" as const,
+          documentId: record.id,
+          label: `${record.record_date} · ${record.customer_name_snapshot || "Customer"} · ${record.field_name_snapshot || "Field"}`,
+        }))}
+      />
       <RecordsListTable
         rows={records}
         columns={columns}

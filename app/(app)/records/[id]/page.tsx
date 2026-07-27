@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { softDeleteMixRecordAction } from "@/app/(app)/records/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
-import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
+import { PdfExportPanel } from "@/components/shared/PdfExportPanel";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { mixRecordPdfFilename } from "@/lib/pdf/pdfFilename";
@@ -105,39 +105,45 @@ export default async function RecordDetailPage({ params }: RecordDetailPageProps
 
   return (
     <section className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Mix Record {record.record_date}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {record.customer_name_snapshot || "Unknown customer"} / {record.field_name_snapshot || "Unknown field"}
-          </p>
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
+              Mix Record {record.record_date}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {record.customer_name_snapshot || "Unknown customer"} /{" "}
+              {record.field_name_snapshot || "Unknown field"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/records" className={buttonVariants({ variant: "outline" })}>
+              Back
+            </Link>
+            <Link href={`/records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
+              Edit
+            </Link>
+            <form action={softDeleteMixRecordAction.bind(null, record.id)}>
+              <ConfirmSubmitButton
+                variant="destructive"
+                confirmMessage={`Delete mix record from ${record.record_date}?`}
+              >
+                Delete
+              </ConfirmSubmitButton>
+            </form>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/records" className={buttonVariants({ variant: "outline" })}>
-            Back
-          </Link>
-          <PdfDownloadButton
-            pdfUrl={`/api/pdf/${record.id}`}
-            filename={mixRecordPdfFilename({
-              customerName: record.customer_name_snapshot,
-              recordDate: record.record_date,
-              id: record.id,
-            })}
-          />
-          <Link href={`/records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
-            Edit
-          </Link>
-          <form action={softDeleteMixRecordAction.bind(null, record.id)}>
-            <ConfirmSubmitButton
-              variant="destructive"
-              confirmMessage={`Delete mix record from ${record.record_date}?`}
-            >
-              Delete
-            </ConfirmSubmitButton>
-          </form>
-        </div>
+        <PdfExportPanel
+          pdfUrl={`/api/pdf/${record.id}`}
+          filename={mixRecordPdfFilename({
+            customerName: record.customer_name_snapshot,
+            recordDate: record.record_date,
+            id: record.id,
+          })}
+          documentKind="mix_record"
+          documentId={record.id}
+          documentLabel="Mix Record"
+        />
       </header>
 
       <Card>

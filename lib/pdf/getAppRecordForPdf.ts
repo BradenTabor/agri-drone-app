@@ -150,9 +150,15 @@ function parseTargetVegetation(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string");
 }
 
+export type GetAppRecordForPdfOptions = {
+  /** When false, skip photo downloads on embedded mix pages. Default true. */
+  includePhotos?: boolean;
+};
+
 export async function getAppRecordForPdf(
   appRecordId: string,
   supabase: SupabaseClient<Database>,
+  options: GetAppRecordForPdfOptions = {},
 ): Promise<AppRecordPdfData | null> {
   const { data: row, error: recordError } = await supabase
     .from("app_records")
@@ -261,7 +267,11 @@ export async function getAppRecordForPdf(
   // Order is preserved (rows are already sorted by link sort_order); any record
   // soft-deleted between the join read and this load resolves to null and is dropped.
   const linkedMixRecordDocs = (
-    await Promise.all(linkedMixRecordRows.map((mix) => getMixRecordForPdf(mix.id, supabase)))
+    await Promise.all(
+      linkedMixRecordRows.map((mix) =>
+        getMixRecordForPdf(mix.id, supabase, { includePhotos: options.includePhotos }),
+      ),
+    )
   ).filter((doc): doc is MixRecordPdfData => doc != null);
 
   const { data: fieldRows, error: fieldsError } = await supabase

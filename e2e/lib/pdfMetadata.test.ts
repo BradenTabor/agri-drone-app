@@ -92,6 +92,7 @@ function makeMixData(): MixRecordPdfData {
     },
     productLines: [],
     photoCount: 0,
+    photos: [],
   };
 }
 

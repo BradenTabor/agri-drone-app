@@ -53,8 +53,9 @@ const mockMixRecord: MixRecordPdfData = {
       rate_unit: "oz",
     },
   ],
-  photoCount: 2,
-};
+    photoCount: 2,
+    photos: [],
+  };
 
 const mockQuote: QuotePdfData = {
   quote: {

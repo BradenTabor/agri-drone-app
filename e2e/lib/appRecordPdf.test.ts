@@ -65,6 +65,7 @@ function makeMixRecordData(id: string): MixRecordPdfData {
       },
     ],
     photoCount: 2,
+    photos: [],
   };
 }
 

@@ -37,4 +37,28 @@ test.describe("auth guards", () => {
     const response = await request.get("/api/quote-pdf/test-id");
     expect(response.status()).toBe(401);
   });
+
+  test("pdf share-link api returns 401 when unauthenticated", async ({ request }) => {
+    const response = await request.post("/api/pdf-share-link", {
+      data: {
+        kind: "mix_record",
+        documentId: "c2d42c9f-fd01-4a42-96e7-93cef32acb16",
+      },
+    });
+    expect(response.status()).toBe(401);
+  });
+
+  test("pdf bulk api returns 401 when unauthenticated", async ({ request }) => {
+    const response = await request.post("/api/pdf-bulk", {
+      data: {
+        items: [
+          {
+            kind: "mix_record",
+            documentId: "c2d42c9f-fd01-4a42-96e7-93cef32acb16",
+          },
+        ],
+      },
+    });
+    expect(response.status()).toBe(401);
+  });
 });

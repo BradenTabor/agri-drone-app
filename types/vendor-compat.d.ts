@@ -64,8 +64,10 @@ declare module "lucide-react" {
   export type LucideIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
   export const AlertTriangle: LucideIcon;
+  export const Archive: LucideIcon;
   export const ArrowRight: LucideIcon;
   export const Building2: LucideIcon;
+  export const Check: LucideIcon;
   export const ChevronDown: LucideIcon;
   export const ChevronRight: LucideIcon;
   export const CircleCheckBig: LucideIcon;
@@ -75,12 +77,18 @@ declare module "lucide-react" {
   export const ClipboardCheck: LucideIcon;
   export const ClipboardList: LucideIcon;
   export const DollarSign: LucideIcon;
+  export const Download: LucideIcon;
   export const Droplets: LucideIcon;
+  export const Eye: LucideIcon;
+  export const FileArchive: LucideIcon;
   export const FileStack: LucideIcon;
   export const FlaskConical: LucideIcon;
   export const Gauge: LucideIcon;
   export const Home: LucideIcon;
+  export const Link2: LucideIcon;
+  export const Loader2: LucideIcon;
   export const LogOut: LucideIcon;
+  export const Mail: LucideIcon;
   export const Map: LucideIcon;
   export const MapPinned: LucideIcon;
   export const Menu: LucideIcon;
@@ -89,6 +97,7 @@ declare module "lucide-react" {
   export const ScanFace: LucideIcon;
   export const Search: LucideIcon;
   export const Settings2: LucideIcon;
+  export const Share2: LucideIcon;
   export const ShieldCheck: LucideIcon;
   export const SlidersHorizontal: LucideIcon;
   export const Sparkles: LucideIcon;

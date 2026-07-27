@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { softDeleteAppRecordAction } from "@/app/(app)/app-records/actions";
 import { ConfirmSubmitButton } from "@/components/shared/ConfirmSubmitButton";
-import { PdfDownloadButton } from "@/components/shared/PdfDownloadButton";
+import { PdfExportPanel } from "@/components/shared/PdfExportPanel";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { appRecordPdfFilename } from "@/lib/pdf/pdfFilename";
@@ -120,43 +120,50 @@ export default async function AppRecordDetailPage({ params }: AppRecordDetailPag
 
   return (
     <section className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Application Record</h1>
-          <p className="text-sm text-muted-foreground">
-            {record.job_date} / {record.customer_name}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/app-records" className={buttonVariants({ variant: "outline" })}>
-            Back
-          </Link>
-          <Link
-            href={`/quotes/new?fromRecord=${record.id}`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Generate Invoice
-          </Link>
-          <PdfDownloadButton
-            pdfUrl={`/api/app-record-pdf/${record.id}`}
-            filename={appRecordPdfFilename({
-              customerName: record.customer_name,
-              jobDate: record.job_date,
-              id: record.id,
-            })}
-          />
-          <Link href={`/app-records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
-            Edit
-          </Link>
-          <form action={softDeleteAppRecordAction.bind(null, record.id)}>
-            <ConfirmSubmitButton
-              variant="destructive"
-              confirmMessage={`Delete application record from ${record.job_date}?`}
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
+              Application Record
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {record.job_date} / {record.customer_name}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/app-records" className={buttonVariants({ variant: "outline" })}>
+              Back
+            </Link>
+            <Link
+              href={`/quotes/new?fromRecord=${record.id}`}
+              className={buttonVariants({ variant: "outline" })}
             >
-              Delete
-            </ConfirmSubmitButton>
-          </form>
+              Generate Invoice
+            </Link>
+            <Link href={`/app-records/${record.id}/edit`} className={buttonVariants({ variant: "outline" })}>
+              Edit
+            </Link>
+            <form action={softDeleteAppRecordAction.bind(null, record.id)}>
+              <ConfirmSubmitButton
+                variant="destructive"
+                confirmMessage={`Delete application record from ${record.job_date}?`}
+              >
+                Delete
+              </ConfirmSubmitButton>
+            </form>
+          </div>
         </div>
+        <PdfExportPanel
+          pdfUrl={`/api/app-record-pdf/${record.id}`}
+          filename={appRecordPdfFilename({
+            customerName: record.customer_name,
+            jobDate: record.job_date,
+            id: record.id,
+          })}
+          documentKind="app_record"
+          documentId={record.id}
+          documentLabel="Application Record"
+        />
       </header>
 
       <Card>

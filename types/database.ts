@@ -517,6 +517,42 @@ export type Database = {
           },
         ]
       }
+      document_share_links: {
+        Row: {
+          created_at: string
+          document_id: string
+          document_kind: string
+          expires_at: string
+          filename: string
+          id: string
+          revoked_at: string | null
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          document_kind: string
+          expires_at: string
+          filename: string
+          id?: string
+          revoked_at?: string | null
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          document_kind?: string
+          expires_at?: string
+          filename?: string
+          id?: string
+          revoked_at?: string | null
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mix_record_photos: {
         Row: {
           caption: string | null

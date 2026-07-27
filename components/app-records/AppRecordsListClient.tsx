@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { softDeleteAppRecordAction } from "@/app/(app)/app-records/actions";
+import { BulkPdfExportBar } from "@/components/shared/BulkPdfExportBar";
 import { ListSearchToolbar } from "@/components/shared/ListSearchToolbar";
 import {
   RecordActionLinks,
@@ -143,6 +144,15 @@ export function AppRecordsListClient({ records }: AppRecordsListClientProps) {
         }}
         filteredCount={filteredRecords.length}
         totalCount={records.length}
+      />
+
+      <BulkPdfExportBar
+        selectionNoun="application records"
+        items={paginatedRecords.map((record) => ({
+          kind: "app_record" as const,
+          documentId: record.id,
+          label: `${record.job_date} · ${record.customer_name}`,
+        }))}
       />
 
       <RecordsListTable
