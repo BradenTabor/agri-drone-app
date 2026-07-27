@@ -114,28 +114,33 @@ export function PdfExportPanel({
   const [dockVisible, setDockVisible] = useState(false);
   const cacheRef = useRef<CacheEntry | null>(null);
   const cacheKeyRef = useRef(`${pdfUrl}::${filename}`);
-  const prefetchStarted = useRef(false);
+  const fetchGenerationRef = useRef(0);
   const panelRef = useRef<HTMLElement | null>(null);
   const kindMeta = KIND_META[documentKind];
   const cacheKey = `${pdfUrl}::${filename}`;
 
   useEffect(() => {
     return () => {
+      fetchGenerationRef.current += 1;
       if (cacheRef.current) {
         window.URL.revokeObjectURL(cacheRef.current.objectUrl);
       }
     };
   }, []);
 
-  const invalidateIfStale = useCallback(() => {
-    if (cacheKeyRef.current === cacheKey) return false;
+  // Reset cached PDF when the document identity changes (no automatic prefetch —
+  // generating PDFs eagerly contended with detail-page navigation in CI).
+  useEffect(() => {
+    if (cacheKeyRef.current === cacheKey) return;
+    fetchGenerationRef.current += 1;
     if (cacheRef.current) {
       window.URL.revokeObjectURL(cacheRef.current.objectUrl);
       cacheRef.current = null;
     }
     cacheKeyRef.current = cacheKey;
-    prefetchStarted.current = false;
-    return true;
+    setReady(false);
+    setByteSize(null);
+    setShareLink(null);
   }, [cacheKey]);
 
   // Sticky mobile dock when the panel scrolls out of view (pass 1).
@@ -156,15 +161,11 @@ export function PdfExportPanel({
   }, []);
 
   const ensurePdf = useCallback(async (): Promise<CacheEntry> => {
-    const stale = invalidateIfStale();
-    if (stale) {
-      setReady(false);
-      setByteSize(null);
-      setShareLink(null);
+    if (cacheRef.current && cacheKeyRef.current === cacheKey) {
+      return cacheRef.current;
     }
 
-    if (cacheRef.current) return cacheRef.current;
-
+    const generation = ++fetchGenerationRef.current;
     const requestedKey = cacheKey;
     const response = await fetch(pdfUrl);
     if (!response.ok) {
@@ -173,8 +174,15 @@ export function PdfExportPanel({
 
     const blob = await response.blob();
     // Ignore stale responses if the user navigated to another document mid-fetch.
-    if (cacheKeyRef.current !== requestedKey) {
+    if (
+      fetchGenerationRef.current !== generation ||
+      cacheKeyRef.current !== requestedKey
+    ) {
       throw new Error("PDF request was superseded. Try again.");
+    }
+
+    if (cacheRef.current) {
+      window.URL.revokeObjectURL(cacheRef.current.objectUrl);
     }
 
     const objectUrl = window.URL.createObjectURL(blob);
@@ -183,32 +191,7 @@ export function PdfExportPanel({
     setByteSize(blob.size);
     setReady(true);
     return entry;
-  }, [cacheKey, invalidateIfStale, pdfUrl]);
-
-  useEffect(() => {
-    if (prefetchStarted.current && cacheKeyRef.current === cacheKey) return;
-    prefetchStarted.current = true;
-    cacheKeyRef.current = cacheKey;
-
-    const schedule =
-      typeof window.requestIdleCallback === "function"
-        ? window.requestIdleCallback.bind(window)
-        : (cb: () => void) => window.setTimeout(cb, 400);
-
-    const handle = schedule(() => {
-      void ensurePdf().catch(() => {
-        // Prefetch is best-effort; action handlers surface errors.
-      });
-    });
-
-    return () => {
-      if (typeof window.cancelIdleCallback === "function" && typeof handle === "number") {
-        window.cancelIdleCallback(handle);
-      } else {
-        window.clearTimeout(handle as number);
-      }
-    };
-  }, [cacheKey, ensurePdf]);
+  }, [cacheKey, pdfUrl]);
 
   const runAction = async (action: Exclude<BusyAction, null>, work: () => Promise<void>) => {
     if (busy) return;
@@ -364,7 +347,7 @@ export function PdfExportPanel({
       ? lastSharedAt
         ? "Ready · recently shared"
         : "Ready to send"
-      : "Warming PDF…";
+      : "Tap an action to prepare";
 
   const shareLabel = capability.canShareFiles ? "Share PDF" : "Share / Send";
 
