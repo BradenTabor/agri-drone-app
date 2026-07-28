@@ -65,16 +65,27 @@ const KIND_META: Record<
 
 const subscribeNoop = () => () => {};
 
+const SERVER_PDF_SHARE_CAPABILITY: PdfShareCapability = {
+  canShareFiles: false,
+  isAppleTouch: false,
+  prefersShareOverDownload: false,
+};
+
+let clientPdfShareCapability: PdfShareCapability | null = null;
+
+function getClientPdfShareCapability(): PdfShareCapability {
+  // useSyncExternalStore requires a stable snapshot reference when data is unchanged.
+  if (!clientPdfShareCapability) {
+    clientPdfShareCapability = detectPdfShareCapability();
+  }
+  return clientPdfShareCapability;
+}
+
 function usePdfShareCapability(): PdfShareCapability {
   return useSyncExternalStore(
     subscribeNoop,
-    () => detectPdfShareCapability(),
-    () =>
-      ({
-        canShareFiles: false,
-        isAppleTouch: false,
-        prefersShareOverDownload: false,
-      }) satisfies PdfShareCapability,
+    getClientPdfShareCapability,
+    () => SERVER_PDF_SHARE_CAPABILITY,
   );
 }
 

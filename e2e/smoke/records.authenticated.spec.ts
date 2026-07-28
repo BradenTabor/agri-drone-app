@@ -162,15 +162,21 @@ test.describe("authenticated record write flows", () => {
     const { customerName, productName } = await fillMixRecordForm(page);
     await submitMixRecordForm(page);
 
-    await expect(page.getByText(customerName, { exact: false })).toBeVisible();
-    await expect(page.getByText(productName, { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Mix Record/ })).toBeVisible();
+    // Scope to the detail subtitle — the export panel filename also includes the customer.
+    await expect(
+      page.locator("header p.text-sm.text-muted-foreground").filter({ hasText: customerName }),
+    ).toBeVisible();
+    await expect(page.getByText(productName, { exact: false }).first()).toBeVisible();
   });
 
   test("app record happy path with attached mix", async ({ page }) => {
     await discardAppDraftIfPresent(page);
     const mix = await fillMixRecordForm(page);
     const mixRecordId = await submitMixRecordForm(page);
-    await expect(page.getByText(mix.customerName, { exact: false })).toBeVisible();
+    await expect(
+      page.locator("header p.text-sm.text-muted-foreground").filter({ hasText: mix.customerName }),
+    ).toBeVisible();
 
     await fillAppRecordForm(page, {
       customerName: mix.customerName,
