@@ -68,6 +68,8 @@ After project creation, add environment variables in Vercel Project Settings:
   - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - [ ] `SUPABASE_SERVICE_ROLE_KEY`
   - [ ] `NEXT_PUBLIC_MAPBOX_TOKEN`
+  - [ ] `CRON_SECRET` (random, 16+ characters; authorizes `/api/cron/keepalive`)
+  - [ ] `KEEPALIVE_E2E_SUPABASE_URL` and `KEEPALIVE_E2E_SUPABASE_KEY` (E2E project URL and anon key; keeps it from pausing)
 - [ ] Also add the same values for **Preview** (recommended if preview deploys should work).
 - [ ] Redeploy after env vars are added/updated so they take effect.
 
